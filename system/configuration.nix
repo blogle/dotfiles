@@ -7,6 +7,7 @@
     ./graphics.nix
     ./virtualization.nix
     ./desktop.nix
+    ./home-manager.nix
     ./build-servers.nix
   ];
 
