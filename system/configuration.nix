@@ -5,6 +5,7 @@
     ./hardware-configuration.nix
     ./graphics.nix
     ./virtualization.nix
+    ./build-servers.nix
   ];
 
 
