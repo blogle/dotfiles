@@ -4,7 +4,9 @@
   imports = [
     ./hardware-configuration.nix
     ./graphics.nix
+    ./virtualization.nix
   ];
+
   networking = {
     hostName = "exclusivor";
     networkmanager.enable = true;
