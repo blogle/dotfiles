@@ -7,6 +7,9 @@
     ./virtualization.nix
   ];
 
+
+  time.timeZone = "America/Chicago";
+
   networking = {
     hostName = "exclusivor";
     networkmanager.enable = true;
