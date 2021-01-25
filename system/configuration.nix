@@ -3,6 +3,7 @@
 
   imports = [
     ./hardware-configuration.nix
+    ./graphics.nix
   ];
   networking = {
     hostName = "exclusivor";
