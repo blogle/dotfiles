@@ -1,6 +1,7 @@
 { system ? builtins.currentSystem, configuration ? ./configuration.nix }:
 
-let pkgs = import ../nixpkgs.nix {};
-in import "${pkgs.path}/nixos" {
-  inherit system configuration;
-}
+let pkgs = import ../nixpkgs.nix {
+  config = { allowUnfree = true; };
+};
+
+in pkgs.nixos (import configuration)
