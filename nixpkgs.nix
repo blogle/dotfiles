@@ -1,9 +1,18 @@
 { config ? {}, overlays ? []}:
-let 
+let
   sources = import ./nix/sources.nix;
   packageOverlay = import ./packages.nix;
-in 
+  homeManager = import sources.home-manager {};
+  homeManagerOverlay = self: super: {
+    home-manager = homeManager.home-manager;
+    home-manager-path = homeManager.path;
+  };
+
+in
   import sources.nixpkgs {
     inherit config;
-    overlays = overlays ++ [ packageOverlay ];
+    overlays = overlays ++ [
+      homeManagerOverlay
+      packageOverlay
+    ];
   }
