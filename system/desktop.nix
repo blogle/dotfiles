@@ -5,18 +5,17 @@
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
-    displayManager.lightdm = {
-      enable = true;
-      greeters.mini = {
-        enable = true;
-        user = "ogle";
-        extraConfig = ''
-          [greeter]
-          show-password-label = false
-          [greeter-theme]
-          background-image=""
-        '';
-      };
+    displayManager = {
+      lightdm.enable = true;
+      autoLogin = { enable = true; user = "ogle"; };
+      defaultSession = "xsession";
+      session = [
+         {
+           manage = "desktop";
+           name = "xsession";
+           start = ''exec $HOME/.xsession'';
+         }
+      ];
     };
 
     videoDrivers = ["intel" "nvidia" "modesetting"];
