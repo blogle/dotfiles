@@ -57,6 +57,10 @@
         exclusivor = {
           modules = [ ./hosts/exclusivor ];
         };
+        
+        modulus = {
+          modules = [ ./hosts/modulus ];
+        };
       };
 
       # homes
