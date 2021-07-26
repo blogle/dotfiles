@@ -22,9 +22,28 @@
   outputs = { self, utils, nixpkgs, hm, ... }@inputs:
     utils.lib.systemFlake {
       inherit self inputs;
+      
+      # overlays
+      
+      overlay = import ./pkgs;
+      channelsConfig = { 
+        allowUnfree = true;
+      };
 
-      supportedSystems = [ "x86_64-linux" ];
-      channelsConfig = { allowUnfree = true; };
+      sharedOverlays = [
+        self.overlay
+      ];
+
+      channels.nixpkgs.input = nixpkgs;
+ 
+      # Channel specific overlays
+      channels.nixpkgs.overlaysBuilder = channels: [
+        (final: prev: {
+          # Overwrites specified packages to be used from unstable channel.
+          home-manager = inputs.hm.packages.x86_64-linux.home-manager;
+        })
+      ];
+
 
       # modules and hosts
 
@@ -48,7 +67,7 @@
           username = "ogle";
           homeDirectory = "/home/ogle";
           system = "x86_64-linux";
-          #extraSpecialArgs = { inherit inputs; };
+          extraSpecialArgs = { inherit inputs; };
 
           configuration = {
             imports = [ ./home ];
@@ -62,32 +81,13 @@
 
       };
 
-      # overlays
-      channels.nixpkgs.overlaysBuilder = channels: [
-        self.overlay
-      ];
-      
-      overlay = import ./pkgs;
-      overlays = utils.lib.exportOverlays {
-        inherit (self) pkgs inputs;
-      };
-
-      # packages
-      outputsBuilder = channels: {
-        packages = utils.lib.exportPackages self.overlays channels;
-      };
-
-	  devShellBuilder = channels:
-		with channels.nixpkgs;
-		mkShell {
-          buildInputs = [
-            hm.packages.x86_64-linux.home-manager
-			#cachix
-			#nixpkgs-fmt
-			#nixos-generators
-			#deploy-rs
-		  ];
-		};
+      devShellBuilder = channels:
+      with channels.nixpkgs;
+      mkShell {
+        buildInputs = [
+          home-manager
+          ];
+        };
 
     };
 
