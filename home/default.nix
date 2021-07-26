@@ -185,13 +185,13 @@ in
   programs.rofi = {
     enable = true;
     terminal = "${pkgs.st}/bin/st";
-    #theme = ./theme.rasi;
-    #font = "System San Francisco Display Regular 36";
-    #extraConfig = ''
-	#  rofi.show: run
-	#  rofi.blur-background : true
-	#  rofi.modi: window,ssh,run
-    #'';
+    theme = ./theme.rasi;
+    font = "System San Francisco Display Regular 36";
+    extraConfig = {
+	  show = "run";
+	  blur-background = "true";
+	  modi ="window,ssh,run";
+    };
   };
 
 }
