@@ -10,11 +10,11 @@
 
   imports = [
     ./hardware-configuration.nix
-    #./users.nix
-    #./graphics.nix
-    #./virtualization.nix
-    #./desktop.nix
-    #./build-servers.nix
+    ./users.nix
+    ./graphics.nix
+    ./virtualization.nix
+    ./desktop.nix
+    ./build-servers.nix
   ];
 
 
