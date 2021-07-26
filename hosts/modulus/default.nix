@@ -21,7 +21,7 @@
   time.timeZone = "America/Chicago";
 
   networking = {
-    hostName = "exclusivor";
+    hostName = "modulus";
     networkmanager.enable = true;
   };
 
