@@ -14,7 +14,7 @@
     ./graphics.nix
     ./virtualization.nix
     ./desktop.nix
-    ./build-servers.nix
+    #./build-servers.nix
   ];
 
 
