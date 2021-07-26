@@ -30,7 +30,7 @@
   ];
 
   boot = {
-    initrd.luks.devices.crypted.device = "/dev/disk/by-uuid/276700af-63cf-49bf-9d53-96cb0d5fa068";
+    initrd.luks.devices.crypted.device = "/dev/disk/by-uuid/167d5984-df64-4fa5-a435-2352615b3062";
     loader = {
       efi.canTouchEfiVariables = true;
       grub.enableCryptodisk = true;
