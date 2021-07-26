@@ -4,24 +4,12 @@ let
   homeDir = "/home/ogle";#builtins.getEnv "HOME";
   #pkgsUnstable = import <nixpkgs-unstable> {};
 
-  _1password = pkgs._1password.overrideAttrs (attrs: {
-    src = pkgs.fetchzip {
-      url = "https://cache.agilebits.com/dist/1P/op/pkg/v${attrs.version}/op_linux_amd64_v${attrs.version}.zip";
-      sha256 = "0qj5v8psqyp0sra0pvzkwjpm28kx3bgg36y37wklb6zl2ngpxm5g";
-	  stripRoot = false;
-	};
-  });
-
-  cog = pkgs.callPackage ./cog.nix {};
+  #cog = pkgs.callPackage ./cog.nix {};
 
   clipboard = pkgs.fetchurl { 
     url = https://st.suckless.org/patches/clipboard/st-clipboard-0.8.3.diff; 
     sha256 = "1h1nwilwws02h2lnxzmrzr69lyh6pwsym21hvalp9kmbacwy6p0g";
   };
-
-  firefox-nogpu = pkgs.writeShellScriptBin "firefox-nogpu" ''
-    CUDA_VISIBLE_DEVICES="" firefox
-  '';
 
   st-xresources = pkgs.fetchurl {
     url = https://st.suckless.org/patches/xresources/st-xresources-20180309-c5ba9c0.diff;
@@ -29,7 +17,7 @@ let
   };
 
   st = pkgs.st.override {
-    conf = builtins.readFile "${homeDir}/.config/st-config.h";
+    conf = builtins.readFile ./st-config.h;
     patches = [ clipboard ];
   };
 
@@ -39,7 +27,7 @@ let
 
   vim = vim-build.customize {
     name = "vim";
-    vimrcConfig.customRC = pkgs.lib.readFile /home/ogle/.vimrc;
+    vimrcConfig.customRC = builtins.readFile ./.vimrc;
     vimrcConfig.packages.myVimPackage = with pkgs.vimPlugins; {
       start = [];
       opt = [];
@@ -115,13 +103,11 @@ in
     pkgs.xdg_utils
     pkgs.xorg.xbacklight
     pkgs.zoom-us
-    pkgs.zotero
-    _1password
+    #pkgs.zotero
     #cog
-    firefox-nogpu
-    obsidian
+    #obsidian
     st
-    python
+    #python
     vim
   ];
 
@@ -134,17 +120,15 @@ in
     enable = true;
     windowManager.xmonad = {
       enable = true;
-      config = "${homeDir}/.config/xmonad/xmonad.hs";
+      config = ./xmonad.hs;
       extraPackages = 
       haskellPackages: [
         haskellPackages.xmonad-contrib
       ];
     };
 
-    initExtra = let
-      config = homeDir + "/xkb/symbols/qgmlwy.xkb";
-    in ''
-      ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${config} $DISPLAY'';
+    initExtra = ''
+      ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./qgmlwy.xkb} $DISPLAY'';
     };
 
   xresources = {
@@ -174,7 +158,7 @@ in
       . ~/.profile
     '';
     shellAliases = {
-      auth = "eval $(${_1password}/bin/op signin)";
+      #auth = "eval $(${_1password}/bin/op signin)";
       docker-clean = "${pkgs.docker}/bin/docker rmi $(docker images -q)";
       pbcopy = "${pkgs.xsel}/bin/xsel --clipboard --input";
       pbpaste = "${pkgs.xsel}/bin/xsel --clipboard --output";
@@ -201,13 +185,13 @@ in
   programs.rofi = {
     enable = true;
     terminal = "${pkgs.st}/bin/st";
-    theme = "${homeDir}/.config/rofi/theme.rasi";
-    font = "System San Francisco Display Regular 36";
-    extraConfig = ''
-	  rofi.show: run
-	  rofi.blur-background : true
-	  rofi.modi: window,ssh,run
-    '';
+    #theme = ./theme.rasi;
+    #font = "System San Francisco Display Regular 36";
+    #extraConfig = ''
+	#  rofi.show: run
+	#  rofi.blur-background : true
+	#  rofi.modi: window,ssh,run
+    #'';
   };
 
 }

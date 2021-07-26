@@ -1,0 +1,43 @@
+xkb_keymap {
+  xkb_keycodes  { include "evdev+aliases(qwerty)"  };
+  xkb_types     { include "complete"	};
+  xkb_compat    { include "complete"	};
+  xkb_symbols "qgmlwy" {
+  
+      include "pc+us+inet(evdev)+terminate(ctrl_alt_bksp)+capslock(escape)"
+      include "latin"
+      include "latin(nodeadkeys)"
+  
+      key <AD01>	{ [         q,          Q,           at,  Greek_OMEGA ]	};
+      key <AD02>	{ [         g,          G,          eng,          ENG ]	};
+      key <AD03>	{ [         m,          M,           mu,    masculine ]	};
+      key <AD04>	{ [         l,          L,      lstroke,      Lstroke ]	};
+      key <AD05>	{ [         w,          W,      lstroke,      Lstroke ]	};
+      key <AD06>	{ [         y,          Y,    leftarrow,          yen ]	};
+      key <AD07>	{ [         f,          F,      dstroke,  ordfeminine ]	};
+      key <AD08>	{ [         u,          U,    downarrow,      uparrow ]	};
+      key <AD09>	{ [         b,          B, rightdoublequotemark, rightsinglequotemark ] };
+      key <AD10>	{ [ semicolon,    colon, dead_acute, dead_doubleacute ]	};
+  
+      key <AC01>	{ [         d,          D,          eth,          ETH ]	};
+      key <AC02>	{ [         s,          S,       ssharp,      section ]	};
+      key <AC03>	{ [         t,          T,       tslash,       Tslash ]	};
+      key <AC04>	{ [         n,          N ]	};
+      key <AC05>	{ [         r,          R,    paragraph,   registered ]	};
+      key <AC06>	{ [         i,          I,   rightarrow,     idotless ]	};
+      key <AC07>	{ [         a,          A,           ae,           AE ]	};
+      key <AC08>	{ [         e,          E ]	};
+      key <AC09>	{ [         o,          O,       oslash,     Ooblique ]	};
+      key <AC10>	{ [         h,          H,      hstroke,      Hstroke ]	};
+  
+      key <AB01>	{ [         z,          Z, guillemotleft,        less ]	};
+      key <AB02>	{ [         x,          X, guillemotright,    greater ]	};
+      key <AB03>	{ [         c,          C,         cent,    copyright ]	};
+      key <AB04>	{ [         v,          V, leftdoublequotemark, leftsinglequotemark ]	};
+      key <AB05>	{ [         j,          J ]	};
+      key <AB06>	{ [         k,          K,          kra,    ampersand ]	};
+      key <AB07>	{ [         p,          P,        thorn,        THORN ]	};
+  
+  };
+  xkb_geometry  { include "pc(pc104)"	};
+};
