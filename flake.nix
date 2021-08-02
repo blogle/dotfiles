@@ -2,8 +2,8 @@
   description = "NixOS system configurations";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    master.url = "github:NixOS/nixpkgs";
+    master.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs";
 
     fu.url = "github:numtide/flake-utils";
     utils = {
