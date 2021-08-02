@@ -26,7 +26,7 @@
   };
 
   environment.systemPackages = [
-    pkgs.linuxPackages.perf
+    config.boot.kernelPackages.perf
   ];
 
   boot = {
@@ -36,6 +36,8 @@
       grub.enableCryptodisk = true;
       systemd-boot.enable = true;
     };
+
+    kernelPackages = pkgs.linuxPackages_latest;
 
   };
 

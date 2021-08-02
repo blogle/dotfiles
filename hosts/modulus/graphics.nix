@@ -1,10 +1,18 @@
-{ config, pkgs, ... }: 
-{
+{ config, pkgs, ... }:
+
+with config.boot.kernelPackages; {
   
   environment.systemPackages = [ 
     pkgs.cudatoolkit
-    pkgs.linuxPackages.nvidia_x11
+    nvidia_x11
   ];
 
-  hardware.opengl.driSupport32Bit = true;
+  boot = {
+    blacklistedKernelModules = ["nouveau"];
+    extraModulePackages = [ nvidia_x11 ];
+  };
+
+  virtualization.docker.enableNvidia = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
+  hardware.nvidia.prime.sync = { enable = true; };
 }

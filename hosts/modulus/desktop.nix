@@ -9,19 +9,26 @@
   services.xserver = {
     enable = true;
     displayManager = {
-      lightdm.enable = true;
-      autoLogin = { enable = true; user = "ogle"; };
+      lightdm = {
+        enable = true;
+        greeter.enable = false;
+      };
+      autoLogin = {
+        enable = true;
+        user = "ogle";
+      };
+
       defaultSession = "xsession";
-      session = [
-         {
-           manage = "desktop";
-           name = "xsession";
-           start = ''exec $HOME/.xsession'';
-         }
-      ];
+      session = [{
+        manage = "desktop";
+        name = "xsession";
+        start = ''
+          exec $HOME/.xsession
+        '';
+       }];
+
     };
 
-    videoDrivers = ["intel" "nvidia" "modesetting"];
     xkbOptions = "caps:escape";
   };
 
@@ -30,6 +37,8 @@
     enable = true;
     tapping = false;
   };
+
+
 
   # Enable audio
   sound.enable = true;
