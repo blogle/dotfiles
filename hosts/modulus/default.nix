@@ -39,5 +39,11 @@
 
   };
 
+
+  services.openssh = {
+      enable = true;
+      passwordAuthentication = true;
+  };
+  services.sshd.enable = true;
   system.stateVersion = lib.mkForce "21.05";
 }
