@@ -4,6 +4,7 @@
   inputs = {
     master.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs.url = "github:NixOS/nixpkgs";
+    nixos-hardware.url = github:NixOS/nixos-hardware/master;
 
     fu.url = "github:numtide/flake-utils";
     utils = {
@@ -19,7 +20,7 @@
     };
   };
 
-  outputs = { self, utils, nixpkgs, hm, ... }@inputs:
+  outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
     utils.lib.systemFlake {
       inherit self inputs;
       
@@ -59,7 +60,10 @@
         };
         
         modulus = {
-          modules = [ ./hosts/modulus ];
+          modules = [
+            nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
+            ./hosts/modulus
+          ];
         };
       };
 
