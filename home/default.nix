@@ -17,7 +17,7 @@ let
   };
 
   st = pkgs.st.override {
-    conf = builtins.readFile ./st-config.h;
+    conf = builtins.readFile ./config/st-config.h;
     patches = [ clipboard ];
   };
 
@@ -120,7 +120,7 @@ in
     enable = true;
     windowManager.xmonad = {
       enable = true;
-      config = ./xmonad.hs;
+      config = ./config/xmonad.hs;
       extraPackages = 
       haskellPackages: [
         haskellPackages.xmonad-contrib
@@ -128,7 +128,7 @@ in
     };
 
     initExtra = ''
-      ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./qgmlwy.xkb} $DISPLAY'';
+      ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} $DISPLAY'';
     };
 
   xresources = {
@@ -185,7 +185,7 @@ in
   programs.rofi = {
     enable = true;
     terminal = "${pkgs.st}/bin/st";
-    theme = ./theme.rasi;
+    theme = ./config/theme.rasi;
     font = "System San Francisco Display Regular 36";
     extraConfig = {
 	  show = "run";
