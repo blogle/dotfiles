@@ -113,6 +113,21 @@
         "type": "github"
       }
     },
+    "nur": {
+      "locked": {
+        "lastModified": 1628050075,
+        "narHash": "sha256-JahkrgisXPN0xcNbUHXYNk80wBxDUzHBYoenNVDZIpg=",
+        "owner": "nix-community",
+        "repo": "nur",
+        "rev": "7f56d5a83d023a7c154e72b89f0ddea1feb81e57",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nur",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "agenix": "agenix",
@@ -121,6 +136,7 @@
         "master": "master",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
+        "nur": "nur",
         "utils": "utils"
       }
     },

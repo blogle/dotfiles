@@ -181,7 +181,25 @@ in
   };
 
 
-  programs.firefox = { enable = true; };
+  home.file.firefox-vim = {
+    source = ./config/vimperatorrc;
+    target = ".tridactylrc";
+  };
+  programs.firefox = {
+    profiles.default.id = 0;
+
+    enable = true;
+
+    package = pkgs.firefox.override {
+      cfg.enableTridactylNative = true;
+    };
+    extensions = with pkgs.nur.repos.rycee; [
+      firefox-addons.onepassword-password-manager
+      firefox-addons.tridactyl
+    ];
+
+  };
+
   programs.rofi = {
     enable = true;
     terminal = "${pkgs.st}/bin/st";

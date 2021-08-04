@@ -4,7 +4,8 @@
   inputs = {
     master.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs.url = "github:NixOS/nixpkgs";
-    nixos-hardware.url = github:NixOS/nixos-hardware/master;
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    nur.url = "github:nix-community/nur";
 
     fu.url = "github:numtide/flake-utils";
     utils = {
@@ -21,7 +22,7 @@
   };
 
   outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
-    utils.lib.systemFlake {
+    utils.lib.systemFlake rec {
       inherit self inputs;
       
       # overlays
@@ -33,6 +34,7 @@
 
       sharedOverlays = [
         self.overlay
+        inputs.nur.overlay
       ];
 
       channels.nixpkgs.input = nixpkgs;
@@ -81,7 +83,7 @@
             imports = [ ./home ];
             nixpkgs = {
               config = { allowUnfree = true; };
-              overlays = [ self.overlay ];
+              overlays = sharedOverlays;
             };
           };
 
