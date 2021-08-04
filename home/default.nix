@@ -45,7 +45,6 @@ in
     #pkgs.google-cloud-sdk
     #pkgs.google-chrome
     pkgs.bind
-    pkgs.cog
     #pkgs.berglas
     #pkgs.dive
     pkgs.docker
