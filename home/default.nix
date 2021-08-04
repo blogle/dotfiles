@@ -20,11 +20,7 @@ let
 
   vim = vim-build.customize {
     name = "vim";
-    vimrcConfig.customRC = builtins.readFile ./.vimrc;
-    vimrcConfig.packages.myVimPackage = with pkgs.vimPlugins; {
-      start = [];
-      opt = [];
-    };
+    vimrcConfig.customRC = builtins.readFile ./config/.vimrc;
   };
 
   python = pkgs.python36.withPackages (ps: [

@@ -1,58 +1,58 @@
-"" Disable the bells
-"set visualbell
-"hi Bell display: none;
-"
-"" Hide the scrollbars
-""set gui=none
-"
-"" Show up to 35 items in the completion list
-"set maxitems=35
-"
-"" Don't go into insert mode when loading a page
-"set focuscontent
-"
-"" Find as you type
-"set incsearch
-"
-"" Highlight the terms
-"set hlsearch
-"
-"" Make searches case-insensitive
-"set ignorecase
-"
-"" Unless they contain upper-case letters
-"set smartcase
-"
-"" Set hint chars
-"set hintchars=antesodh
-"set hintmatching=firstletters
-"highlight Hint font-family: "Menlo", monospace; font-size:14px; font-weight: normal; color: #FFFFFF; background-color: #458588; padding:0px 2px;
-"
-"" Page navigation
-"noremap e g<Down>
-"noremap o <Right>
-"noremap u g<Up>
-"noremap a <Left>
-"
-"noremap j u
-"noremap o :open<Space>
-"noremap s :open google<Space> 
-"
-"nmap , <Leader>
-"
-"nmap <Leader>t :tabopen<Space>
-"nmap <Leader>r :emenu History.Restore Previous Session
-"
-"" Buffer Navigation
-"nmap <Leader>n :tabnext<CR>
-"nmap <Leader>m :tabprevious<CR>
-"
-"
-"" Toggle for search highlight
-"map <silent> coh :set hlsearch!<CR>
-"
-"" Shortcuts to menus / options
-"noremap <silent> cop :open about:preferences<CR>
-"
-"" show the available tabs
-"noremap cot :buffers<CR>
+" Disable the bells
+set visualbell
+hi Bell display: none;
+
+" Hide the scrollbars
+set gui=none
+
+" Show up to 35 items in the completion list
+set maxitems=35
+
+" Don't go into insert mode when loading a page
+set focuscontent
+
+" Find as you type
+set incsearch
+
+" Highlight the terms
+set hlsearch
+
+" Make searches case-insensitive
+set ignorecase
+
+" Unless they contain upper-case letters
+set smartcase
+
+" Set hint chars
+set hintchars=antesodh
+set hintmatching=firstletters
+highlight Hint font-family: "Menlo", monospace; font-size:14px; font-weight: normal; color: #FFFFFF; background-color: #458588; padding:0px 2px;
+
+" Page navigation
+noremap e g<Down>
+noremap o <Right>
+noremap u g<Up>
+noremap a <Left>
+
+noremap j u
+noremap o :open<Space>
+noremap s :open google<Space> 
+
+nmap , <Leader>
+
+nmap <Leader>t :tabopen<Space>
+nmap <Leader>r :emenu History.Restore Previous Session
+
+" Buffer Navigation
+nmap <Leader>n :tabnext<CR>
+nmap <Leader>m :tabprevious<CR>
+
+
+" Toggle for search highlight
+map <silent> coh :set hlsearch!<CR>
+
+" Shortcuts to menus / options
+noremap <silent> cop :open about:preferences<CR>
+
+" show the available tabs
+noremap cot :buffers<CR>
