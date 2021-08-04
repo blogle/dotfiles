@@ -6,11 +6,6 @@ let
 
   #cog = pkgs.callPackage ./cog.nix {};
 
-  clipboard = pkgs.fetchurl { 
-    url = https://st.suckless.org/patches/clipboard/st-clipboard-0.8.3.diff; 
-    sha256 = "1h1nwilwws02h2lnxzmrzr69lyh6pwsym21hvalp9kmbacwy6p0g";
-  };
-
   st-xresources = pkgs.fetchurl {
     url = https://st.suckless.org/patches/xresources/st-xresources-20180309-c5ba9c0.diff;
     sha256 = "1qgck68sf4s47dckvl9akjikjfqhvrv70bip0l3cy2mb1wdlln6d";
@@ -18,7 +13,7 @@ let
 
   st = pkgs.st.override {
     conf = builtins.readFile ./config/st-config.h;
-    patches = [ clipboard ];
+    patches = [ pkgs.st-clipboard ];
   };
 
   vim-build = pkgs.vim_configurable.override {
