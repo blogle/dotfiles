@@ -1,5 +1,7 @@
 final: prev: {
 
+    cog = final.callPackage ./cog.nix {};
+
     obsidian = final.callPackage ./obsidian.nix {};
 
     st-clipboard = final.fetchurl {
