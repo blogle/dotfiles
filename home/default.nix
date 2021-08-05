@@ -38,7 +38,7 @@ in
     pkgs.arandr
     #pkgs.arcanist
     #pkgs.ansible
-    #pkgs.google-cloud-sdk
+    pkgs.google-cloud-sdk
     #pkgs.google-chrome
     pkgs.bind
     #pkgs.berglas
