@@ -1,58 +1,54 @@
-" Disable the bells
-set visualbell
-hi Bell display: none;
+" Enable "vim-like" behaviour where removing a line from
+" here makes the setting disappear.
+sanitise tridactyllocal tridactylsync
 
-" Hide the scrollbars
-set gui=none
+" Sane hinting mode
+set hintkeys "antesodh"
+set hintfiltermode vimperator-reflow
 
-" Show up to 35 items in the completion list
-set maxitems=35
+"
+" Binds
+"
 
-" Don't go into insert mode when loading a page
-set focuscontent
+" Scroll Navigation
+bind e scrollline 5
+bind u scrollline -5
 
-" Find as you type
-set incsearch
+" Tab Navigation
+bind ,d tabclose
+bind ,n tabnext
+bind ,m tabprev
+unbind d
 
-" Highlight the terms
-set hlsearch
+" URL Navigation
+command o open
 
-" Make searches case-insensitive
-set ignorecase
+" Allow Ctrl-a to select all in the commandline
+unbind --mode=ex <C-a>
 
-" Unless they contain upper-case letters
-set smartcase
+" Let Ctrl-c to copy in the commandline
+unbind --mode=ex <C-c>
 
-" Set hint chars
-set hintchars=antesodh
-set hintmatching=firstletters
-highlight Hint font-family: "Menlo", monospace; font-size:14px; font-weight: normal; color: #FFFFFF; background-color: #458588; padding:0px 2px;
-
-" Page navigation
-noremap e g<Down>
-noremap o <Right>
-noremap u g<Up>
-noremap a <Left>
-
-noremap j u
-noremap o :open<Space>
-noremap s :open google<Space> 
-
-nmap , <Leader>
-
-nmap <Leader>t :tabopen<Space>
-nmap <Leader>r :emenu History.Restore Previous Session
-
-" Buffer Navigation
-nmap <Leader>n :tabnext<CR>
-nmap <Leader>m :tabprevious<CR>
+blacklistadd app.sketchup.com/app
 
 
-" Toggle for search highlight
-map <silent> coh :set hlsearch!<CR>
+"
+" Misc settings
+"
 
-" Shortcuts to menus / options
-noremap <silent> cop :open about:preferences<CR>
+" set editorcmd to suckless terminal, or use the defaults on other platforms
+"js tri.browserBg.runtime.getPlatformInfo().then(os=>{const editorcmd = os.os=="linux" ? "st vim" : "auto"; tri.config.set("editorcmd", editorcmd)})
 
-" show the available tabs
-noremap cot :buffers<CR>
+" set profile dir on Windows
+"jsb browser.runtime.getPlatformInfo().then(os=>{const profiledir = os.os=="win" ? "C:\\Users\\olie\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\gwm76nmk.default" : "auto"; tri.config.set("profiledir", profiledir)})
+
+
+"
+" URL redirects
+"
+
+" New reddit is bad
+"autocmd DocStart www.reddit.com js tri.excmds.urlmodify("-t", "www", "old")
+
+" This will have to do until someone writes us a nice syntax file :)
+" vim: set filetype=vim:
