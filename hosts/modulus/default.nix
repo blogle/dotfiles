@@ -11,6 +11,7 @@
   imports = [
     ./hardware-configuration.nix
     ./users.nix
+    ./fonts.nix
     ./graphics.nix
     ./virtualization.nix
     ./desktop.nix
