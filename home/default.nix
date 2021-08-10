@@ -32,7 +32,7 @@ in
 {
   # Let Home Manager install and manage itself.
   programs.home-manager.path = pkgs.home-manager-path;
-  home.packages = 
+  home.packages =
   [
     pkgs.alsaUtils
     pkgs.arandr
@@ -65,7 +65,6 @@ in
     pkgs.spotify
     #pkgs.terraform
     #pkgs.tmate
-    pkgs.tmux
     #pkgs.tree
     pkgs.vlc
     pkgs.wget
@@ -90,7 +89,7 @@ in
     windowManager.xmonad = {
       enable = true;
       config = ./config/xmonad.hs;
-      extraPackages = 
+      extraPackages =
       haskellPackages: [
         haskellPackages.xmonad-contrib
       ];
@@ -147,6 +146,25 @@ in
          required = true;
        };
     };
+  };
+
+
+  programs.tmux =
+  # This file needs to be made executable
+  let tmux-pain-control = pkgs.writeScript "tmux-pain-control-tmux"
+    (builtins.readFile ./config/tmux-pain-control.tmux);
+  in {
+    enable = true;
+    terminal = "xterm-256color";
+    prefix = "`";
+    historyLimit = 50000;
+    extraConfig = ''
+      unbind-key i
+      bind-key ? show-messages
+
+      run-shell ${tmux-pain-control}
+    '';
+
   };
 
 
