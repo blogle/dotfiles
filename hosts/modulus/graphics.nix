@@ -12,7 +12,11 @@ with config.boot.kernelPackages; {
     extraModulePackages = [ nvidia_x11 ];
   };
 
-  virtualization.docker.enableNvidia = true;
+  #virtualization.docker.enableNvidia = true;
   services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.nvidia.prime.sync = { enable = true; };
+  hardware.nvidia = {
+    modesetting = { enable = true; };
+    prime.sync = { enable = true; };
+  };
+
 }
