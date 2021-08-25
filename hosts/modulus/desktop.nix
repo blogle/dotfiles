@@ -38,7 +38,7 @@
     tapping = false;
   };
 
-
+  # TODO switch to pipewire for audio
 
   # Enable audio
   sound.enable = true;
@@ -47,7 +47,6 @@
     package = pkgs.pulseaudioFull;
     extraConfig = ''
       load-module module-switch-on-connect
-      load-module module-bluetooth-discover a2dp_config="ldac_eqmid=hq ldac_fmt=f32"
     '';
     extraModules = [ pkgs.pulseaudio-modules-bt ];
   };
@@ -57,11 +56,9 @@
     enable = true;
     package = pkgs.bluezFull;
     powerOnBoot = true;
-    config = {
+    settings = {
       General = {
         Autoconnect = true;
-        ControllerMode = "bredr";
-        MultiProfile = "multiple";
         Enable = "Source,Sink,Media,Socket";
       };
     };
