@@ -1,11 +1,14 @@
 { buildGoModule }:
+
 buildGoModule rec {
   pname = "cog";
-  version = "v1.1.3";
+  version = "v1.2.3";
   src = builtins.fetchGit {
-    url = "ssh://git@github.com/Standard-Cognition/${pname}.git";
-    rev = "dddfde87876f607cb35183acdb26a5b28a2b4e15";
+    url = "ssh://git@github.com/standard-ai/${pname}.git";
+    rev = "03951df6e885cc20d89d4f1c5be5e3c11e802206";
   };
+
+  modRoot = "src";
 
   buildFlagsArray = 
   ''
@@ -18,6 +21,6 @@ buildGoModule rec {
       -X main.buildArch=x86_64-linux
   '';
 
-  modSha256 = "18rcsi5rrkw9bhcm5acjyawr4xc0hmidsvalcsk9fgfksbnssj0g";
+  vendorSha256 = "l7qiIvpuQLCgTKEz6bV75lhVKIulUPtC8ZH+8Ew+wlE=";
   subPackages = [ "." ];
 }

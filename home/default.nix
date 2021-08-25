@@ -38,6 +38,7 @@ in
     pkgs.arandr
     #pkgs.arcanist
     #pkgs.ansible
+    pkgs.cog
     pkgs.google-cloud-sdk
     #pkgs.google-chrome
     pkgs.bind
@@ -72,7 +73,6 @@ in
     pkgs.xorg.xbacklight
     pkgs.zoom-us
     #pkgs.zotero
-    #cog
     pkgs.obsidian
     st
     #python
