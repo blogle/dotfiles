@@ -36,15 +36,10 @@ in
   [
     pkgs.alsaUtils
     pkgs.arandr
-    #pkgs.arcanist
-    #pkgs.ansible
     pkgs.berglas
     pkgs.cog
     pkgs.google-cloud-sdk
-    #pkgs.google-chrome
     pkgs.bind
-    #pkgs.berglas
-    #pkgs.dive
     pkgs.docker
     pkgs.docker-compose
     #pkgs.flameshot
@@ -55,28 +50,19 @@ in
     pkgs.jq
     pkgs.niv
     pkgs.nmap
-    #pkgs.paprefs
     pkgs.pavucontrol
-    pkgs.polybar
-    #pkgs.php
     pkgs.pywal
     pkgs.ripgrep
     pkgs.rls
-    #pkgs.slack
     pkgs.socat
     pkgs.spotify
-    #pkgs.terraform
-    #pkgs.tmate
-    #pkgs.tree
     pkgs.vlc
     pkgs.wget
     pkgs.xdg_utils
     pkgs.xorg.xbacklight
     pkgs.zoom-us
-    #pkgs.zotero
     pkgs.obsidian
     st
-    #python
     vim
   ];
 
