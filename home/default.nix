@@ -36,6 +36,7 @@ in
   [
     pkgs.alsaUtils
     pkgs.arandr
+    pkgs.arcanist
     pkgs.berglas
     pkgs.cog
     pkgs.google-cloud-sdk
