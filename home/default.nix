@@ -43,7 +43,7 @@ in
     pkgs.bind
     pkgs.docker
     pkgs.docker-compose
-    #pkgs.flameshot
+    pkgs.flameshot
     pkgs.git
     pkgs.git-lfs
     pkgs.gnumake
