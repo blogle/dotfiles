@@ -19,6 +19,7 @@
   ];
 
 
+  #nix.generateRegistryFromInputs = true;
   time.timeZone = "America/Chicago";
 
   networking = {

@@ -3,11 +3,11 @@
 {
 
 
-  fonts.fontconfig.dpi = 192;
 
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
+    dpi = 192;
     displayManager = {
       lightdm = {
         enable = true;
@@ -27,16 +27,16 @@
         '';
        }];
 
+     };
+
+    # Enable touchpad support.
+    libinput.touchpad = {
+      tapping = false;
     };
 
     xkbOptions = "caps:escape";
   };
 
-  # Enable touchpad support.
-  services.xserver.libinput = {
-    enable = true;
-    tapping = false;
-  };
 
   # TODO switch to pipewire for audio
 

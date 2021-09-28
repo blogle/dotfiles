@@ -9,7 +9,7 @@
 
     fu.url = "github:numtide/flake-utils";
     utils = {
-      url = "github:gytis-ivaskevicius/flake-utils-plus/staging";
+      url = "github:gytis-ivaskevicius/flake-utils-plus/master";
       inputs.flake-utils.follows = "fu";
     };
 
@@ -22,11 +22,11 @@
   };
 
   outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
-    utils.lib.systemFlake rec {
+    utils.lib.mkFlake rec {
       inherit self inputs;
       
       # overlays
-      
+
       overlay = import ./pkgs;
       channelsConfig = { 
         allowUnfree = true;
@@ -52,7 +52,7 @@
 
       hostDefaults = {
         modules = [
-          utils.nixosModules.saneFlakeDefaults
+          #utils.nixosModules.saneFlakeDefaults
         ];
       };
 
