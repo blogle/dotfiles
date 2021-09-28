@@ -30,8 +30,9 @@
      };
 
     # Enable touchpad support.
-    libinput.touchpad = {
-      tapping = false;
+    libinput = {
+      enable = true;
+      touchpad.tapping = false;
     };
 
     xkbOptions = "caps:escape";
