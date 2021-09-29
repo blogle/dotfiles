@@ -91,14 +91,15 @@
 
       };
 
-      devShellBuilder = channels:
-      with channels.nixpkgs;
-      mkShell {
-        buildInputs = [
-          home-manager
-          ];
+      outputsBuilder = channels: {
+        devShell =
+        with channels.nixpkgs;
+        mkShell {
+          buildInputs = [
+            home-manager
+            ];
+          };
         };
-
     };
 
   #nixConfig = {
