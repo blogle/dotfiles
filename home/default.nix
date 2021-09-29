@@ -38,6 +38,7 @@ in
     pkgs.arandr
     pkgs.arcanist
     pkgs.berglas
+    pkgs.brightnessctl
     pkgs.cog
     pkgs.google-cloud-sdk
     pkgs.bind
@@ -60,7 +61,6 @@ in
     pkgs.vlc
     pkgs.wget
     pkgs.xdg_utils
-    pkgs.xorg.xbacklight
     pkgs.zoom-us
     pkgs.obsidian
     st
@@ -77,10 +77,7 @@ in
     windowManager.xmonad = {
       enable = true;
       config = ./config/xmonad.hs;
-      extraPackages =
-      haskellPackages: [
-        haskellPackages.xmonad-contrib
-      ];
+      enableContribAndExtras = true;
     };
 
     initExtra = ''
