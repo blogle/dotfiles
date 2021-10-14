@@ -85,9 +85,9 @@ in
     };
 
   xresources = {
-    extraConfig = ''
-      #include "/home/ogle/.cache/wal/colors.Xresources"
-    '';
+    #extraConfig = ''
+    #  #include "/home/ogle/.cache/wal/colors.Xresources"
+    #'';
   };
 
   programs.gpg.enable = true;
@@ -101,7 +101,7 @@ in
   programs.bash = {
     enable = true;
     bashrcExtra = ''
-      wal -Rq
+      #wal -Rq
       export VAULT_USERNAME=ogle
       export VAULT_ADDR=https://vault.nonstandard.ai:8200
 
