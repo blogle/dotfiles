@@ -19,6 +19,15 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "fu";
+      };
+    };
+
   };
 
   outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
@@ -35,6 +44,7 @@
       sharedOverlays = [
         self.overlay
         inputs.nur.overlay
+        inputs.rust-overlay.overlay
       ];
 
       channels.nixpkgs.input = nixpkgs;

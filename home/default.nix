@@ -28,6 +28,8 @@ let
     ps.pyls-mypy ps.pyls-isort ps.pyls-black
   ]);
 
+  rust = pkgs.rust-bin.stable.latest.default;
+
 in
 {
   # Let Home Manager install and manage itself.
@@ -63,6 +65,7 @@ in
     pkgs.xdg_utils
     pkgs.zoom-us
     pkgs.obsidian
+    rust
     st
     vim
   ];
