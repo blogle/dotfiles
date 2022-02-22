@@ -20,7 +20,7 @@
 
 
   #nix.generateRegistryFromInputs = true;
-  time.timeZone = "America/Chicago";
+  time.timeZone = "America/Los_Angeles";
 
   networking = {
     hostName = "modulus";
