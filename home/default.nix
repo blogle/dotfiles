@@ -58,6 +58,7 @@ in
     pkgs.pywal
     pkgs.ripgrep
     pkgs.rls
+    pkgs.slack
     pkgs.socat
     pkgs.spotify
     pkgs.vlc
