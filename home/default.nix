@@ -52,6 +52,7 @@ in
     pkgs.gnumake
     pkgs.htop
     pkgs.jq
+    pkgs.mutagen
     pkgs.niv
     pkgs.nmap
     pkgs.pavucontrol
