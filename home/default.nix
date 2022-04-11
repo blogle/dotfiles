@@ -15,7 +15,7 @@ let
   };
 
   vim-build = pkgs.vim_configurable.override {
-    python = python;
+    python3 = python;
   };
 
   vim = vim-build.customize {
