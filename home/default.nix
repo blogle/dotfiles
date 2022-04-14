@@ -23,10 +23,7 @@ let
     vimrcConfig.customRC = builtins.readFile ./config/.vimrc;
   };
 
-  python = pkgs.python36.withPackages (ps: [
-    ps.python-language-server
-    ps.pyls-mypy ps.pyls-isort ps.pyls-black
-  ]);
+  python = pkgs.python37;
 
   rust = pkgs.rust-bin.stable.latest.default;
 
@@ -67,6 +64,7 @@ in
     pkgs.xdg_utils
     pkgs.zoom-us
     pkgs.obsidian
+    python
     rust
     st
     vim

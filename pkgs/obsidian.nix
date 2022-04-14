@@ -1,4 +1,4 @@
-{ appimageTools, fetchurl, gnome3, hicolor-icon-theme, wrapGAppsHook }:
+{ appimageTools, fetchurl, gtk3, gsettings-desktop-schemas, hicolor-icon-theme, wrapGAppsHook }:
 
 let version = "0.6.4";
 in appimageTools.wrapType2 {
@@ -11,8 +11,8 @@ in appimageTools.wrapType2 {
   extraPkgs = pkgs: [ hicolor-icon-theme wrapGAppsHook ];
 
   profile = let
-    gtk = gnome3.gtk3;
-    gdesktop-schemas = gnome3.gsettings-desktop-schemas;
+    gtk = gtk3;
+    gdesktop-schemas = gsettings-desktop-schemas;
   in ''
     export LC_ALL=C.UTF-8
     export XDG_DATA_DIRS=${gdesktop-schemas}/share/gsettings-schemas/${gdesktop-schemas.name}:${gtk}/share/gsettings-schemas/${gtk.name}:$XDG_DATA_DIRS
