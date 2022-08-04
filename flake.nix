@@ -33,22 +33,22 @@
   outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
     utils.lib.mkFlake rec {
       inherit self inputs;
-      
+
       # overlays
 
       overlay = import ./pkgs;
-      channelsConfig = { 
+      channelsConfig = {
         allowUnfree = true;
       };
 
       sharedOverlays = [
         self.overlay
         inputs.nur.overlay
-        inputs.rust-overlay.overlay
+        inputs.rust-overlay.overlays.default
       ];
 
       channels.nixpkgs.input = nixpkgs;
- 
+
       # Channel specific overlays
       channels.nixpkgs.overlaysBuilder = channels: [
         (final: prev: {
@@ -70,7 +70,7 @@
         exclusivor = {
           modules = [ ./hosts/exclusivor ];
         };
-        
+
         modulus = {
           modules = [
             nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
@@ -84,19 +84,19 @@
       homeConfigurations = {
 
         home = hm.lib.homeManagerConfiguration {
-          username = "ogle";
-          homeDirectory = "/home/ogle";
-          system = "x86_64-linux";
+          pkgs = self.pkgs.x86_64-linux.nixpkgs;
+          modules = [
+            ./home
+            {
+              home = {
+                username = "ogle";
+                homeDirectory = "/home/ogle";
+                stateVersion = "22.05";
+              };
+            }
+          ];
+
           extraSpecialArgs = { inherit inputs; };
-
-          configuration = {
-            imports = [ ./home ];
-            nixpkgs = {
-              config = { allowUnfree = true; };
-              overlays = sharedOverlays;
-            };
-          };
-
         };
 
       };

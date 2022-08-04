@@ -20,25 +20,23 @@ buildGoModule rec {
   default_binaryGCSBucket="sc-binaries";
   default_binaryGCSPath="SRE";
 
-  buildFlagsArray = 
-  ''
-      -ldflags=
-      -X main.buildInstallMethod=nix
-      -X main.buildDate=0
-      -X main.buildHash=${src.rev}
-      -X main.buildVersion=${version}
-      -X main.buildOS=linux
-      -X main.buildArch=x86_64-linux
+  ldFlags = [
+      "-X main.buildInstallMethod=nix"
+      "-X main.buildDate=0"
+      "-X main.buildHash=${src.rev}"
+      "-X main.buildVersion=${version}"
+      "-X main.buildOS=linux"
+      "-X main.buildArch=x86_64-linux"
 
-      -X main.default_vaultAddress=${default_vaultAddress}
-      -X main.default_vaultProxyHost=${default_vaultProxyHost}
-      -X main.default_vaultIAPServiceAccount=${default_vaultIAPServiceAccount}
-      -X main.default_vaultIAPClientID=${default_vaultIAPClientID}
-      -X main.default_gcsBucket=${default_gcsBucket}
-      -X main.default_gcsFilename=${default_gcsFilename}
-      -X main.default_binaryGCSBucket=${default_binaryGCSBucket}
-      -X main.default_binaryGCSPath=${default_binaryGCSPath}
-  '';
+      "-X main.default_vaultAddress=${default_vaultAddress}"
+      "-X main.default_vaultProxyHost=${default_vaultProxyHost}"
+      "-X main.default_vaultIAPServiceAccount=${default_vaultIAPServiceAccount}"
+      "-X main.default_vaultIAPClientID=${default_vaultIAPClientID}"
+      "-X main.default_gcsBucket=${default_gcsBucket}"
+      "-X main.default_gcsFilename=${default_gcsFilename}"
+      "-X main.default_binaryGCSBucket=${default_binaryGCSBucket}"
+      "-X main.default_binaryGCSPath=${default_binaryGCSPath}"
+  ];
 
   vendorSha256 = "l7qiIvpuQLCgTKEz6bV75lhVKIulUPtC8ZH+8Ew+wlE=";
   subPackages = [ "." ];
