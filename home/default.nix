@@ -62,6 +62,7 @@ in
     pkgs.spotify
     pkgs.vlc
     pkgs.wget
+    pkgs.wireshark
     pkgs.xdg_utils
     pkgs.zoom-us
     pkgs.obsidian
