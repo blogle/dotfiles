@@ -1,13 +1,14 @@
 xkb_keymap {
-  xkb_keycodes  { include "evdev+aliases(qwerty)"  };
-  xkb_types     { include "complete"	};
-  xkb_compat    { include "complete"	};
+
+  xkb_keycodes  { include "evdev+aliases(qwerty)" };
+  xkb_types     { include "complete"      };
+  xkb_compat    { include "complete"      };
+  xkb_geometry  { include "pc(pc104)"     };
+
   xkb_symbols "qgmlwy" {
-  
-      include "pc+us+inet(evdev)+terminate(ctrl_alt_bksp)+capslock(escape)"
-      include "latin"
-      include "latin(nodeadkeys)"
-  
+
+      include "pc+us+inet(evdev)+capslock(escape)"
+
       key <AD01>	{ [         q,          Q,           at,  Greek_OMEGA ]	};
       key <AD02>	{ [         g,          G,          eng,          ENG ]	};
       key <AD03>	{ [         m,          M,           mu,    masculine ]	};
@@ -39,5 +40,4 @@ xkb_keymap {
       key <AB07>	{ [         p,          P,        thorn,        THORN ]	};
   
   };
-  xkb_geometry  { include "pc(pc104)"	};
 };
