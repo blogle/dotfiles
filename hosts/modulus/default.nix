@@ -21,9 +21,12 @@
 
   #nix.generateRegistryFromInputs = true;
   time.timeZone = "America/Los_Angeles";
+  # Enable ntp daemon
+  services.chrony.enable = true;
 
   networking = {
     hostName = "modulus";
+    timeServers = ["time.google.com"] ;
     networkmanager.enable = true;
   };
 
