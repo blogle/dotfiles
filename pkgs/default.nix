@@ -1,5 +1,6 @@
 final: prev: {
 
+    cbt = final.callPackage ./cbt.nix {};
     cog = final.callPackage ./cog.nix {};
 
     nvidia-docker = final.mkNvidiaContainerPkg {

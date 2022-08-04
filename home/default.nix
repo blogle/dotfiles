@@ -38,6 +38,7 @@ in
     pkgs.arcanist
     pkgs.berglas
     pkgs.brightnessctl
+    pkgs.cbt
     pkgs.cog
     pkgs.google-cloud-sdk
     pkgs.bind
