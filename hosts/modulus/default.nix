@@ -2,12 +2,6 @@
 
 {
 
-  #age.secrets = {
-  #  vaultwarden.file = ../../secrets/vaultwarden.age;
-  #  ddclientConfig.file = ../../secrets/ddclientConfig.age;
-  #  mailPass.file = ../../secrets/mailPass.age;
-  #};
-
   imports = [
     ./hardware-configuration.nix
     ./users.nix
@@ -16,22 +10,6 @@
     ./virtualization.nix
     ./desktop.nix
     #./build-servers.nix
-  ];
-
-
-  #nix.generateRegistryFromInputs = true;
-  time.timeZone = "America/Los_Angeles";
-  # Enable ntp daemon
-  services.chrony.enable = true;
-
-  networking = {
-    hostName = "modulus";
-    timeServers = ["time.google.com"] ;
-    networkmanager.enable = true;
-  };
-
-  environment.systemPackages = [
-    config.boot.kernelPackages.perf
   ];
 
   boot = {
@@ -43,14 +21,50 @@
     };
 
     kernelPackages = pkgs.linuxPackages_latest;
+  };
+
+  # Enable perf in the kernel
+  environment.systemPackages = [
+    config.boot.kernelPackages.perf
+  ];
+
+  networking = {
+    hostName = "modulus";
+    timeServers = ["time.google.com"] ;
+    networkmanager.enable = true;
+
+    firewall = {
+      enable = true;
+
+      # Trust tailscale traffic
+      trustedInterfaces = ["tailscale0"];
+
+      # Allow the tailscale port
+      allowedUDPPorts = [ config.services.tailscale.port ];
+
+      # tailscale traffic will not match the same interface
+      # on the opposite end - dont want to block this traffic
+      checkReversePath = "loose";
+    };
 
   };
 
+  # Time/Locale
+  time.timeZone = "America/Los_Angeles";
 
+  # Enable ntp daemon
+  services.chrony.enable = true;
+
+  # Enable tailscale
+  services.tailscale = { enable = true; };
+
+  # Enable ssh
   services.openssh = {
       enable = true;
       passwordAuthentication = true;
   };
   services.sshd.enable = true;
+
+  # Nix system version
   system.stateVersion = lib.mkForce "21.05";
 }
