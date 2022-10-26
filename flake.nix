@@ -35,28 +35,25 @@
       inherit self inputs;
 
       # overlays
-
       overlay = import ./pkgs;
       channelsConfig = {
         allowUnfree = true;
       };
 
-      sharedOverlays = [
-        self.overlay
-        inputs.nur.overlay
-        inputs.rust-overlay.overlays.default
-      ];
+      channels.nixpkgs = {
+        input = nixpkgs;
+        overlaysBuilder = _: [
+          self.overlay
+          inputs.nur.overlay
+          inputs.rust-overlay.overlays.default
 
-      channels.nixpkgs.input = nixpkgs;
-
-      # Channel specific overlays
-      channels.nixpkgs.overlaysBuilder = channels: [
-        (final: prev: {
-          # Overwrites specified packages to be used from unstable channel.
-          home-manager = inputs.hm.packages.x86_64-linux.home-manager;
-        })
-      ];
-
+          (final: prev: {
+            # Overwrites specified packages to be used from unstable channel.
+            home-manager = inputs.hm.packages.x86_64-linux.home-manager;
+            inherit (channels.master) ffmpeg-full;
+          })
+        ];
+      };
 
       # modules and hosts
 
