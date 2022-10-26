@@ -15,11 +15,6 @@ autocmd VimEnter * if len(filter(values(g:plugs), '!isdirectory(v:val.dir)'))
 
 call plug#begin('~/.vim/plugged')
 
-"Ale
-"Plug 'w0rp/ale'
-"
-Plug 'aklt/plantuml-syntax'
-
 " Semantic Completion
 Plug 'zxqfl/tabnine-vim'
 
@@ -30,7 +25,7 @@ Plug 'bling/vim-bufferline'
 Plug 'LnL7/vim-nix'
 
 "HashiCorp hcl
-Plug 'git@github.com:jvirtanen/vim-hcl.git'
+Plug 'hashivim/vim-terraform'
 
 "Git integration
 Plug 'tpope/vim-fugitive'
