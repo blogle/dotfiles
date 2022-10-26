@@ -49,13 +49,12 @@
     extraConfig = ''
       load-module module-switch-on-connect
     '';
-    extraModules = [ pkgs.pulseaudio-modules-bt ];
   };
 
   # Enable bluetooth.
   hardware.bluetooth = {
     enable = true;
-    package = pkgs.bluezFull;
+    package = pkgs.bluez;
     powerOnBoot = true;
     settings = {
       General = {
