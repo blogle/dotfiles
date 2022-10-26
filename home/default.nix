@@ -1,8 +1,6 @@
 { config, pkgs, ... }:
 
 let
-  homeDir = "/home/ogle";#builtins.getEnv "HOME";
-  #pkgsUnstable = import <nixpkgs-unstable> {};
 
   st-xresources = pkgs.fetchurl {
     url = https://st.suckless.org/patches/xresources/st-xresources-20180309-c5ba9c0.diff;
@@ -33,7 +31,7 @@ in
   programs.home-manager.path = pkgs.home-manager-path;
   home.packages =
   [
-    pkgs.alsaUtils
+    pkgs.alsa-utils
     pkgs.arandr
     pkgs.arcanist
     pkgs.berglas
@@ -48,6 +46,7 @@ in
     pkgs.git
     pkgs.git-lfs
     pkgs.gnumake
+    pkgs.home-manager
     pkgs.htop
     pkgs.jq
     pkgs.mutagen
@@ -56,14 +55,14 @@ in
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
-    pkgs.rls
+    pkgs.rust-analyzer
     pkgs.slack
     pkgs.socat
     pkgs.spotify
     pkgs.vlc
     pkgs.wget
     pkgs.wireshark
-    pkgs.xdg_utils
+    pkgs.xdg-utils
     pkgs.zoom-us
     pkgs.obsidian
     python
