@@ -20,7 +20,7 @@
       systemd-boot.enable = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages_6_2;
   };
 
   # Enable perf in the kernel
@@ -60,9 +60,12 @@
 
   # Enable ssh
   services.openssh = {
-      enable = true;
+    enable = true;
+    settings = {
       passwordAuthentication = true;
+    };
   };
+
   services.sshd.enable = true;
 
   # Nix system version

@@ -21,7 +21,7 @@ let
     vimrcConfig.customRC = builtins.readFile ./config/.vimrc;
   };
 
-  python = pkgs.python37;
+  python = pkgs.python39;
 
   rust = pkgs.rust-bin.stable.latest.default;
 
@@ -169,11 +169,13 @@ in
     package = pkgs.firefox.override {
       cfg.enableTridactylNative = true;
     };
-    extensions = with pkgs.nur.repos.rycee; [
-      firefox-addons.onepassword-password-manager
-      firefox-addons.tridactyl
-    ];
-
+    
+    profiles.default = {
+      extensions = with pkgs.nur.repos.rycee; [
+        firefox-addons.onepassword-password-manager
+        firefox-addons.tridactyl
+      ];
+    };
   };
 
   programs.rofi = {

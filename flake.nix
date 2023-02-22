@@ -38,6 +38,7 @@
       overlay = import ./pkgs;
       channelsConfig = {
         allowUnfree = true;
+        allowBroken = true; # Gross
       };
 
       channels.nixpkgs = {
