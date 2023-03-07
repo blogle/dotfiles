@@ -46,6 +46,7 @@ in
     pkgs.git
     pkgs.git-lfs
     pkgs.gnumake
+    pkgs.hotspot
     pkgs.home-manager
     pkgs.htop
     pkgs.jq
