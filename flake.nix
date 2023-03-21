@@ -13,6 +13,11 @@
       inputs.flake-utils.follows = "fu";
     };
 
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # flakes
     agenix.url = "github:ryantm/agenix";
     hm = {
@@ -75,7 +80,13 @@
             ./hosts/modulus
           ];
         };
+        
+        nandstorm = {
+          modules = [ ./hosts/nandstorm ];
+        };
+
       };
+
 
       # homes
 
@@ -98,6 +109,20 @@
         };
 
       };
+
+      # deployments
+
+      deploy.nodes = {
+        nandstorm = {
+          hostname = "192.168.1.20";
+          profiles.system = {
+            sshUser = "root";
+            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
+          };
+        };
+      };
+      
+      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) inputs.deploy-rs.lib;
 
       outputsBuilder = channels: {
         devShell =

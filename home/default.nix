@@ -40,6 +40,7 @@ in
     pkgs.cog
     pkgs.google-cloud-sdk
     pkgs.bind
+    pkgs.deploy-rs
     pkgs.docker
     pkgs.docker-compose
     pkgs.flameshot

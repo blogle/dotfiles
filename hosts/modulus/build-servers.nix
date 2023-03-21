@@ -14,7 +14,7 @@
       buildMachines = [
 		{
 		  hostName = "aarch64.nixos.community";
-		  maxJobs = 64;
+		  settings.max-jobs = 64;
 		  sshKey = "/root/.ssh/aarch-build-box";
 		  sshUser = "blogle";
 		  system = "aarch64-linux";
