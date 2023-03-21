@@ -1,0 +1,18 @@
+project=mystic-advice-238223
+bucket=ogle-vm-images
+
+nix build .#cacheflow-gce-image -o ./result
+image=./result/*.tar.gz
+
+tag=$(date -u +%Y-%m-%d-%s)
+name="cacheflow-${tag}"
+
+# Copy the image to gcs
+gsutil cp $image gs://ogle-vm-images/$name
+
+# Create compute image
+gcloud compute images create $name \
+  --project=$project \
+  --source-uri=https://storage.googleapis.com/ogle-vm-images/$name \
+  --storage-location=us
+

@@ -18,6 +18,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # flakes
     agenix.url = "github:ryantm/agenix";
     hm = {
@@ -44,6 +49,10 @@
       channelsConfig = {
         allowUnfree = true;
         allowBroken = true; # Gross
+      };
+
+      nix = {
+        generateNixPathFromInputs = true;
       };
 
       channels.nixpkgs = {
@@ -111,6 +120,12 @@
       };
 
       # deployments
+      cacheflow-gce-image = inputs.nixos-generators.nixosGenerate {
+        pkgs = self.pkgs.x86_64-linux.nixpkgs;
+        format = "gce";
+        system = "x86_64-linux";
+        modules = [ ./hosts/cacheflow ];
+      };
 
       deploy.nodes = {
         nandstorm = {
