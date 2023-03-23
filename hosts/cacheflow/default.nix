@@ -10,7 +10,27 @@
     ./virtualization.nix
   ];
 
-  networking.hostName = "cacheflow"; # Define your hostname.
+  networking = {
+    hostName = "cacheflow";
+    nameservers = [ "8.8.8.8" "8.8.4.4"];
+    timeServers = ["time.google.com"] ;
+
+    firewall = {
+      enable = true;
+
+      # Trust tailscale traffic
+      trustedInterfaces = ["tailscale0"];
+
+      # Allow the tailscale port
+      allowedTCPPorts = [ 22 ];
+      allowedUDPPorts = [ config.services.tailscale.port ];
+
+      # tailscale traffic will not match the same interface
+      # on the opposite end - dont want to block this traffic
+      checkReversePath = "loose";
+    };
+
+  };
 
   users.users.ogle = {
     name = "ogle";
@@ -33,11 +53,8 @@
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
 
-  # Open ports in the firewall.
-  #networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  networking.firewall.enable = false;
+  # Enable tailscale
+  services.tailscale = { enable = true; };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
