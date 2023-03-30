@@ -39,6 +39,7 @@ in
     pkgs.cbt
     pkgs.cog
     pkgs.google-cloud-sdk
+    pkgs.google-chrome
     pkgs.bind
     pkgs.deploy-rs
     pkgs.docker
