@@ -45,6 +45,7 @@ in
     pkgs.docker
     pkgs.docker-compose
     pkgs.flameshot
+    pkgs.ffmpeg-full
     pkgs.git
     pkgs.git-lfs
     pkgs.gnumake

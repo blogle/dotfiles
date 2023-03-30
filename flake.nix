@@ -65,7 +65,6 @@
           (final: prev: {
             # Overwrites specified packages to be used from unstable channel.
             home-manager = inputs.hm.packages.x86_64-linux.home-manager;
-            inherit (channels.master) ffmpeg-full;
           })
         ];
       };
