@@ -50,6 +50,23 @@
       ];
   };
 
+  users.users.matt = {
+    name = "matt";
+    group = "users";
+    extraGroups = [ "wheel" "docker" ];
+    createHome = true;
+    home = "/home/matt";
+    uid = 1001;
+    isNormalUser = true;
+    packages = with pkgs; [
+      google-cloud-sdk
+    ];
+
+    openssh.authorizedKeys.keys = [
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCUiAcZLZBZf3Ln/c3hjetg7V5T7lx5HEMnXn4+3+kgGN47biyfWIA9aX1sxw42BaAuET8aEmvBynouE76GenaLWjg/GgaRfYU0NGcwhjVSbYCE1Si+srievytP3diRNrtTfF/txcUo1OBH0IdNCkFzKe4KYFanU1/BlpNm7LAXCJn4dlvKJc+kbJPByo3XM/nKEpb4PV3MtdLNpG2hCxOmQCTzli6TRHa8jRabLUOGY/cOPKqoAhjUs3cW5MYbKMFPF2SPCLlE5Kn0iEKGEW/tmeiH7+nJhAqsvF1nJ1iYHWZ3PNLDf5//JJu4m3+heIkOMxptHd5M+rO9LhVDfkqCvz/pmKHOy2qYK6OXOmpGthJfMBXkzCSfQxhE3KUandnSmc3t7C4qRzXEepvvNMDPSaDD/J24X3kZYr4mSywBq/2FArTYmdITl4rpH6P0LgtuqEZbITv9gNOlxcdHanVSmt1YpgXrXwHsgDroOp0VXsIHOO9DowYer6dhyNoPJKM= matt@standard.ai"
+    ];
+  };
+
   users.mutableUsers = false;
 
   # List services that you want to enable:
