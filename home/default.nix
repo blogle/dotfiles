@@ -2,6 +2,7 @@
 
 let
 
+  rofi-theme = ./config/theme.rasi;
   st-xresources = pkgs.fetchurl {
     url = https://st.suckless.org/patches/xresources/st-xresources-20180309-c5ba9c0.diff;
     sha256 = "1qgck68sf4s47dckvl9akjikjfqhvrv70bip0l3cy2mb1wdlln6d";
@@ -77,6 +78,9 @@ in
 
   home.sessionVariables = {
     EDITOR = "vim";
+    SSH_ASKPASS = pkgs.writeShellScript "ask-pass" ''
+      rofi -dmenu -password -i -no-fixed-num-lines -p "Password:" -theme ${rofi-theme}
+    '';
   };
 
   # X11 Configuration
@@ -89,8 +93,10 @@ in
     };
 
     initExtra = ''
-      ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} $DISPLAY'';
-    };
+        # Configure desired keybindings
+        ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} $DISPLAY
+    '';
+  };
 
   xresources = {
     #extraConfig = ''
@@ -141,6 +147,14 @@ in
     };
   };
 
+  programs.keychain = {
+    enable = true;
+    # I just want the xsession integration
+    enableBashIntegration = false;
+    enableFishIntegration = false;
+    enableZshIntegration = false;
+    enableNushellIntegration = false;
+  };
 
   programs.tmux =
   # This file needs to be made executable
@@ -173,7 +187,7 @@ in
     package = pkgs.firefox.override {
       cfg.enableTridactylNative = true;
     };
-    
+
     profiles.default = {
       extensions = with pkgs.nur.repos.rycee; [
         firefox-addons.onepassword-password-manager
@@ -185,7 +199,7 @@ in
   programs.rofi = {
     enable = true;
     terminal = "${pkgs.st}/bin/st";
-    theme = ./config/theme.rasi;
+    theme = rofi-theme;
     font = "System San Francisco Display Regular 36";
     extraConfig = {
 	  show = "run";
