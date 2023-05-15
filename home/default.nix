@@ -34,7 +34,6 @@ in
   [
     pkgs.alsa-utils
     pkgs.arandr
-    pkgs.arcanist
     pkgs.berglas
     pkgs.brightnessctl
     pkgs.cbt
@@ -69,7 +68,6 @@ in
     pkgs.wireshark
     pkgs.xdg-utils
     pkgs.zoom-us
-    pkgs.obsidian
     python
     rust
     st
