@@ -2,16 +2,9 @@
   description = "NixOS system configurations";
 
   inputs = {
-    master.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs.url = "github:NixOS/nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
-
-    fu.url = "github:numtide/flake-utils";
-    utils = {
-      url = "github:gytis-ivaskevicius/flake-utils-plus/master";
-      inputs.flake-utils.follows = "fu";
-    };
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
@@ -23,8 +16,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # flakes
-    agenix.url = "github:ryantm/agenix";
+    # Should look into using this flake for managing secrets
+    # agenix.url = "github:ryantm/agenix";
+
     hm = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -32,36 +26,26 @@
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "fu";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
   };
 
-  outputs = { self, utils, nixpkgs, hm, nixos-hardware, ... }@inputs:
-    utils.lib.mkFlake rec {
-      inherit self inputs;
+  outputs = { self, nixpkgs, hm, nixos-hardware, ... }@inputs:
+    let
+      system = "x86_64-linux"; 
+      
+      pkgConfig = {
+        inherit system;
+        config = {
+          allowUnfree = true;
+          allowBroken = true;
+        };
 
-      # overlays
-      overlay = import ./pkgs;
-      channelsConfig = {
-        allowUnfree = true;
-        allowBroken = true; # Gross
-      };
-
-      nix = {
-        generateNixPathFromInputs = true;
-      };
-
-      channels.nixpkgs = {
-        input = nixpkgs;
-        overlaysBuilder = _: [
-          self.overlay
+        overlays = [ 
           inputs.nur.overlay
           inputs.rust-overlay.overlays.default
-
+          (import ./pkgs)
           (final: prev: {
             # Overwrites specified packages to be used from unstable channel.
             home-manager = inputs.hm.packages.x86_64-linux.home-manager;
@@ -69,88 +53,93 @@
         ];
       };
 
-      # modules and hosts
+      pkgs = import nixpkgs pkgConfig;
+      nixpkgModule = {pkgs, ...}: {
+        nixpkgs = pkgConfig;
+      };
 
-      hostDefaults = {
-        modules = [
-          #utils.nixosModules.saneFlakeDefaults
+      # Module to support gce virtualization
+      gceModule = {modulesPath, ...}: {
+        imports = [
+          "${toString modulesPath}/virtualisation/google-compute-image.nix"
         ];
       };
 
-      hosts = {
-        exclusivor = {
-          modules = [ ./hosts/exclusivor ];
-        };
+    in
+  {
 
-        modulus = {
-          modules = [
-            nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
-            ./hosts/modulus
-          ];
-        };
-        
-        nandstorm = {
-          modules = [ ./hosts/nandstorm ];
-        };
+    legacyPackages."${system}" = pkgs;
 
+    homeConfigurations = {
+      home = hm.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [
+          ./home
+          {
+            home = {
+              username = "ogle";
+              homeDirectory = "/home/ogle";
+              stateVersion = "22.05";
+            };
+          }
+        ];
       };
-
-
-      # homes
-
-      homeConfigurations = {
-
-        home = hm.lib.homeManagerConfiguration {
-          pkgs = self.pkgs.x86_64-linux.nixpkgs;
-          modules = [
-            ./home
-            {
-              home = {
-                username = "ogle";
-                homeDirectory = "/home/ogle";
-                stateVersion = "22.05";
-              };
-            }
-          ];
-
-          extraSpecialArgs = { inherit inputs; };
-        };
-
-      };
-
-      # deployments
-      cacheflow-gce-image = inputs.nixos-generators.nixosGenerate {
-        pkgs = self.pkgs.x86_64-linux.nixpkgs;
-        format = "gce";
-        system = "x86_64-linux";
-        modules = [ ./hosts/cacheflow ];
-      };
-
-      deploy.nodes = {
-        nandstorm = {
-          hostname = "192.168.1.20";
-          profiles.system = {
-            sshUser = "root";
-            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
-          };
-        };
-      };
-      
-      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) inputs.deploy-rs.lib;
-
-      outputsBuilder = channels: {
-        devShell =
-        with channels.nixpkgs;
-        mkShell {
-          buildInputs = [
-            home-manager
-            ];
-          };
-        };
     };
 
-  #nixConfig = {
-  #  substituters = [ "https://app.cachix.org/cache/fufexan" ];
-  #  trusted-public-keys = [ "fufexan.cachix.org-1:LwCDjCJNJQf5XD2BV+yamQIMZfcKWR9ISIFy5curUsY=" ];
-  #};
+    nixosConfigurations = {
+      exclusivor = nixpkgs.lib.nixosSystem {
+        inherit system pkgs;
+        modules = [ 
+          nixpkgModule
+          ./hosts/exclusivor
+        ];
+      };
+
+      modulus = nixpkgs.lib.nixosSystem {
+        inherit system pkgs;
+        modules = [
+          nixpkgModule
+          nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
+          ./hosts/modulus
+        ];
+      };
+
+      nandstorm = nixpkgs.lib.nixosSystem {
+        inherit system pkgs;
+        modules = [ 
+          nixpkgModule
+          ./hosts/nandstorm
+        ];
+      };
+
+      cacheflow = nixpkgs.lib.nixosSystem {
+        inherit system pkgs;
+        modules = [
+          gceModule
+          nixpkgModule
+          ./hosts/cacheflow
+        ];
+      };
+
+    };
+
+    # Export an artifact that we can use to create a compute-engine vm
+    cacheflow-gce-image = self.nixosConfigurations.cacheflow.config.system.build.googleComputeImage;
+
+    # Remote deploy-rs targets
+    deploy.nodes = {
+      nandstorm = {
+        hostname = "192.168.1.20";
+        profiles.system = {
+          sshUser = "root";
+          path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
+        };
+      };
+    };
+    
+    # Validate system configs before shipping them off with deploy-rs
+    checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) inputs.deploy-rs.lib;
+
+  };
+      
 }
