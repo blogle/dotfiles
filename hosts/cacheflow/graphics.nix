@@ -19,6 +19,7 @@ with config.boot.kernelPackages; {
   };
 
   hardware.nvidia = {
+    package = nvidia_x11_production;
     modesetting = { enable = true; };
   };
 

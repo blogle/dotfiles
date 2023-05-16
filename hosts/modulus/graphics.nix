@@ -15,6 +15,7 @@ with config.boot.kernelPackages; {
   #virtualization.docker.enableNvidia = true;
   services.xserver.videoDrivers = [ "nvidia" ];
   hardware.nvidia = {
+    package = nvidia_x11_production;
     modesetting = { enable = true; };
     prime.sync = { enable = true; };
   };
