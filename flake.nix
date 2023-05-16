@@ -50,7 +50,10 @@
 
       pkgs = import nixpkgs pkgConfig;
       nixpkgModule = {pkgs, ...}: {
+        # Use our overlayed package set
         nixpkgs = pkgConfig;
+        # Enable nix 2.0 api and flakes
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
       };
 
       # Module to support gce virtualization
