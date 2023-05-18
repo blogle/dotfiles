@@ -68,6 +68,7 @@
   };
 
   users.mutableUsers = false;
+  security.sudo.wheelNeedsPassword = false;
 
   # List services that you want to enable:
 
