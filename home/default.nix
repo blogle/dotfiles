@@ -37,7 +37,6 @@ in
     pkgs.berglas
     pkgs.brightnessctl
     pkgs.cbt
-    pkgs.cog
     pkgs.google-cloud-sdk
     pkgs.google-chrome
     pkgs.bind
