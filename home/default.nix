@@ -136,6 +136,7 @@ in
     userEmail = "brandon@standardcognition.com";
     #delta = { enable = true; };
     extraConfig = {
+      credential.helper = "store";
 	  "filter \"lfs\"" = {
 		 clean = "${pkgs.git-lfs}/bin/git-lfs clean -- %f";
 		 smudge = "${pkgs.git-lfs}/bin/git-lfs smudge --skip -- %f";
