@@ -55,6 +55,7 @@ in
     pkgs.mutagen
     pkgs.niv
     pkgs.nmap
+    pkgs.nodejs_latest
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep

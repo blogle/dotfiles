@@ -15,8 +15,11 @@ autocmd VimEnter * if len(filter(values(g:plugs), '!isdirectory(v:val.dir)'))
 
 call plug#begin('~/.vim/plugged')
 
+" Copilot
+Plug 'github/copilot.vim'
+
 " Semantic Completion
-Plug 'zxqfl/tabnine-vim'
+"Plug 'zxqfl/tabnine-vim'
 
 "Buffer status bar
 Plug 'bling/vim-bufferline'
