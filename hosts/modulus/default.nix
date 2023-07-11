@@ -20,7 +20,7 @@
       systemd-boot.enable = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_6_2;
+    kernelPackages = pkgs.linuxPackages_latest;
   };
 
   # Enable perf in the kernel
@@ -62,7 +62,7 @@
   services.openssh = {
     enable = true;
     settings = {
-      passwordAuthentication = true;
+      PasswordAuthentication = true;
     };
   };
 
