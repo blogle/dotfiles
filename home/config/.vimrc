@@ -54,9 +54,6 @@ Plug 'vim-scripts/Align'
 "Cython Highlighting
 Plug 'lambdalisue/vim-cython-syntax'
 
-"Julia Highlighting
-Plug 'JuliaEditorSupport/julia-vim'
-
 "Rust Highlighting
 Plug 'rust-lang/rust.vim'
 
