@@ -41,6 +41,7 @@ in
     pkgs.google-chrome
     pkgs.bind
     pkgs.deploy-rs
+    pkgs.devbox
     pkgs.docker
     pkgs.docker-compose
     pkgs.flameshot
