@@ -1,9 +1,6 @@
 { config, pkgs, ... }:
 
 {
-
-
-
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
@@ -35,7 +32,7 @@
       touchpad.tapping = false;
     };
 
-    xkbOptions = "caps:escape";
+    xkb.options = "caps:escape";
   };
 
 
@@ -66,10 +63,10 @@
 
   # Allow buttons on bluetooth headphones to control audio.	
   systemd.user.services.mpris-proxy = {
-	Unit.Description = "Mpris proxy";
-	Unit.After = [ "network.target" "sound.target" ];
-	Service.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
-	Install.WantedBy = [ "default.target" ];
+	description = "Mpris proxy";
+    after = [ "network.target" "sound.target" ];
+    wantedBy = [ "default.target" ];
+    serviceConfig.ExecStart = "${pkgs.bluez}/bin/mpris-proxy";
   };
 
 }

@@ -69,5 +69,5 @@
   services.sshd.enable = true;
 
   # Nix system version
-  system.stateVersion = lib.mkForce "21.05";
+  system.stateVersion = lib.mkForce "23.11";
 }

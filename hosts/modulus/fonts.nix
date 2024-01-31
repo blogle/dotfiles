@@ -2,7 +2,7 @@
 
 {
 
-  fonts.fonts = [
+  fonts.packages = [
     pkgs.nerdfonts
   ];
 

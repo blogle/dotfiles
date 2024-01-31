@@ -51,7 +51,8 @@
       pkgs = import nixpkgs pkgConfig;
       nixpkgModule = {pkgs, ...}: {
         # Use our overlayed package set
-        nixpkgs = pkgConfig;
+        nixpkgs.config = pkgConfig.config;
+        nixpkgs.overlays = pkgConfig.overlays;
         # Enable nix 2.0 api and flakes
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
       };
@@ -86,7 +87,7 @@
 
     nixosConfigurations = {
       exclusivor = nixpkgs.lib.nixosSystem {
-        inherit system pkgs;
+        inherit system;
         modules = [ 
           nixpkgModule
           ./hosts/exclusivor
@@ -94,7 +95,7 @@
       };
 
       modulus = nixpkgs.lib.nixosSystem {
-        inherit system pkgs;
+        inherit system;
         modules = [
           nixpkgModule
           nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
@@ -103,7 +104,7 @@
       };
 
       nandstorm = nixpkgs.lib.nixosSystem {
-        inherit system pkgs;
+        inherit system;
         modules = [ 
           nixpkgModule
           ./hosts/nandstorm
@@ -111,7 +112,7 @@
       };
 
       cacheflow = nixpkgs.lib.nixosSystem {
-        inherit system pkgs;
+        inherit system;
         modules = [
           gceModule
           nixpkgModule
