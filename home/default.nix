@@ -53,6 +53,7 @@ in
     pkgs.home-manager
     pkgs.htop
     pkgs.jq
+    pkgs.kubectl
     pkgs.mutagen
     pkgs.niv
     pkgs.nmap
