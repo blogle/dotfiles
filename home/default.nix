@@ -32,6 +32,7 @@ in
   programs.home-manager.path = pkgs.home-manager-path;
   home.packages =
   [
+    pkgs.agenix
     pkgs.alsa-utils
     pkgs.arandr
     pkgs.berglas
@@ -69,6 +70,8 @@ in
     pkgs.wget
     pkgs.wireshark
     pkgs.xdg-utils
+    pkgs.zip
+    pkgs.unzip
     pkgs.zoom-us
     python
     rust

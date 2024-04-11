@@ -6,13 +6,15 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    # Should look into using this flake for managing secrets
-    # agenix.url = "github:ryantm/agenix";
 
     hm = {
       url = "github:nix-community/home-manager";
@@ -26,7 +28,7 @@
 
   };
 
-  outputs = { self, nixpkgs, hm, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, agenix, hm, nixos-hardware, ... }@inputs:
     let
       system = "x86_64-linux"; 
       
@@ -42,7 +44,7 @@
           inputs.rust-overlay.overlays.default
           (import ./pkgs)
           (final: prev: {
-            # Overwrites specified packages to be used from unstable channel.
+            agenix = agenix.packages.x86_64-linux.default;
             home-manager = inputs.hm.packages.x86_64-linux.home-manager;
           })
         ];
@@ -108,6 +110,7 @@
         modules = [ 
           nixpkgModule
           ./hosts/nandstorm
+          agenix.nixosModules.default
         ];
       };
 
