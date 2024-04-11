@@ -1,7 +1,7 @@
 # tailscale.nix
 { config, pkgs, ... }: {
     # the nix expression containing age secret configuration, enabling tailscale packages and service, networking rules, and the systemd autoconnect unit file
-    age.secrets.tailscale.file = ../../tailscale.age;
+    age.secrets.tailscale.file = ../../secrets/tailscale.age;
 
     # We'll install the package to the system, enable the service, and set up some networking rules
     environment.systemPackages = with pkgs; [ tailscale ];

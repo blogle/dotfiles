@@ -4,12 +4,12 @@ with config.boot.kernelPackages; {
   
   environment.systemPackages = [ 
     pkgs.cudatoolkit
-    nvidia_x11_production
+    nvidia_x11
   ];
 
   boot = {
     blacklistedKernelModules = ["nouveau"];
-    extraModulePackages = [ nvidia_x11_production ];
+    extraModulePackages = [ nvidia_x11 ];
   };
 
   #virtualization.docker.enableNvidia = true;
