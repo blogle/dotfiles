@@ -88,13 +88,6 @@
     };
 
     nixosConfigurations = {
-      exclusivor = nixpkgs.lib.nixosSystem {
-        inherit system;
-        modules = [ 
-          nixpkgModule
-          ./hosts/exclusivor
-        ];
-      };
 
       modulus = nixpkgs.lib.nixosSystem {
         inherit system;
@@ -114,19 +107,7 @@
         ];
       };
 
-      cacheflow = nixpkgs.lib.nixosSystem {
-        inherit system;
-        modules = [
-          gceModule
-          nixpkgModule
-          ./hosts/cacheflow
-        ];
-      };
-
     };
-
-    # Export an artifact that we can use to create a compute-engine vm
-    cacheflow-gce-image = self.nixosConfigurations.cacheflow.config.system.build.googleComputeImage;
 
     # Remote deploy-rs targets
     deploy.nodes = {
