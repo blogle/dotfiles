@@ -10,12 +10,7 @@
         enable = true;
         greeter.enable = false;
       };
-      autoLogin = {
-        enable = true;
-        user = "ogle";
-      };
 
-      defaultSession = "xsession";
       session = [{
         manage = "desktop";
         name = "xsession";
@@ -26,13 +21,21 @@
 
      };
 
-    # Enable touchpad support.
-    libinput = {
-      enable = true;
-      touchpad.tapping = false;
-    };
-
     xkb.options = "caps:escape";
+  };
+
+  services.displayManager = {
+    defaultSession = "xsession";
+    autoLogin = {
+      enable = true;
+      user = "ogle";
+    };
+  };
+
+  # Enable touchpad support.
+  services.libinput = {
+    enable = true;
+    touchpad.tapping = false;
   };
 
 
@@ -61,7 +64,7 @@
     };
   };
 
-  # Allow buttons on bluetooth headphones to control audio.	
+  # Allow buttons on bluetooth headphones to control audio.
   systemd.user.services.mpris-proxy = {
 	description = "Mpris proxy";
     after = [ "network.target" "sound.target" ];
