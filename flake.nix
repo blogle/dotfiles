@@ -21,6 +21,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    impermanence = {
+      url = "github:nix-community/impermanence";
+    };
+
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,7 +32,7 @@
 
   };
 
-  outputs = { self, nixpkgs, agenix, hm, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, agenix, hm, nixos-hardware, impermanence, ... }@inputs:
     let
       system = "x86_64-linux"; 
       
@@ -104,6 +108,7 @@
           nixpkgModule
           ./hosts/nandstorm
           agenix.nixosModules.default
+          impermanence.nixosModules.impermanence
         ];
       };
 
@@ -112,9 +117,10 @@
     # Remote deploy-rs targets
     deploy.nodes = {
       nandstorm = {
-        hostname = "192.168.1.101";
+        hostname = "192.168.1.24";
         profiles.system = {
           sshUser = "root";
+          fastConnection = true;
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
         };
       };
