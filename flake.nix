@@ -98,6 +98,7 @@
         modules = [
           nixpkgModule
           nixos-hardware.nixosModules.lenovo-thinkpad-p1-gen3
+          agenix.nixosModules.default
           ./hosts/modulus
         ];
       };
@@ -106,9 +107,9 @@
         inherit system;
         modules = [ 
           nixpkgModule
-          ./hosts/nandstorm
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
+          ./hosts/nandstorm
         ];
       };
 

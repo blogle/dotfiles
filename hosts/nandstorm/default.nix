@@ -43,6 +43,20 @@
 
   networking.hostId = "deadb33f";
   networking.hostName = "nandstorm"; # Define your hostname.
+  networking.nameservers = [
+    "127.0.0.1"
+    "::1"
+  ];
+
+  age.secrets.nextdns.file = ../../secrets/nextdns.age;
+  services.nextdns = {
+    enable = true;
+    arguments = [
+      "-config-file" "${config.age.secrets.nextdns.path}"
+    ];
+  };
+
+  services.resolved.enable = true;
 
   # Set your time zone.
   time.timeZone = "Americas/Los_Angeles";
