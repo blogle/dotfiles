@@ -118,10 +118,9 @@
     # Remote deploy-rs targets
     deploy.nodes = {
       nandstorm = {
-        hostname = "192.168.1.24";
+        hostname = "100.101.197.124";
         profiles.system = {
           sshUser = "root";
-          fastConnection = true;
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
         };
       };

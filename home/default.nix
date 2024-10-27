@@ -35,10 +35,7 @@ in
     pkgs.agenix
     pkgs.alsa-utils
     pkgs.arandr
-    pkgs.berglas
     pkgs.brightnessctl
-    pkgs.cbt
-    pkgs.google-cloud-sdk
     pkgs.google-chrome
     pkgs.bind
     pkgs.deploy-rs
@@ -48,7 +45,6 @@ in
     pkgs.flameshot
     pkgs.ffmpeg-full
     pkgs.git
-    pkgs.git-lfs
     pkgs.gnumake
     pkgs.hotspot
     pkgs.home-manager
@@ -56,16 +52,16 @@ in
     pkgs.jq
     pkgs.kubectl
     pkgs.mutagen
-    pkgs.niv
+    pkgs.ngrok
     pkgs.nmap
     pkgs.nodejs_latest
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
     pkgs.rust-analyzer
-    pkgs.slack
     pkgs.socat
     pkgs.spotify
+    pkgs.uv
     pkgs.vlc
     pkgs.wget
     pkgs.wireshark
@@ -112,7 +108,7 @@ in
     enable = true;
     defaultCacheTtl = 1800;
     enableSshSupport = true;
-    pinentryFlavor = "gtk2";
+    pinentryPackage = pkgs.pinentry-gtk2;
   };
 
   programs.bash = {
