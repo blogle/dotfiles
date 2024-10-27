@@ -22,7 +22,7 @@ let
     vimrcConfig.customRC = builtins.readFile ./config/.vimrc;
   };
 
-  python = pkgs.python39;
+  python = pkgs.python313;
 
   rust = pkgs.rust-bin.stable.latest.default;
 
