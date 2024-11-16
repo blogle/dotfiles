@@ -113,10 +113,13 @@ in
     pinentryPackage = pkgs.pinentry-gtk2;
   };
 
-  programs.bash = {
+  programs.bash =
+  let
+    wallpaper = ./config/wallpaper/bhambay.webp;
+  in {
     enable = true;
     bashrcExtra = ''
-      #wal -Rq
+      wal -i ${wallpaper}
       export VAULT_USERNAME=ogle
       export VAULT_ADDR=https://vault.nonstandard.ai:8200
 
