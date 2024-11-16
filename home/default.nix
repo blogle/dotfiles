@@ -120,8 +120,6 @@ in
     enable = true;
     bashrcExtra = ''
       wal -i ${wallpaper}
-      export VAULT_USERNAME=ogle
-      export VAULT_ADDR=https://vault.nonstandard.ai:8200
 
       # Required to make Ansible work properly
       export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
