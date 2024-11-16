@@ -55,6 +55,8 @@ in
     pkgs.ngrok
     pkgs.nmap
     pkgs.nodejs_latest
+    pkgs.openfoam
+    pkgs.paraview
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
