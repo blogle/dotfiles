@@ -29,7 +29,7 @@ unbind --mode=ex <C-a>
 " Let Ctrl-c to copy in the commandline
 unbind --mode=ex <C-c>
 
-blacklistadd app.sketchup.com/app
+blacklistadd cad.onshape.com
 
 
 "
