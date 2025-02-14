@@ -1,0 +1,156 @@
+volumes:
+  jellyfin_config:
+  transmission_config:
+  radarr_config:
+  sonarr_config:
+  prowlarr_config:
+  jellyseerr_config:
+  downloads:
+
+networks:
+  ingress_ingress:
+    external: true
+  ingress_internal:
+    external: true
+
+services:
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    restart: unless-stopped
+    networks:
+      ingress_internal:
+      ingress_ingress:
+        ipv4_address: 10.0.0.100
+    volumes:
+      - jellyfin_config:/config
+      - /media:/media
+    environment:
+      - PUID=0
+      - GUID=0
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.thejeffer.net`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.routers.jellyfin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      - "traefik.docker.network=ingress_internal"
+    
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+    volumes:
+      - transmission_config:/config
+      - downloads:/downloads
+
+    #ports:
+    #  - 51413:51413 # Torrent port TCP
+    #  - 51413:51413/udp # Torrent port UDP
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.transmission.rule=Host(`transmission.thejeffer.net`)"
+      - "traefik.http.routers.transmission.entrypoints=websecure"
+      - "traefik.http.routers.transmission.tls.certresolver=letsencrypt"
+      - "traefik.http.services.transmission.loadbalancer.server.port=9091"
+      - "traefik.docker.network=ingress_internal"
+
+      # Basic auth
+      #- "traefik.http.middlewares.jeffernet-auth.basicauth.usersfile=/.htpasswd"
+      #- "traefik.http.routers.jeffernet-transmission.middlewares=jeffernet-auth"
+    
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+    environment:
+      - PUID=0
+      - GUID=0
+    volumes:
+      - radarr_config:/config
+      - /media:/data/media
+      - downloads:/downloads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.thejeffer.net`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      - "traefik.docker.network=ingress_internal"
+      # Basic auth
+      #- "traefik.http.middlewares.jeffernet-auth.basicauth.usersfile=/.htpasswd"
+      #- "traefik.http.routers.jeffernet-radarr.middlewares=jeffernet-auth"
+    
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+    environment:
+      - PUID=0
+      - GUID=0
+    volumes:
+      - sonarr_config:/config
+      - /media:/data/media
+      - downloads:/downloads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.thejeffer.net`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      - "traefik.docker.network=ingress_internal"
+      # Basic auth
+      #- "traefik.http.middlewares.jeffernet-auth.basicauth.usersfile=/.htpasswd"
+      #- "traefik.http.routers.jeffernet-sonarr.middlewares=jeffernet-auth"
+      
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+    volumes:
+      - prowlarr_config:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.thejeffer.net`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      - "traefik.docker.network=ingress_internal"
+      # Basic auth
+      #- "traefik.http.middlewares.jeffernet-auth.basicauth.usersfile=/.htpasswd"
+      #- "traefik.http.routers.jeffernet-prowlarr.middlewares=jeffernet-auth"
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    restart: unless-stopped
+    networks:
+      - ingress_internal
+    volumes:
+      - jellyseerr_config:/app/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.thejeffer.net`)"
+      - "traefik.http.routers.jellyseerr.entrypoints=websecure"
+      - "traefik.http.routers.jellyseerr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.jellyseerr.loadbalancer.server.port=5055"
+      - "traefik.docker.network=ingress_internal"
+      - "traefik.enable=true"

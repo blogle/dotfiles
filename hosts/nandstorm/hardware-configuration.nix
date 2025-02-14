@@ -26,7 +26,13 @@
       fsType = "zfs";
       neededForBoot = true;
     };
-    
+
+    fileSystems."/media" =
+    { device = "rpool/safe/media";
+      fsType = "zfs";
+      neededForBoot = true;
+    };
+
   fileSystems."/boot" =
     { device = "/dev/disk/by-uuid/4ACD-B822";
       fsType = "vfat";

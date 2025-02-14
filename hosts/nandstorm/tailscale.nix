@@ -5,13 +5,24 @@
 
     # We'll install the package to the system, enable the service, and set up some networking rules
     environment.systemPackages = with pkgs; [ tailscale ];
-    services.tailscale.enable = true;
+
+    services.tailscale = {
+      enable = true;
+      extraUpFlags = ["--advertise-routes 10.0.0.100/30"];
+    };
+
     networking = {
         firewall = {
             checkReversePath = "loose";
             allowedUDPPorts = [ config.services.tailscale.port ];
             trustedInterfaces = [ "tailscale0" ];
         };
+    };
+
+    # Enable subnet routing
+    boot.kernel.sysctl = {
+      "net.ipv4.conf.all.forwarding" = true;
+      "net.ipv6.conf.all.forwarding" = true;
     };
 
     # Here is the magic, where we automatically connect with the tailscale CLI by passing our secret token, and ensure that agenix mounting was completed
