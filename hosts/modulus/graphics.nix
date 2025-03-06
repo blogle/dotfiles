@@ -12,9 +12,9 @@ with config.boot.kernelPackages; {
     extraModulePackages = [ nvidia_x11_production ];
   };
 
-  #virtualization.docker.enableNvidia = true;
   services.xserver.videoDrivers = [ "nvidia" ];
   hardware.nvidia = {
+    open = false;
     package = nvidia_x11_production;
     modesetting = { enable = true; };
     prime.sync = { enable = true; };
