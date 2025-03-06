@@ -20,7 +20,7 @@
       systemd-boot.enable = true;
     };
 
-    kernelPackages = pkgs.linuxPackages_6_8;
+    kernelPackages = pkgs.linuxPackages;
   };
 
   # Enable perf in the kernel
