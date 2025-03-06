@@ -6,7 +6,6 @@
 
   virtualisation.docker = {
     enable = true;
-    enableNvidia = true;
   };
 
   virtualisation.libvirtd = {
