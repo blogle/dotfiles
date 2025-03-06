@@ -38,19 +38,31 @@
     touchpad.tapping = false;
   };
 
-
-  # TODO switch to pipewire for audio
-
   # Enable audio
-  sound.enable = true;
-  hardware.pulseaudio = {
+  security.rtkit.enable = true;
+  services.pipewire = {
     enable = true;
-    package = pkgs.pulseaudioFull;
-    extraConfig = ''
-      load-module module-switch-on-connect
-    '';
+    alsa.enable = true;
+    pulse.enable = true;
+
+	# Enable Airplay
+
+	# opens UDP ports 6001-6002
+	raopOpenFirewall = true;
+	extraConfig.pipewire = {
+	  "10-airplay" = {
+		"context.modules" = [
+		  {
+			name = "libpipewire-module-raop-discover";
+		  }
+		];
+	  };
+	};
   };
 
+  # Required for airplay discovery
+  services.avahi.enable = true;
+ 
   # Enable bluetooth.
   hardware.bluetooth = {
     enable = true;
