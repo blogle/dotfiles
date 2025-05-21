@@ -61,11 +61,13 @@ in
     pkgs.spotify
     pkgs.uv
     pkgs.vlc
+    pkgs.vscode
     pkgs.wget
     pkgs.wireshark
     pkgs.xdg-utils
     pkgs.zip
     pkgs.unzip
+    pkgs.unityhub
     pkgs.zoom-us
     python
     rust
