@@ -39,7 +39,6 @@ in
     pkgs.google-chrome
     pkgs.bind
     pkgs.deploy-rs
-    pkgs.devbox
     pkgs.docker
     pkgs.docker-compose
     pkgs.flameshot
@@ -51,12 +50,9 @@ in
     pkgs.htop
     pkgs.jq
     pkgs.kubectl
-    pkgs.mutagen
     pkgs.ngrok
     pkgs.nmap
     pkgs.nodejs_latest
-    pkgs.openfoam
-    pkgs.paraview
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
