@@ -2,8 +2,8 @@
 
 {
 
-  fonts.packages = [
-    pkgs.nerdfonts
+  fonts.packages = with pkgs.nerd-fonts; [
+    hack
   ];
 
 }
