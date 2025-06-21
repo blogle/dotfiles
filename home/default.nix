@@ -144,7 +144,7 @@ in
   programs.git = {
     enable = true;
     userName = "Brandon Ogle";
-    userEmail = "brandon@standardcognition.com";
+    userEmail = "oglebrandon@gmail.com";
     #delta = { enable = true; };
     extraConfig = {
       credential.helper = "store";
