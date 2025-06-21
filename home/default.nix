@@ -22,6 +22,15 @@ let
     vimrcConfig.customRC = builtins.readFile ./config/.vimrc;
   };
 
+  vscode = pkgs.vscode-with-extensions.override {
+    vscodeExtensions = with pkgs.nix-vscode-extensions.vscode-marketplace; [
+      ms-dotnettools.csdevkit
+      rooveterinaryinc.roo-cline
+      visualstudiotoolsforunity.vstuc
+      vscodevim.vim
+    ];
+  };
+
   python = pkgs.python313;
 
   rust = pkgs.rust-bin.stable.latest.default;
@@ -61,7 +70,6 @@ in
     pkgs.spotify
     pkgs.uv
     pkgs.vlc
-    pkgs.vscode
     pkgs.wget
     pkgs.wireshark
     pkgs.xdg-utils
@@ -73,6 +81,7 @@ in
     rust
     st
     vim
+    vscode
   ];
 
   home.sessionVariables = {

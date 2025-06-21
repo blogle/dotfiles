@@ -30,6 +30,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs = { self, nixpkgs, agenix, hm, nixos-hardware, impermanence, ... }@inputs:
@@ -46,6 +51,7 @@
         overlays = [ 
           inputs.nur.overlay
           inputs.rust-overlay.overlays.default
+          inputs.nix-vscode-extensions.overlays.default
           (import ./pkgs)
           (final: prev: {
             agenix = agenix.packages.x86_64-linux.default;
