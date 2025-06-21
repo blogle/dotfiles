@@ -23,11 +23,15 @@
   environment.persistence."/persist" = {
     enable = true;
     hideMounts = true;
-	directories = [
+        directories = [
       "/var/log"
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
       "/etc/ssh"
+      # Persist k3s state so it survives reboots
+      "/var/lib/rancher"
+      "/var/lib/kubelet"
+      "/var/lib/containerd"
     ];
 
   };
@@ -116,6 +120,16 @@
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   networking.firewall.enable = false;
+
+  services.k3s = {
+    enable = true;
+    role = "server";
+    clusterInit = true;
+    extraFlags = [
+      "--disable servicelb"
+      "--write-kubeconfig-mode=644"
+    ];
+  };
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
