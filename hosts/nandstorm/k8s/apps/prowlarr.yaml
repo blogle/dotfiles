@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      containers:
+      - name: prowlarr
+        image: lscr.io/linuxserver/prowlarr:latest
+        ports:
+        - containerPort: 9696
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        hostPath:
+          path: /persist/prowlarr
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+  namespace: media
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.105
+  selector:
+    app: prowlarr
+  ports:
+  - port: 9696
+    targetPort: 9696
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prowlarr
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  tls:
+  - hosts:
+    - prowlarr.thejeffer.net
+    secretName: prowlarr-tls
+  rules:
+  - host: prowlarr.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prowlarr
+            port:
+              number: 9696
