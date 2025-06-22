@@ -8,6 +8,9 @@ spec:
   chart: metallb
   version: v0.14.3
   targetNamespace: metallb-system
+  valuesContent: |
+    crds:
+      enabled: true
 ---
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool

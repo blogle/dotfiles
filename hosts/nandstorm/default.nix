@@ -45,6 +45,13 @@
     };
   };
 
+  # Networking prerequisites for Kubernetes
+  boot.kernelModules = [ "br_netfilter" "overlay" ];
+  boot.kernel.sysctl = {
+    "net.bridge.bridge-nf-call-iptables" = 1;
+    "net.bridge.bridge-nf-call-ip6tables" = 1;
+  };
+
   networking.hostId = "deadb33f";
   networking.hostName = "nandstorm"; # Define your hostname.
   networking.nameservers = [
