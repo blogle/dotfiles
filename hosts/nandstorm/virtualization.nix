@@ -7,7 +7,4 @@
     enableNvidia = true;
   };
 
-  # Provide the NVIDIA runtime for Kubernetes workloads
-  hardware.nvidia.containerToolkit.enable = true;
-
 }
