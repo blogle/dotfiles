@@ -125,10 +125,10 @@
     enable = true;
     role = "server";
     clusterInit = true;
-    extraFlags = [
-      "--disable servicelb"
-      "--write-kubeconfig-mode=644"
-    ];
+    extraFlags = ''
+      --disable servicelb
+      --write-kubeconfig-mode=644
+    '';
   };
 
   # Copy the NixOS configuration file and link it from the resulting system
