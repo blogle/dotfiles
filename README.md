@@ -28,3 +28,10 @@ kubectl apply -f hosts/nandstorm/k8s/apps
 
 This installs MetalLB, ExternalDNS, the NVIDIA device plugin and exposes
 Jellyfin, Transmission and friends via Traefik with TLS.
+
+### Networking requirements
+
+The server must load the `br_netfilter` and `overlay` kernel modules and
+enable bridge firewalling so the bundled flannel CNI works correctly.  This is
+handled in `hosts/nandstorm/default.nix` but is worth noting when porting the
+configuration to other machines.
