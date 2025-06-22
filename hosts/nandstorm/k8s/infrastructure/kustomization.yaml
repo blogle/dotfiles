@@ -1,0 +1,7 @@
+resources:
+  - external-dns.yaml
+  - media-namespace.yaml
+  - metallb
+  - metallb.yaml
+  - nvidia-device-plugin.yaml
+  - runtimeclass.yaml
