@@ -1,0 +1,3 @@
+resources:
+  - nvidia-device-plugin.yaml
+  - runtimeclass.yaml

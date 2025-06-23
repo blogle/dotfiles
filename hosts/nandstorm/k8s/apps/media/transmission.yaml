@@ -1,66 +1,70 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prowlarr
+  name: transmission
   namespace: media
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: prowlarr
+      app: transmission
   template:
     metadata:
       labels:
-        app: prowlarr
+        app: transmission
     spec:
       containers:
-      - name: prowlarr
-        image: lscr.io/linuxserver/prowlarr:latest
+      - name: transmission
+        image: lscr.io/linuxserver/transmission:latest
         ports:
-        - containerPort: 9696
+        - containerPort: 9091
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: downloads
+          mountPath: /downloads
       volumes:
       - name: config
-        hostPath:
-          path: /persist/prowlarr
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: transmission-config-pvc
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: downloads-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: prowlarr
+  name: transmission
   namespace: media
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.0.105
+  loadBalancerIP: 10.0.0.102
   selector:
-    app: prowlarr
+    app: transmission
   ports:
-  - port: 9696
-    targetPort: 9696
+  - port: 9091
+    targetPort: 9091
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: prowlarr
+  name: transmission
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   tls:
   - hosts:
-    - prowlarr.thejeffer.net
-    secretName: prowlarr-tls
+    - transmission.thejeffer.net
+    secretName: transmission-tls
   rules:
-  - host: prowlarr.thejeffer.net
+  - host: transmission.thejeffer.net
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: prowlarr
+            name: transmission
             port:
-              number: 9696
+              number: 9091
