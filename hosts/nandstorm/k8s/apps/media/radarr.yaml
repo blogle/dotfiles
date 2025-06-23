@@ -1,72 +1,80 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: transmission
+  name: radarr
   namespace: media
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: transmission
+      app: radarr
   template:
     metadata:
       labels:
-        app: transmission
+        app: radarr
     spec:
       containers:
-      - name: transmission
-        image: lscr.io/linuxserver/transmission:latest
+      - name: radarr
+        image: lscr.io/linuxserver/radarr:latest
         ports:
-        - containerPort: 9091
+        - containerPort: 7878
+        env:
+        - name: PUID
+          value: "0"
+        - name: GUID
+          value: "0"
         volumeMounts:
         - name: config
           mountPath: /config
+        - name: media
+          mountPath: /data/media
         - name: downloads
           mountPath: /downloads
       volumes:
       - name: config
-        hostPath:
-          path: /persist/transmission
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: radarr-config-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc
       - name: downloads
-        hostPath:
-          path: /media/downloads
-          type: Directory
+        persistentVolumeClaim:
+          claimName: downloads-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: transmission
+  name: radarr
   namespace: media
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.0.102
+  loadBalancerIP: 10.0.0.103
   selector:
-    app: transmission
+    app: radarr
   ports:
-  - port: 9091
-    targetPort: 9091
+  - port: 7878
+    targetPort: 7878
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: transmission
+  name: radarr
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   tls:
   - hosts:
-    - transmission.thejeffer.net
-    secretName: transmission-tls
+    - radarr.thejeffer.net
+    secretName: radarr-tls
   rules:
-  - host: transmission.thejeffer.net
+  - host: radarr.thejeffer.net
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: transmission
+            name: radarr
             port:
-              number: 9091
+              number: 7878

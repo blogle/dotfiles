@@ -1,0 +1,9 @@
+resources:
+  - media-namespace.yaml
+  - media-volumes.yaml
+  - jellyfin.yaml
+  - jellyseerr.yaml
+  - prowlarr.yaml
+  - radarr.yaml
+  - sonarr.yaml
+  - transmission.yaml
