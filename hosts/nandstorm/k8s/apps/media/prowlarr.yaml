@@ -1,66 +1,65 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jellyseerr
+  name: prowlarr
   namespace: media
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jellyseerr
+      app: prowlarr
   template:
     metadata:
       labels:
-        app: jellyseerr
+        app: prowlarr
     spec:
       containers:
-      - name: jellyseerr
-        image: fallenbagel/jellyseerr:latest
+      - name: prowlarr
+        image: lscr.io/linuxserver/prowlarr:latest
         ports:
-        - containerPort: 5055
+        - containerPort: 9696
         volumeMounts:
         - name: config
-          mountPath: /app/config
+          mountPath: /config
       volumes:
       - name: config
-        hostPath:
-          path: /persist/jellyseerr
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: prowlarr-config-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jellyseerr
+  name: prowlarr
   namespace: media
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.0.106
+  loadBalancerIP: 10.0.0.105
   selector:
-    app: jellyseerr
+    app: prowlarr
   ports:
-  - port: 5055
-    targetPort: 5055
+  - port: 9696
+    targetPort: 9696
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jellyseerr
+  name: prowlarr
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
   tls:
   - hosts:
-    - jellyseerr.thejeffer.net
-    secretName: jellyseerr-tls
+    - prowlarr.thejeffer.net
+    secretName: prowlarr-tls
   rules:
-  - host: jellyseerr.thejeffer.net
+  - host: prowlarr.thejeffer.net
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: jellyseerr
+            name: prowlarr
             port:
-              number: 5055
+              number: 9696

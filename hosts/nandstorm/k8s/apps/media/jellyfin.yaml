@@ -13,7 +13,7 @@ spec:
       labels:
         app: jellyfin
     spec:
-      runtimeClassName: nvidia
+      #runtimeClassName: nvidia
       containers:
       - name: jellyfin
         image: lscr.io/linuxserver/jellyfin:latest
@@ -24,9 +24,9 @@ spec:
           value: "0"
         - name: GUID
           value: "0"
-        resources:
-          limits:
-            nvidia.com/gpu: 1
+        #resources:
+        #  limits:
+        #    nvidia.com/gpu: 1
         volumeMounts:
         - name: config
           mountPath: /config
@@ -34,13 +34,11 @@ spec:
           mountPath: /media
       volumes:
       - name: config
-        hostPath:
-          path: /persist/jellyfin
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: jellyfin-config-pvc
       - name: media
-        hostPath:
-          path: /media
-          type: Directory
+        persistentVolumeClaim:
+          claimName: media-pvc
 ---
 apiVersion: v1
 kind: Service

@@ -4,8 +4,7 @@ This repository contains the NixOS configurations for the machines **modulus** a
 
 ## k3s on `nandstorm`
 
-The headless server `nandstorm` runs a single-node k3s cluster.  The service
-state is persisted under `/persist` so it survives reboots.
+The headless server `nandstorm` runs a single-node k3s cluster.  The service state is persisted under `/persist` so it survives reboots.
 
 ### Getting access from `modulus`
 
@@ -16,15 +15,25 @@ state is persisted under `/persist` so it survives reboots.
 
 After this `kubectl` will talk to the cluster running on `nandstorm`.
 
-## Kubernetes manifests
+## Kustomize manifests
 
 The `hosts/nandstorm/k8s` directory contains manifests for cluster
-infrastructure and all former docker-compose services.  Apply them with:
+infrastructure and all former docker-compose services.  It is organized as a
+[Kustomize](https://kustomize.io/) configuration.  Apply everything with:
 
 ```sh
-kubectl apply -f hosts/nandstorm/k8s/infrastructure
-kubectl apply -f hosts/nandstorm/k8s/apps
+kubectl apply -k hosts/nandstorm/k8s
 ```
+
+`kubectl` includes built-in support for Kustomize, so no separate installation is
+required.
 
 This installs MetalLB, ExternalDNS, the NVIDIA device plugin and exposes
 Jellyfin, Transmission and friends via Traefik with TLS.
+
+### Networking requirements
+
+The server must load the `br_netfilter` and `overlay` kernel modules,
+enable bridge firewalling and allow IPv4 forwarding so the bundled flannel CNI
+works correctly.  This is handled in `hosts/nandstorm/default.nix` but is worth
+noting when porting the configuration to other machines.
