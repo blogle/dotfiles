@@ -11,6 +11,7 @@
     ./graphics.nix
     ./virtualization.nix
     ./tailscale.nix
+    ./kube.nix
     ];
 
   # Reset the machine to a clean state on boot
@@ -129,15 +130,6 @@
   # Or disable the firewall altogether.
   networking.firewall.enable = false;
 
-  services.k3s = {
-    enable = true;
-    role = "server";
-    clusterInit = true;
-    extraFlags = ''
-      --disable servicelb
-      --write-kubeconfig-mode=644
-    '';
-  };
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you

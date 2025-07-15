@@ -2,3 +2,4 @@ resources:
   - external-dns.yaml
   - metallb
   - nvidia
+  - traefik

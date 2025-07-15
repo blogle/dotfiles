@@ -28,8 +28,10 @@ kubectl apply -k hosts/nandstorm/k8s
 `kubectl` includes built-in support for Kustomize, so no separate installation is
 required.
 
-This installs MetalLB, ExternalDNS, the NVIDIA device plugin and exposes
-Jellyfin, Transmission and friends via Traefik with TLS.
+This installs MetalLB, ExternalDNS, Traefik, the NVIDIA device plugin and
+exposes Jellyfin, Transmission and friends via Traefik with TLS.  Traefik and
+ExternalDNS require a Cloudflare API token which is managed with agenix and
+loaded into the cluster by the `k8s-secret-cloudflare` service.
 
 ### Networking requirements
 
