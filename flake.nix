@@ -49,7 +49,7 @@
         };
 
         overlays = [
-          inputs.nur.overlay
+          inputs.nur.overlays.default
           inputs.rust-overlay.overlays.default
           inputs.nix-vscode-extensions.overlays.default
           (import ./pkgs)
@@ -124,7 +124,7 @@
     # Remote deploy-rs targets
     deploy.nodes = {
       nandstorm = {
-        hostname = "10.0.0.15";
+        hostname = "nandstorm";
         profiles.system = {
           sshUser = "root";
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
