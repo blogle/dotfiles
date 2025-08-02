@@ -47,8 +47,6 @@ metadata:
   name: sonarr
   namespace: media
 spec:
-  type: LoadBalancer
-  loadBalancerIP: 10.0.0.104
   selector:
     app: sonarr
   ports:
@@ -62,6 +60,7 @@ metadata:
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
   - hosts:

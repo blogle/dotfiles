@@ -32,8 +32,6 @@ metadata:
   name: prowlarr
   namespace: media
 spec:
-  type: LoadBalancer
-  loadBalancerIP: 10.0.0.105
   selector:
     app: prowlarr
   ports:
@@ -47,6 +45,7 @@ metadata:
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
   - hosts:

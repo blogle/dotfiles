@@ -45,9 +45,10 @@ kind: Service
 metadata:
   name: jellyfin
   namespace: media
+
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.0.107
+  loadBalancerIP: 10.0.0.101
   selector:
     app: jellyfin
   ports:
@@ -61,6 +62,7 @@ metadata:
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
   - hosts:

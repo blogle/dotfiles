@@ -8,7 +8,6 @@
     clusterInit = true;
     extraFlags = [
       "--disable servicelb"
-      "--disable traefik"
       "--write-kubeconfig-mode=644"
     ];
   };
@@ -16,9 +15,10 @@
   # Cloudflare API token for Traefik and ExternalDNS
   age.secrets.cloudflare-api-token.file = ../../secrets/cloudflare-api-token.age;
 
+  # hmm - how do we want to handle secrets where the namespace is not provisioned yet.
   kubeSecrets.cloudflare = {
-    namespace = "kube-system";
-    data = { api-token = config.age.secrets.cloudflare-api-token.path; };
+    namespace = "cert-manager";
+    data = { api-key = config.age.secrets.cloudflare-api-token.path; };
   };
 
 }

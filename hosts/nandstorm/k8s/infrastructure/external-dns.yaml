@@ -1,3 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: external-dns
+---
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
@@ -9,11 +14,14 @@ spec:
   version: 1.14.4
   targetNamespace: external-dns
   valuesContent: |
-    provider: cloudflare
-    txtOwnerId: nandstorm
-    extraEnv:
-    - name: CF_API_TOKEN
-      valueFrom:
-        secretKeyRef:
-          name: cloudflare-api-token
-          key: token
+    provider:
+      name: cloudflare
+    policy: sync
+    env:
+      - name: CF_API_EMAIL
+        value: oglebrandon@gmail.com
+      - name: CF_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: cloudflare
+            key: api-token

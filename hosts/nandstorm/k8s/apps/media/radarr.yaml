@@ -47,8 +47,6 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  type: LoadBalancer
-  loadBalancerIP: 10.0.0.103
   selector:
     app: radarr
   ports:
@@ -62,6 +60,7 @@ metadata:
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   tls:
   - hosts:
