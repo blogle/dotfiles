@@ -44,8 +44,8 @@ in
     pkgs.agenix
     pkgs.alsa-utils
     pkgs.arandr
+    pkgs.codex
     pkgs.brightnessctl
-    pkgs.google-chrome
     pkgs.bind
     pkgs.deploy-rs
     pkgs.docker
@@ -54,6 +54,7 @@ in
     pkgs.ffmpeg-full
     pkgs.git
     pkgs.gnumake
+    pkgs.google-chrome
     pkgs.hotspot
     pkgs.home-manager
     pkgs.htop
