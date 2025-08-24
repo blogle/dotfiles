@@ -1,4 +1,5 @@
 resources:
+  - cert-manager.yaml
   - external-dns.yaml
   - metallb
   - nvidia

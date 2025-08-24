@@ -24,7 +24,7 @@
   environment.persistence."/persist" = {
     enable = true;
     hideMounts = true;
-        directories = [
+    directories = [
       "/var/log"
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
