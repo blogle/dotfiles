@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 
 with config.boot.kernelPackages; {
-  
-  environment.systemPackages = [ 
+
+  environment.systemPackages = [
     pkgs.cudatoolkit
     nvidia_x11
   ];
@@ -20,6 +20,7 @@ with config.boot.kernelPackages; {
   };
 
   hardware.nvidia = {
+    open = true;
     modesetting = { enable = true; };
   };
 

@@ -11,6 +11,7 @@
     ./graphics.nix
     ./virtualization.nix
     ./tailscale.nix
+    ./kube.nix
     ];
 
   # Reset the machine to a clean state on boot
@@ -23,11 +24,15 @@
   environment.persistence."/persist" = {
     enable = true;
     hideMounts = true;
-	directories = [
+    directories = [
       "/var/log"
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
       "/etc/ssh"
+      # Persist k3s state so it survives reboots
+      "/var/lib/rancher"
+      "/var/lib/kubelet"
+      "/var/lib/containerd"
     ];
 
   };
@@ -39,6 +44,14 @@
       canTouchEfiVariables = true;
       efiSysMountPoint = "/boot";
     };
+  };
+
+  # Networking prerequisites for Kubernetes
+  boot.kernelModules = [ "br_netfilter" "overlay" ];
+  boot.kernel.sysctl = {
+    "net.bridge.bridge-nf-call-iptables" = 1;
+    "net.bridge.bridge-nf-call-ip6tables" = 1;
+    "net.ipv4.ip_forward" = 1;
   };
 
   networking.hostId = "deadb33f";
@@ -116,6 +129,7 @@
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   networking.firewall.enable = false;
+
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you

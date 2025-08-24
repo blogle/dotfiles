@@ -1,0 +1,28 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-  
+    additionalArguments: []
+    env: []
+    persistence:
+      enabled: false
+    certResolvers: {}
+
+    service:
+      enabled: true
+      type: LoadBalancer
+      loadBalancerIP: 10.0.0.101
+      annotations:
+        metallb.universe.tf/address-pool: default
+    ports:
+      web:
+        port: 80
+        expose:
+          default: true
+      websecure:
+        port: 443
+        expose:
+          default: true

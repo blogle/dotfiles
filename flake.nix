@@ -39,8 +39,8 @@
 
   outputs = { self, nixpkgs, agenix, hm, nixos-hardware, impermanence, ... }@inputs:
     let
-      system = "x86_64-linux"; 
-      
+      system = "x86_64-linux";
+
       pkgConfig = {
         inherit system;
         config = {
@@ -48,8 +48,8 @@
           allowBroken = true;
         };
 
-        overlays = [ 
-          inputs.nur.overlay
+        overlays = [
+          inputs.nur.overlays.default
           inputs.rust-overlay.overlays.default
           inputs.nix-vscode-extensions.overlays.default
           (import ./pkgs)
@@ -111,7 +111,7 @@
 
       nandstorm = nixpkgs.lib.nixosSystem {
         inherit system;
-        modules = [ 
+        modules = [
           nixpkgModule
           agenix.nixosModules.default
           impermanence.nixosModules.impermanence
@@ -124,17 +124,17 @@
     # Remote deploy-rs targets
     deploy.nodes = {
       nandstorm = {
-        hostname = "10.0.0.26";
+        hostname = "nandstorm";
         profiles.system = {
           sshUser = "root";
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nandstorm;
         };
       };
     };
-    
+
     # Validate system configs before shipping them off with deploy-rs
     checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) inputs.deploy-rs.lib;
 
   };
-      
+
 }

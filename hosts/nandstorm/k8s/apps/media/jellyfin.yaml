@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      #runtimeClassName: nvidia
+      containers:
+      - name: jellyfin
+        image: lscr.io/linuxserver/jellyfin:latest
+        ports:
+        - containerPort: 8096
+        env:
+        - name: PUID
+          value: "0"
+        - name: GUID
+          value: "0"
+        #resources:
+        #  limits:
+        #    nvidia.com/gpu: 1
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /media
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: jellyfin-config-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: media
+
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.101
+  selector:
+    app: jellyfin
+  ports:
+  - port: 8096
+    targetPort: 8096
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - jellyfin.thejeffer.net
+    secretName: jellyfin-tls
+  rules:
+  - host: jellyfin.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: 8096
