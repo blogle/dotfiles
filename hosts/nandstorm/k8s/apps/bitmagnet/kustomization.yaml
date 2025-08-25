@@ -1,0 +1,6 @@
+resources:
+  - bitmagnet-namespace.yaml
+  - bitmagnet-volumes.yaml
+  - postgres.yaml
+  - bitmagnet.yaml
+

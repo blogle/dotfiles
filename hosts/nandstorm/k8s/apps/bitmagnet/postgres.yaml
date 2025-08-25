@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bitmagnet-postgres
+  namespace: bitmagnet
+spec:
+  serviceName: bitmagnet-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bitmagnet-postgres
+  template:
+    metadata:
+      labels:
+        app: bitmagnet-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "bitmagnet"
+        readinessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pg_isready -U postgres"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: dshm
+          mountPath: /dev/shm
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: bitmagnet-postgres-pvc
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitmagnet-postgres
+  namespace: bitmagnet
+spec:
+  selector:
+    app: bitmagnet-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+
