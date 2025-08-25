@@ -60,6 +60,7 @@ in
     pkgs.htop
     pkgs.jq
     pkgs.kubectl
+    pkgs.kubeseal
     pkgs.ngrok
     pkgs.nmap
     pkgs.nodejs_latest

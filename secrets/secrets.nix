@@ -6,5 +6,4 @@ in
   {
     "nextdns.age".publicKeys = [ogle modulus nandstorm];
     "tailscale.age".publicKeys = [ogle nandstorm];
-    "cloudflare-api-token.age".publicKeys = [ogle nandstorm];
   }

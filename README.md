@@ -30,8 +30,42 @@ required.
 
 This installs MetalLB, ExternalDNS, Traefik, the NVIDIA device plugin and
 exposes Jellyfin, Transmission and friends via Traefik with TLS.  Traefik and
-ExternalDNS require a Cloudflare API token which is managed with agenix and
-loaded into the cluster by the `k8s-secret-cloudflare` service.
+ExternalDNS require a Cloudflare API key which is now managed via Sealed Secrets.
+Use the helper script in `scripts/seal-secret.sh` to create encrypted manifests.
+
+### Secrets with Sealed Secrets
+
+We keep Kubernetes secrets encrypted in Git as SealedSecrets. The controller is
+installed by `hosts/nandstorm/k8s/infrastructure/kustomization.yaml`.
+
+Add or rotate a secret:
+
+1. Generate the sealed manifest(s) locally (no plaintext committed):
+
+   ./scripts/seal-secret.sh \
+     --name cloudflare \
+     -n cert-manager -n external-dns \
+     --literal api-key=YOUR_CLOUDFLARE_API_KEY \
+     --output-dir hosts/nandstorm/k8s/infrastructure \
+     --scope cluster-wide
+
+   This writes `cloudflare-cert-manager.sealed.yaml` and
+   `cloudflare-external-dns.sealed.yaml` under the chosen `--output-dir`.
+
+2. Reference the generated files in the appropriate `kustomization.yaml` under
+   `resources` and apply:
+
+   kubectl apply -k hosts/nandstorm/k8s/infrastructure
+
+3. Verify the controller created managed Secrets:
+
+   kubectl -n cert-manager get secret cloudflare -o json | jq -r '.metadata.annotations["sealedsecrets.bitnami.com/managed"]'
+   kubectl -n external-dns get secret cloudflare -o json | jq -r '.metadata.annotations["sealedsecrets.bitnami.com/managed"]'
+
+Tips:
+- Use `--scope strict` to bind a secret to a specific namespace/name.
+- For the same secret in multiple namespaces, prefer `--scope cluster-wide` and
+  run the script with multiple `-n` flags; it will produce one file per namespace.
 
 ### Networking requirements
 

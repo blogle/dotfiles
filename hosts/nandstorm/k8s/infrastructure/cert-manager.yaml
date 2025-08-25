@@ -48,4 +48,3 @@ spec:
               name: cloudflare
               key: api-key
         selector: {}   # match all Certificate / Ingress requests
-
