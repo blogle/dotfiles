@@ -128,7 +128,7 @@ in
   in {
     enable = true;
     bashrcExtra = ''
-      wal -i ${wallpaper}
+      wal -i ${wallpaper} -q
 
       # Required to make Ansible work properly
       export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
