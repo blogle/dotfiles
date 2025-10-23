@@ -52,6 +52,7 @@ in
     pkgs.docker-compose
     pkgs.flameshot
     pkgs.ffmpeg-full
+    pkgs.gemini-cli
     pkgs.git
     pkgs.gnumake
     pkgs.google-chrome
