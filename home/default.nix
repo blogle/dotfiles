@@ -127,13 +127,12 @@ in
     wallpaper = ./config/wallpaper/bhambay.webp;
   in {
     enable = true;
-    bashrcExtra = ''
-      wal -i ${wallpaper} -q
-
-      # Required to make Ansible work properly
-      export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-
-      . ~/.profile
+    initExtra = ''
+      if [ -f "$HOME/.cache/wal/sequences" ]; then
+        cat $HOME/.cache/wal/sequences
+      else
+        wal -i ${wallpaper} -q
+      fi
     '';
     shellAliases = {
       #auth = "eval $(${_1password}/bin/op signin)";
