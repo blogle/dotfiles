@@ -64,11 +64,9 @@ in
     pkgs.kubeseal
     pkgs.ngrok
     pkgs.nmap
-    pkgs.nodejs_latest
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
-    pkgs.rust-analyzer
     pkgs.socat
     pkgs.spotify
     pkgs.uv
@@ -91,6 +89,34 @@ in
     EDITOR = "vim";
     SSH_ASKPASS = pkgs.writeShellScript "ask-pass" ''
       rofi -dmenu -password -i -no-fixed-num-lines -p "Password:" -theme ${rofi-theme}
+    '';
+  };
+
+  programs.tmux =
+  let tmux-pain-control = pkgs.writeScript "tmux-pain-control"
+    (builtins.readFile ./config/tmux-pain-control.tmux);
+  in {
+    enable = true;
+
+    baseIndex = 1;
+    escapeTime = 0;
+    historyLimit = 50000;
+    keyMode = "vi";
+
+    terminal = "xterm-256color";
+    extraConfig = ''
+      # Rebind prefix key to backtick.
+      # Note: home-manager doesn't seem to correctly re-bind prefix.
+      unbind C-a
+      set -g prefix `
+      bind ` send-prefix
+
+      # Disable the i so we can use it for window nav
+      unbind-key i
+      bind-key ? show-messages
+
+      # Run our custom plugin for window manipulatioN
+      run-shell ${tmux-pain-control}
     '';
   };
 
@@ -174,25 +200,6 @@ in
     enableZshIntegration = false;
     enableNushellIntegration = false;
   };
-
-  programs.tmux =
-  # This file needs to be made executable
-  let tmux-pain-control = pkgs.writeScript "tmux-pain-control-tmux"
-    (builtins.readFile ./config/tmux-pain-control.tmux);
-  in {
-    enable = true;
-    terminal = "xterm-256color";
-    prefix = "`";
-    historyLimit = 50000;
-    extraConfig = ''
-      unbind-key i
-      bind-key ? show-messages
-
-      run-shell ${tmux-pain-control}
-    '';
-
-  };
-
 
   home.file.firefox-vim = {
     source = ./config/vimperatorrc;
