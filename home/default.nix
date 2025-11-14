@@ -13,7 +13,7 @@ let
     patches = [ pkgs.st-clipboard ];
   };
 
-  vim-build = pkgs.vim_configurable.override {
+  vim-build = pkgs.vim-full.override {
     python3 = python;
   };
 
@@ -126,7 +126,7 @@ in
     enable = true;
     defaultCacheTtl = 1800;
     enableSshSupport = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentry.package = pkgs.pinentry-gtk2;
   };
 
   programs.bash =
@@ -151,17 +151,18 @@ in
 
   programs.git = {
     enable = true;
-    userName = "Brandon Ogle";
-    userEmail = "oglebrandon@gmail.com";
-    #delta = { enable = true; };
-    extraConfig = {
+    settings = {
+      user = {
+        name = "Brandon Ogle";
+        email = "oglebrandon@gmail.com";
+      };
       credential.helper = "store";
-	  "filter \"lfs\"" = {
-		 clean = "${pkgs.git-lfs}/bin/git-lfs clean -- %f";
-		 smudge = "${pkgs.git-lfs}/bin/git-lfs smudge --skip -- %f";
-		 process = "${pkgs.git-lfs}/bin/git-lfs filter-process --skip";
-         required = true;
-       };
+      "filter \"lfs\"" = {
+        clean = "${pkgs.git-lfs}/bin/git-lfs clean -- %f";
+        smudge = "${pkgs.git-lfs}/bin/git-lfs smudge --skip -- %f";
+        process = "${pkgs.git-lfs}/bin/git-lfs filter-process --skip";
+        required = true;
+      };
     };
   };
 
@@ -209,7 +210,7 @@ in
     };
 
     profiles.default = {
-      extensions = with pkgs.nur.repos.rycee; [
+      extensions.packages = with pkgs.nur.repos.rycee; [
         firefox-addons.onepassword-password-manager
         firefox-addons.tridactyl
       ];
