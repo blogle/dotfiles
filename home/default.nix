@@ -64,6 +64,7 @@ in
     pkgs.kubeseal
     pkgs.ngrok
     pkgs.nmap
+    pkgs.opencode
     pkgs.pavucontrol
     pkgs.pywal
     pkgs.ripgrep
