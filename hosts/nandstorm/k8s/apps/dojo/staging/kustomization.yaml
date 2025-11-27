@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dojo-staging
+
+resources:
+- namespace.yaml
+- volumes.yaml
+- ingress.yaml
+- github.com/blogle/dojo//deploy/k8s/overlays/staging?ref=master
+
+patches:
+- target:
+    group: ""
+    version: v1
+    kind: PersistentVolumeClaim
+    name: dojo-data
+    namespace: dojo-staging
+  patch: |-
+    - op: replace
+      path: /spec/volumeName
+      value: dojo-staging-pv
+    - op: replace
+      path: /spec/storageClassName
+      value: ""

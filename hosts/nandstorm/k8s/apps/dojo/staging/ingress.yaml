@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dojo
+  namespace: dojo-staging
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - staging-dojo.thejeffer.net
+    secretName: dojo-staging-tls
+  rules:
+  - host: staging-dojo.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dojo
+            port:
+              number: 80
