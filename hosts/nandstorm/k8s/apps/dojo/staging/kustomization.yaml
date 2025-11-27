@@ -23,3 +23,21 @@ patches:
     - op: replace
       path: /spec/storageClassName
       value: ""
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: dojo
+    namespace: dojo-staging
+  patch: |-
+    - op: add
+      path: /spec/template/spec/initContainers
+      value:
+        - name: fix-permissions
+          image: ghcr.io/blogle/dojo:edge
+          command: ["/bin/sh", "-c", "chown -R 1000:1000 /data"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+          - name: data
+            mountPath: /data
