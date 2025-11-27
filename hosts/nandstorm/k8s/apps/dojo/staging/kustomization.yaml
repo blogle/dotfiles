@@ -7,7 +7,7 @@ resources:
 - namespace.yaml
 - volumes.yaml
 - ingress.yaml
-- github.com/blogle/dojo//deploy/k8s/overlays/staging?ref=6212af3
+- github.com/blogle/dojo//deploy/k8s/overlays/staging?ref=master
 
 patches:
 - target:
