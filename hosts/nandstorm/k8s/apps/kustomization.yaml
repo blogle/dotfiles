@@ -1,4 +1,4 @@
 resources:
   - media
   - bitmagnet
-  - dojo/staging
+  - dojo/overlays/staging
