@@ -4,10 +4,14 @@ kind: Kustomization
 namespace: dojo-staging
 
 resources:
+- ../../base
 - namespace.yaml
 - volumes.yaml
 - ingress.yaml
-- github.com/blogle/dojo//deploy/k8s/overlays/staging?ref=master
+
+images:
+- name: ghcr.io/blogle/dojo
+  newTag: staging
 
 patches:
 - target:
@@ -31,10 +35,16 @@ patches:
     namespace: dojo-staging
   patch: |-
     - op: add
+      path: /metadata/annotations
+      value:
+        keel.sh/policy: force
+        keel.sh/trigger: poll
+        keel.sh/match-tag: "true"
+    - op: add
       path: /spec/template/spec/initContainers
       value:
         - name: fix-permissions
-          image: ghcr.io/blogle/dojo:edge
+          image: ghcr.io/blogle/dojo:staging
           command: ["/bin/sh", "-c", "chown -R 1000:1000 /data"]
           securityContext:
             runAsUser: 0
