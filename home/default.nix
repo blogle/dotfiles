@@ -35,12 +35,49 @@ let
 
   rust = pkgs.rust-bin.stable.latest.default;
 
+  applyKeyboard = pkgs.writeShellScriptBin "apply-keyboard" ''
+    set -eu
+    ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} "$DISPLAY"
+  '';
+
+  xplugRc = pkgs.writeShellScript "xplugrc" ''
+    set -eu
+
+    type="''${1:-}"
+    device="''${2:-}"
+    status="''${3:-}"
+    desc="''${4:-}"
+
+    lock="''${XDG_RUNTIME_DIR:-/tmp}/xplug-hotplug.lock"
+
+    (
+      ${pkgs.util-linux}/bin/flock -x 9
+
+      case "$type,$status" in
+        display,connected|display,disconnected)
+          ${pkgs.coreutils}/bin/sleep 0.8
+          ${pkgs.autorandr}/bin/autorandr --change --default mobile
+          ;;
+        keyboard,connected|keyboard,disconnected)
+          ${applyKeyboard}/bin/apply-keyboard || true
+          ;;
+        *)
+          :
+          ;;
+      esac
+    ) 9>"$lock"
+  '';
+
 in
 {
   # Let Home Manager install and manage itself.
   programs.home-manager.path = pkgs.home-manager-path;
   home.packages =
   [
+    pkgs.autorandr
+    pkgs.xplugd
+    pkgs.util-linux
+    applyKeyboard
     pkgs.agenix
     pkgs.alsa-utils
     pkgs.arandr
@@ -121,6 +158,15 @@ in
     '';
   };
 
+  home.file.".config/autorandr/postswitch" = {
+    executable = true;
+    text = ''
+      #!${pkgs.runtimeShell}
+      set -eu
+      ${applyKeyboard}/bin/apply-keyboard || true
+    '';
+  };
+
   # X11 Configuration
   xsession = {
     enable = true;
@@ -132,7 +178,10 @@ in
 
     initExtra = ''
         # Configure desired keybindings
-        ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} $DISPLAY
+        ${applyKeyboard}/bin/apply-keyboard
+
+        # Hotplug automation (dock/undock)
+        pgrep -xu "$USER" xplugd >/dev/null || ${pkgs.xplugd}/bin/xplugd ${xplugRc} &
     '';
   };
 
