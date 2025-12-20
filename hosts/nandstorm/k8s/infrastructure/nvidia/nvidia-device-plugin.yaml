@@ -15,13 +15,96 @@ spec:
       containers:
       - name: nvidia-device-plugin
         image: nvcr.io/nvidia/k8s-device-plugin:v0.15.0
-        args: ["--fail-on-init-error=false"]
+        args:
+        - "--fail-on-init-error=false"
+        - "--device-list-strategy=cdi-cri"
+        env:
+        - name: LD_LIBRARY_PATH
+          value: /run/opengl-driver/lib
+        - name: NVIDIA_CTK_LIBCUDA_DIR
+          value: /driver-root/lib64
         securityContext:
           privileged: true
         volumeMounts:
         - name: device-plugin
           mountPath: /var/lib/kubelet/device-plugins
+        - name: cdi
+          mountPath: /var/run/cdi
+        - name: opengl-driver
+          mountPath: /run/opengl-driver
+          readOnly: true
+        - name: nix-store
+          mountPath: /nix/store
+          readOnly: true
+        - name: opengl-driver-driver-root
+          mountPath: /driver-root/run/opengl-driver
+          readOnly: true
+        - name: nix-store-driver-root
+          mountPath: /driver-root/nix/store
+          readOnly: true
+        - name: opengl-driver-lib64-driver-root
+          mountPath: /driver-root/lib64
+          readOnly: true
+        - name: dev-driver-root
+          mountPath: /driver-root/dev
+          readOnly: true
+        - name: dev-nvidiactl
+          mountPath: /dev/nvidiactl
+        - name: dev-nvidia0
+          mountPath: /dev/nvidia0
+        - name: dev-nvidia1
+          mountPath: /dev/nvidia1
+        - name: dev-nvidia2
+          mountPath: /dev/nvidia2
+        - name: dev-nvidia-uvm
+          mountPath: /dev/nvidia-uvm
+        - name: dev-nvidia-uvm-tools
+          mountPath: /dev/nvidia-uvm-tools
+        - name: dev-nvidia-modeset
+          mountPath: /dev/nvidia-modeset
       volumes:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
+      - name: cdi
+        hostPath:
+          path: /var/run/cdi
+      - name: opengl-driver
+        hostPath:
+          path: /run/opengl-driver
+      - name: nix-store
+        hostPath:
+          path: /nix/store
+      - name: opengl-driver-driver-root
+        hostPath:
+          path: /run/opengl-driver
+      - name: nix-store-driver-root
+        hostPath:
+          path: /nix/store
+      - name: opengl-driver-lib64-driver-root
+        hostPath:
+          path: /run/opengl-driver/lib
+      - name: dev-driver-root
+        hostPath:
+          path: /dev
+      - name: dev-nvidiactl
+        hostPath:
+          path: /dev/nvidiactl
+      - name: dev-nvidia0
+        hostPath:
+          path: /dev/nvidia0
+      - name: dev-nvidia1
+        hostPath:
+          path: /dev/nvidia1
+      - name: dev-nvidia2
+        hostPath:
+          path: /dev/nvidia2
+      - name: dev-nvidia-uvm
+        hostPath:
+          path: /dev/nvidia-uvm
+      - name: dev-nvidia-uvm-tools
+        hostPath:
+          path: /dev/nvidia-uvm-tools
+      - name: dev-nvidia-modeset
+        hostPath:
+          path: /dev/nvidia-modeset

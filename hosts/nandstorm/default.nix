@@ -13,6 +13,7 @@
     ./tailscale.nix
     ./gaming.nix
     ./kube.nix
+    ./nvidia-k3s.nix
     ];
 
   # Reset the machine to a clean state on boot

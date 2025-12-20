@@ -13,7 +13,6 @@ spec:
       labels:
         app: jellyfin
     spec:
-      #runtimeClassName: nvidia
       containers:
       - name: jellyfin
         image: lscr.io/linuxserver/jellyfin:latest
@@ -24,9 +23,9 @@ spec:
           value: "0"
         - name: GUID
           value: "0"
-        #resources:
-        #  limits:
-        #    nvidia.com/gpu: 1
+        resources:
+          limits:
+            nvidia.com/gpu: 1
         volumeMounts:
         - name: config
           mountPath: /config

@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gpu-smoke-test
+  namespace: kube-system
+spec:
+  schedule: "@yearly"
+  suspend: true
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: nvidia-smi
+              image: nvidia/cuda:12.4.0-base-ubuntu22.04
+              imagePullPolicy: IfNotPresent
+              command: ["bash", "-lc"]
+              args:
+                - |
+                  set -euo pipefail
+
+                  export LD_LIBRARY_PATH="/run/opengl-driver/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+                  echo "== nvidia-smi -L =="
+                  /usr/local/bin/nvidia-smi -L
+
+                  echo "== nvidia-smi =="
+                  /usr/local/bin/nvidia-smi
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
+              volumeMounts:
+                - name: nvidia-smi-bin
+                  mountPath: /usr/local/bin/nvidia-smi
+                  readOnly: true
+                - name: opengl-driver
+                  mountPath: /run/opengl-driver
+                  readOnly: true
+                - name: nix-store
+                  mountPath: /nix/store
+                  readOnly: true
+          volumes:
+            - name: nvidia-smi-bin
+              hostPath:
+                path: /run/current-system/sw/bin/nvidia-smi
+                type: File
+            - name: opengl-driver
+              hostPath:
+                path: /run/opengl-driver
+                type: Directory
+            - name: nix-store
+              hostPath:
+                path: /nix/store
+                type: Directory
