@@ -11,7 +11,6 @@
     ./graphics.nix
     ./virtualization.nix
     ./tailscale.nix
-    ./gaming.nix
     ./kube.nix
     ./nvidia-k3s.nix
     ];
