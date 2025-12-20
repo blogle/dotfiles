@@ -15,7 +15,7 @@
         # Advertise only the minimal covering CIDR for 10.0.0.100-120
         "--advertise-routes=10.0.0.96/27"
         # Keep using the specified exit node and allow LAN access
-        "--exit-node=us-sea-wg-001.mullvad.ts.net"
+        "--exit-node=100.96.176.46"
         "--exit-node-allow-lan-access"
       ];
     };
