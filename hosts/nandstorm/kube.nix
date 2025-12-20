@@ -8,6 +8,7 @@
     extraFlags = [
       "--disable servicelb"
       "--write-kubeconfig-mode=644"
+      "--flannel-iface=eno1"
     ];
   };
 
