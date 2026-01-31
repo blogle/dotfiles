@@ -12,8 +12,6 @@ resources:
   - service-mcpgateway.yaml
   - statefulset-toolgateway.yaml
   - service-toolgateway.yaml
-  - mcpgateway-basicauth-mcp-gateway.sealed.yaml
   - traefik-middleware-ipallowlist.yaml
-  - traefik-middleware-basicauth.yaml
   - ingress.yaml
   - networkpolicy.yaml

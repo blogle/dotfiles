@@ -6,7 +6,7 @@ Design goals:
 - Gateway stays "dumb": reverse proxy + management plane only (no LLM runtime).
 - OpenClaw gets **no** Kubernetes credentials.
 - Secrets for downstream tools live only in tool pods (or proxy pods), not in OpenClaw.
-- Gateway is reachable only from LAN/tailnet and protected by Traefik BasicAuth.
+- Gateway is reachable only from LAN/tailnet (Traefik IP allowlist).
 
 ## Deploy
 
@@ -42,10 +42,12 @@ If using Ingress:
 export MCPGW=https://mcpgateway.thejeffer.net
 ```
 
-### 1) Health check
+### 1) Sanity check
+
+Note: `GET /` returns `404` by design (no web UI). Use `/adapters` and `/tools`.
 
 ```sh
-curl -u "USER:PASS" -fsS "$MCPGW/adapters" | head
+curl -fsS "$MCPGW/adapters" | head
 ```
 
 ### 2) Create a sample adapter
@@ -66,7 +68,7 @@ Example payload:
 ```
 
 ```sh
-curl -u "USER:PASS" -fsS \
+curl -fsS \
   -H 'Content-Type: application/json' \
   -d @payload.json \
   "$MCPGW/adapters" | head
@@ -75,7 +77,7 @@ curl -u "USER:PASS" -fsS \
 ### 3) Connect to an adapter via streamable HTTP
 
 ```sh
-curl -u "USER:PASS" -i \
+curl -i \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
   "$MCPGW/adapters/mcp-example/mcp"
@@ -95,7 +97,7 @@ To enable it:
 Then you can route via:
 
 ```sh
-curl -u "USER:PASS" -i -X POST "$MCPGW/mcp" \
+curl -i -X POST "$MCPGW/mcp" \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
@@ -112,22 +114,9 @@ workload identity / downstream credentials cannot be abused.
 ## Security posture
 
 - **No secrets in OpenClaw:** OpenClaw talks only to the gateway endpoint. Downstream tool API keys belong in tool pods.
-- **Ingress restrictions:** Traefik IP allowlist (LAN/tailnet) + Traefik BasicAuth.
+- **Ingress restrictions:** Traefik IP allowlist (LAN/tailnet only).
+- **East/west access:** in-cluster clients should use the ClusterIP service `mcpgateway-service.mcp-gateway.svc.cluster.local:8000` (no ingress hop).
 - **RBAC:** gateway ServiceAccount has namespace-scoped permissions only (to create/update workloads it manages).
 - **NetworkPolicies:** included for least-privilege intent. Enforcement depends on your CNI (k3s flannel may not enforce).
 
-## Rotating Traefik BasicAuth secret
-
-Regenerate the sealed secret and re-apply:
-
-```sh
-# Example: generate a new htpasswd line and seal it
-./scripts/seal-secret.sh \
-  --name mcpgateway-basicauth \
-  -n mcp-gateway \
-  --literal users='USER:APR1_HASH' \
-  --output-dir hosts/nandstorm/k8s/apps/mcp-gateway \
-  --scope strict
-
-kubectl apply -k hosts/nandstorm/k8s/apps/mcp-gateway
-```
+Important: without Entra auth or an ingress auth layer, anyone who can reach the gateway can call the control plane and ask it to deploy pods in the `mcp-gateway` namespace. If you want a non-interactive auth that agents can use, we should add a machine credential mechanism (e.g., Entra, or separate internal-only service + admin-only port-forward for management).
