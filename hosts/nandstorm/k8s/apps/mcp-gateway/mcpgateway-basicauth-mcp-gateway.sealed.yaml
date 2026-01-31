@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: mcpgateway-basicauth
+  namespace: mcp-gateway
+spec:
+  encryptedData:
+    users: AgBei5Rnpk200rQrDdOTd49G0dDPEa6zecWAU/ryHKEIDh33LINGtmkgPYH1ctonsC3/YXi0LVmWY7We7fGrW119a8NWM3m9rSgwKKlBTcev44kk7etj1R/agW25HB1HbndW5R3/57v/OnZ0Jr1zMEfWmLkMoPWEZes/ELxPLF44tdD8fmujczXj6yCzBCz5WTQba8dl8Yz70SztfE8HpHDdPNHuXhfUlDFDsbDeJ9FybsvzkdGlaS7sieXz6WOxP1ezMGfJ89gK6YpA73VbBNHSDEWRWx4gTsv/ZUdIb5dPCue+4qEuMrk7kItt//2epM1ndM+hWyrspont54I1CA8w3591Sz3YLJko+sRofFhOS99/ERfGT97QsUk4/TtTYDrbPSm2acLl7KcN99psBUL0vKvizgAnMaSkCxBBdybTBR1J3dS80AUwmVgyioT+/ZOby/QClLnLQjSwPylTgXw/5EFn+0YbMM8CKgcvHyV41kGnDQLuU1qsxMWOeo9HiJMSViDVXIB1h7S8Gqg521PFuqO20rXX9s7vfF+pZ9Tj8mH/vTnxpsZmoZ42iUASw+3gdUZH1pmor+070a8JLncOx6XFEhJwVLn3xcHwFRcN58dbrJCUcXBzu8ZxR/pcl5bLlBjJ5Vj6kOdq3V+MfbUx+GkJkzB1DpEh9d69sSnb/g95gKfjJZVtVz9SrsbRHKlu6ItyX/aQbIkP3WYqramY9ax/JVSBg2TDzQEVTpG8WAtcJz0nZxIHT3HHVYX1pCpLvlk+YG14v2/6G8BLr92MWGI=
+  template:
+    metadata:
+      name: mcpgateway-basicauth
+      namespace: mcp-gateway
+    type: Opaque

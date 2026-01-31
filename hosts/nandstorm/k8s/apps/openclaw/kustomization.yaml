@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openclaw
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  # Generated via ./scripts/seal-secret.sh (do NOT commit plaintext Secret)
+  - openclaw-gateway-token-openclaw.sealed.yaml
+  - configmap-openclaw-config.yaml
+  - service.yaml
+  - statefulset.yaml
+  - traefik-middleware-ipallowlist.yaml
+  - ingress.yaml

@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: openclaw-gateway-token
+  namespace: openclaw
+spec:
+  encryptedData:
+    OPENCLAW_GATEWAY_TOKEN: AgBVi8Mc2LnZMazv8jlaFbGv0w6s3/L83VO9f0Y2PTynsJNdOGxaUPDfv3QwWTMdRd2p5YnCV10eaQT6eiANnHiIKwSR4Z72B+jSVyF/waSsOvxu/jTF/kQvxr7ey/0yCjbOM0hEtmJ3Ms323dQBdLsA0a5xPz09R73Y8Ph2wqU3NhISDFQhwkdWiGJEiZgBdcYQXxgsUq/TnRGIGcnl6KjaMvGcbEGjX8uRRysNeBS9m3VV4jWCk/YM+eggO19/yp2yV95gi2Wt1xFmcXa+lvkoyFUD/W+39lW1bPFSHvyvHloJlFu3CKDc+RIctclbNWZH+6N79ht+bKIbT5jZYVJ+fbaqlJ1adDyhfqzC/v1sr+byhAgZ89UdWK048HdWzKLNo9biGi0+vqILHwdccv88f8/jfxzHGpxjcEZgpKJoc3P0C7wQU/K6UYwhNjPPUD5CvAmRjiKxlqkdaJw4kNGMySJxLCCQWM+OchtS5omTr3AQzln3gMK4PiiIJQysf/lwnL14yCnKmS0jIWAUU9+1pqtpu6SpYKG9TyxKUGr6RIN4Zcj168jiRUZCcp5HdTq1pcihGmiOQ6zWc2f5d+p8jIv4RPDQVBwA80ajvCS9Mkd2wbEp1JbTuJuQ+554ojiicvO76McXX8vkZbwr072gb/rgEkPGpEcbg7oVARag8vuzIe3qP97zzS6LwYa3Hq1iZpEALRPV67r7XIG2P/uHpj+UkgjW/GVlKkBEaaTDcoq9jmLTbNA8NRQXLN/b6ZLLevUkU4NaVoZPJnZhifIe
+  template:
+    metadata:
+      name: openclaw-gateway-token
+      namespace: openclaw
+    type: Opaque

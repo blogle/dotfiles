@@ -2,3 +2,5 @@ resources:
   - media
   - bitmagnet
   - dojo/overlays/staging
+  - openclaw
+  - mcp-gateway

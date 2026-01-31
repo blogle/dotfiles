@@ -1,0 +1,78 @@
+# NOTE: NetworkPolicy enforcement depends on your CNI.
+# On k3s+flannel this may not be enforced unless you installed a policy engine.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: mcp-gateway
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-traefik-and-openclaw
+  namespace: mcp-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: mcpgateway
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openclaw
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-kube-dns-redis-apiserver
+  namespace: mcp-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: mcpgateway
+  policyTypes: ["Egress"]
+  egress:
+    # Redis in-namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: mcp-gateway
+          podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # CoreDNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Kubernetes API server (single-node)
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.25/32
+      ports:
+        - protocol: TCP
+          port: 6443

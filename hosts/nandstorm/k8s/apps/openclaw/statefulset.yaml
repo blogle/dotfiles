@@ -1,0 +1,153 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openclaw-gateway
+  namespace: openclaw
+spec:
+  serviceName: openclaw-gateway
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw
+      app.kubernetes.io/component: gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openclaw
+        app.kubernetes.io/component: gateway
+    spec:
+      serviceAccountName: openclaw
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
+
+      initContainers:
+        - name: init-dirs
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eux
+              mkdir -p /home/node/.openclaw/state /home/node/.openclaw/identity /home/node/openclaw/workspace
+              chmod 700 /home/node/.openclaw/state
+              chmod 700 /home/node/.openclaw/identity
+              chmod 700 /home/node/openclaw/workspace
+
+              # Seed config into the persisted volume only once.
+              # Onboarding and UI edits write to this file; don't clobber on restart.
+              if [ ! -f /home/node/.openclaw/state/openclaw.json ]; then
+                cp /config-src/openclaw.json /home/node/.openclaw/state/openclaw.json
+              fi
+              chmod 600 /home/node/.openclaw/state/openclaw.json
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: state
+              mountPath: /home/node/.openclaw
+            - name: workspace
+              mountPath: /home/node/openclaw
+            - name: config
+              mountPath: /config-src
+              readOnly: true
+
+      containers:
+        - name: gateway
+          image: ghcr.io/openclaw/openclaw:2026.1.29@sha256:2428a11c2ef0cd1bf515925cc19f146a296fd488c9bba477a0d4dfcbe3f29947
+          imagePullPolicy: IfNotPresent
+
+          command: ["node", "dist/index.js"]
+          args: ["gateway", "--bind", "lan", "--port", "18789"]
+
+          env:
+            - name: HOME
+              value: /home/node
+            - name: TERM
+              value: xterm-256color
+            # Force config + state paths into the persisted volume.
+            - name: OPENCLAW_STATE_DIR
+              value: /home/node/.openclaw/state
+            - name: OPENCLAW_CONFIG_PATH
+              value: /home/node/.openclaw/state/openclaw.json
+            - name: OPENCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-gateway-token
+                  key: OPENCLAW_GATEWAY_TOKEN
+
+          ports:
+            - name: http
+              containerPort: 18789
+
+          readinessProbe:
+            tcpSocket:
+              port: 18789
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 18789
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: state
+              mountPath: /home/node/.openclaw
+            - name: workspace
+              mountPath: /home/node/openclaw
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: config
+          configMap:
+            name: openclaw-config
+            defaultMode: 0600
+        - name: tmp
+          emptyDir: {}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: state
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

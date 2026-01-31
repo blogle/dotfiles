@@ -1,0 +1,80 @@
+# Tool Gateway Router (MCP server) from upstream local deployment.
+# NOTE: Microsoft does not currently publish a public image for this component.
+# We keep it scaled to 0 by default until you build and push the image.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: toolgateway
+  namespace: mcp-gateway
+spec:
+  serviceName: toolgateway-service
+  replicas: 0
+  selector:
+    matchLabels:
+      app: toolgateway
+  template:
+    metadata:
+      labels:
+        app: toolgateway
+        adapter/type: "mcp"
+    spec:
+      serviceAccountName: mcpgateway-sa
+      automountServiceAccountToken: true
+
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: toolgateway
+          # Placeholder; see README for build/push instructions.
+          image: localhost:5000/microsoft-mcpgateway-tools:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            - name: Redis__ConnectionString
+              value: "redis-service:6379"
+
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}

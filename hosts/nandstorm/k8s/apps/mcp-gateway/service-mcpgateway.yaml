@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcpgateway-service
+  namespace: mcp-gateway
+spec:
+  selector:
+    app: mcpgateway
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

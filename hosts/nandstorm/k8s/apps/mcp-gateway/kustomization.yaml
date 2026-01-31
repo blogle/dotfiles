@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mcp-gateway
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - rbac.yaml
+  - redis.yaml
+  - deployment-mcpgateway.yaml
+  - service-mcpgateway.yaml
+  - statefulset-toolgateway.yaml
+  - service-toolgateway.yaml
+  - mcpgateway-basicauth-mcp-gateway.sealed.yaml
+  - traefik-middleware-ipallowlist.yaml
+  - traefik-middleware-basicauth.yaml
+  - ingress.yaml
+  - networkpolicy.yaml

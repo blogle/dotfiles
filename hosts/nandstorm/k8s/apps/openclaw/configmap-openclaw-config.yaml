@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+  namespace: openclaw
+data:
+  openclaw.json: |
+    {
+      "gateway": {
+        "mode": "local",
+        "bind": "lan",
+        "controlUi": { "enabled": true },
+
+        // IMPORTANT:
+        // - keep token auth enabled.
+        // - do not allow Tailscale identity headers since we are behind Traefik.
+        "auth": { "mode": "token", "token": "${OPENCLAW_GATEWAY_TOKEN}", "allowTailscale": false },
+
+        // Reverse proxy in front: trust proxy ranges so OpenClaw can reason about
+        // X-Forwarded-* correctly (see docs.openclaw.ai/gateway/security).
+        "trustedProxies": ["10.42.0.0/16"]
+      },
+
+      "agents": {
+        "defaults": {
+          "workspace": "/home/node/openclaw/workspace",
+
+          // Use OpenAI Codex subscription auth (ChatGPT OAuth).
+          "model": { "primary": "openai-codex/gpt-5.2" },
+
+          // Explicit model catalog/allowlist (keeps /model picker sane).
+          "models": {
+            "openai-codex/gpt-5.2": { "alias": "gpt" }
+          }
+        }
+      },
+
+      // Reduce attack surface until explicitly needed.
+      "browser": { "enabled": false },
+      "canvasHost": { "enabled": false },
+      "tools": { "elevated": { "enabled": false } },
+
+      // Recommended: redact tool outputs in logs.
+      "logging": { "redactSensitive": "tools" }
+    }

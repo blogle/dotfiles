@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: toolgateway-service
+  namespace: mcp-gateway
+spec:
+  # Headless for stable network identities + session affinity.
+  clusterIP: "None"
+  selector:
+    app: toolgateway
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

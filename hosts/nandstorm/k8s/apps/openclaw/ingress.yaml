@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openclaw
+  namespace: openclaw
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: openclaw-openclaw-ipallowlist@kubernetescrd
+spec:
+  tls:
+    - hosts:
+        - moltbot.thejeffer.net
+      secretName: openclaw-tls
+  rules:
+    - host: moltbot.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openclaw-gateway
+                port:
+                  number: 18789

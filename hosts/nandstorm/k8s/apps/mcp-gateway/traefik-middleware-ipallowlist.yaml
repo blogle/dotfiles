@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: mcpgateway-ipallowlist
+  namespace: mcp-gateway
+spec:
+  ipWhiteList:
+    sourceRange:
+      # Tailscale CGNAT
+      - 100.64.0.0/10
+      # LAN ranges (tighten to your actual LAN CIDRs if possible)
+      - 10.0.0.0/8
+      - 192.168.0.0/16
+      - 172.16.0.0/12

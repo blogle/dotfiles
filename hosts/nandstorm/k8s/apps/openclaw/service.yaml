@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-gateway
+  namespace: openclaw
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/component: gateway
+  ports:
+    - name: http
+      port: 18789
+      targetPort: http
+      protocol: TCP

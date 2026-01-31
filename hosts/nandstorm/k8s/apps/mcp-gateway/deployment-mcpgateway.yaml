@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcpgateway
+  namespace: mcp-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcpgateway
+  template:
+    metadata:
+      labels:
+        app: mcpgateway
+    spec:
+      serviceAccountName: mcpgateway-sa
+      automountServiceAccountToken: true
+
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: mcpgateway
+          image: ghcr.io/microsoft/mcp-gateway:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Development"
+            # Upstream local manifest uses redis to back session routing.
+            - name: Redis__ConnectionString
+              value: "redis-service:6379"
+
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
