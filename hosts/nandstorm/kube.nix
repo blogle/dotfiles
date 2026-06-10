@@ -17,8 +17,8 @@
   # failing during network policy initialization before the node has
   # fully settled its primary interface state.
   systemd.services.k3s = {
-    after = [ "dhcpcd.service" ];
-    wants = [ "dhcpcd.service" ];
+    after = [ "dhcpcd.service" "systemd-time-wait-sync.service" ];
+    wants = [ "dhcpcd.service" "systemd-time-wait-sync.service" ];
 
     preStart = ''
       set -euo pipefail
