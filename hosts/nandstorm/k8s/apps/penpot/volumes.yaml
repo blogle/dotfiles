@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: penpot-assets-pv
+  labels: { app: penpot, component: assets }
+spec:
+  capacity: { storage: 20Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/penpot/assets
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: penpot-assets-pvc
+  namespace: penpot
+spec:
+  storageClassName: ""
+  volumeName: penpot-assets-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 20Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: penpot-postgres-pv
+  labels: { app: penpot, component: postgres }
+spec:
+  capacity: { storage: 50Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/penpot/postgres
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: penpot-postgres-pvc
+  namespace: penpot
+spec:
+  storageClassName: ""
+  volumeName: penpot-postgres-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 50Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: penpot-valkey-pv
+  labels: { app: penpot, component: valkey }
+spec:
+  capacity: { storage: 1Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/penpot/valkey
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: penpot-valkey-pvc
+  namespace: penpot
+spec:
+  storageClassName: ""
+  volumeName: penpot-valkey-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 1Gi }

@@ -34,6 +34,7 @@
       "/var/lib/rancher"
       "/var/lib/kubelet"
       "/var/lib/containerd"
+      "/persist/penpot"
     ];
 
   };

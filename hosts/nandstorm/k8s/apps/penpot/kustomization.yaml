@@ -1,0 +1,7 @@
+resources:
+  - namespace.yaml
+  - penpot-secrets.sealed.yaml
+  - volumes.yaml
+  - postgres.yaml
+  - valkey.yaml
+  - penpot.yaml

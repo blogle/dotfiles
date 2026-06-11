@@ -1,0 +1,37 @@
+fullnameOverride: penpot
+
+config:
+  publicUri: https://penpot.thejeffer.net
+  flags: enable-registration enable-login-with-password disable-email-verification enable-log-emails
+  existingSecret: penpot-secrets
+  secretKeys:
+    apiSecretKey: PENPOT_SECRET_KEY
+  postgresql:
+    host: penpot-postgres
+    database: penpot
+    existingSecret: penpot-secrets
+    secretKeys:
+      usernameKey: POSTGRES_USER
+      passwordKey: POSTGRES_PASSWORD
+  redis:
+    host: penpot-valkey
+    existingSecret: penpot-secrets
+    secretKeys:
+      redisUriKey: PENPOT_REDIS_URI
+
+persistence:
+  assets:
+    existingClaim: penpot-assets-pvc
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  hosts:
+    - penpot.thejeffer.net
+  tls:
+    - secretName: penpot-tls
+      hosts:
+        - penpot.thejeffer.net
