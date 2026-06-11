@@ -5,7 +5,10 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-  
-    additionalArguments: []
+    additionalArguments:
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
     env: []
     persistence:
       enabled: false
