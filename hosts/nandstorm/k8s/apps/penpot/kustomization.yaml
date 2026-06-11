@@ -5,3 +5,5 @@ resources:
   - postgres.yaml
   - valkey.yaml
   - penpot.yaml
+  - penpot-mcp-namespace.yaml
+  - penpot-mcp.yaml
