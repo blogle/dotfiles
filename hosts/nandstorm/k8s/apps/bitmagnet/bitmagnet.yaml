@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: bitmagnet
-        image: ghcr.io/bitmagnet-io/bitmagnet:latest
+        image: ghcr.io/bitmagnet-io/bitmagnet:v0.10.0
         args: [
           "worker", "run",
           "--keys=http_server",

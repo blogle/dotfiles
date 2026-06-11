@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: transmission
-        image: lscr.io/linuxserver/transmission:latest
+        image: lscr.io/linuxserver/transmission:4.1.2-r0-ls348
         ports:
         - containerPort: 9091
         volumeMounts:

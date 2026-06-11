@@ -6,7 +6,7 @@ metadata:
 spec:
   repo: https://charts.jetstack.io
   chart: cert-manager
-  version: v1.18.2                      # latest stable as of Jul‑2025
+  version: v1.20.2
   targetNamespace: cert-manager
   set:
     installCRDs: "true"                 # install CRDs with the release

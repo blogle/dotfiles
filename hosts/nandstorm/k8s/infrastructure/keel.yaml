@@ -12,7 +12,7 @@ metadata:
 spec:
   repo: https://charts.keel.sh
   chart: keel
-  version: 1.0.5
+  version: 1.2.0
   targetNamespace: keel
   valuesContent: |-
     helmProvider:

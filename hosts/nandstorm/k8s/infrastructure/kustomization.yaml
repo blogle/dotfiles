@@ -1,5 +1,5 @@
 resources:
-  - https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.1/controller.yaml
+  - https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.37.0/controller.yaml
   - cloudflare-cert-manager.sealed.yaml
   - cloudflare-external-dns.sealed.yaml
   - cert-manager.yaml

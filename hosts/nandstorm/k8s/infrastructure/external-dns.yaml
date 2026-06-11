@@ -11,7 +11,7 @@ metadata:
 spec:
   repo: https://kubernetes-sigs.github.io/external-dns/
   chart: external-dns
-  version: 1.14.4
+  version: 1.21.1
   targetNamespace: external-dns
   valuesContent: |
     provider:

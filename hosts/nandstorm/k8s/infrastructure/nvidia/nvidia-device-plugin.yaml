@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: nvidia-device-plugin
-        image: nvcr.io/nvidia/k8s-device-plugin:v0.15.0
+        image: nvcr.io/nvidia/k8s-device-plugin:v0.19.2
         args:
         - "--fail-on-init-error=false"
         - "--device-list-strategy=cdi-cri"
