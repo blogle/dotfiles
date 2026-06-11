@@ -195,6 +195,26 @@ in
     pinentry.package = pkgs.pinentry-gtk2;
   };
 
+  services.dunst.enable = true;
+
+  systemd.user.services.dunst.Install.WantedBy = [ "graphical-session.target" ];
+
+  systemd.user.services.batsignal = {
+    Unit = {
+      Description = "Battery level monitor";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+    };
+
+    Service = {
+      ExecStart = "${pkgs.batsignal}/bin/batsignal -w 20 -c 10 -d 5";
+      Restart = "always";
+      RestartSec = 5;
+    };
+
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
   programs.bash =
   let
     wallpaper = ./config/wallpaper/bhambay.webp;
