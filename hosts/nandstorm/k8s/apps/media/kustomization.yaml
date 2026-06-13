@@ -3,7 +3,8 @@ resources:
   - media-volumes.yaml
   - flaresolverr.yaml
   - jellyfin.yaml
-  - jellyseerr.yaml
+  - seerr.yaml
+  - seerr-redirect.yaml
   - prowlarr.yaml
   - radarr.yaml
   - sonarr.yaml
