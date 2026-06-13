@@ -123,7 +123,7 @@ spec:
             - name: PENPOT_PUBLIC_URI
               value: https://penpot.thejeffer.net
             - name: PENPOT_FLAGS
-              value: enable-registration enable-login-with-password disable-email-verification enable-log-emails
+              value: enable-registration enable-login-with-password disable-email-verification enable-log-emails enable-mcp
             - name: PENPOT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -246,6 +246,101 @@ spec:
             limits: {}
             requests: {}
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: penpot-mcp
+  namespace: penpot
+  labels:
+    helm.sh/chart: penpot-1.3.0
+    app.kubernetes.io/name: penpot
+    app.kubernetes.io/instance: penpot
+    app.kubernetes.io/version: "2.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4401
+      targetPort: 4401
+      protocol: TCP
+      name: http
+    - port: 4402
+      targetPort: 4402
+      protocol: TCP
+      name: ws
+  selector:
+    app.kubernetes.io/name: penpot-mcp
+    app.kubernetes.io/instance: penpot
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: penpot-mcp
+  namespace: penpot
+  labels:
+    helm.sh/chart: penpot-1.3.0
+    app.kubernetes.io/name: penpot
+    app.kubernetes.io/instance: penpot
+    app.kubernetes.io/version: "2.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: penpot-mcp
+      app.kubernetes.io/instance: penpot
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: penpot-mcp
+        app.kubernetes.io/name: penpot-mcp
+        app.kubernetes.io/instance: penpot
+    spec:
+      serviceAccountName: penpot
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: penpot-mcp
+          image: penpotapp/mcp:2.16.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1001
+          env:
+            - name: PENPOT_PUBLIC_URI
+              value: https://penpot.thejeffer.net
+            - name: PENPOT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: penpot-secrets
+                  key: PENPOT_SECRET_KEY
+            - name: PENPOT_REDIS_URI
+              valueFrom:
+                secretKeyRef:
+                  name: penpot-secrets
+                  key: PENPOT_REDIS_URI
+            - name: PENPOT_MCP_SERVER_PORT
+              value: "4401"
+            - name: PENPOT_MCP_WEBSOCKET_PORT
+              value: "4402"
+          ports:
+            - name: http
+              containerPort: 4401
+              protocol: TCP
+            - name: ws
+              containerPort: 4402
+              protocol: TCP
+          resources:
+            limits: {}
+            requests: {}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -289,7 +384,7 @@ spec:
             runAsUser: 1001
           env:
             - name: PENPOT_FLAGS
-              value: enable-registration enable-login-with-password disable-email-verification enable-log-emails
+              value: enable-registration enable-login-with-password disable-email-verification enable-log-emails enable-mcp
             - name: PENPOT_PUBLIC_URI
               value: https://penpot.thejeffer.net
             - name: PENPOT_BACKEND_URI

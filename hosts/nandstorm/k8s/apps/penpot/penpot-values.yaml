@@ -2,7 +2,7 @@ fullnameOverride: penpot
 
 config:
   publicUri: https://penpot.thejeffer.net
-  flags: enable-registration enable-login-with-password disable-email-verification enable-log-emails
+  flags: enable-registration enable-login-with-password disable-email-verification enable-log-emails enable-mcp
   existingSecret: penpot-secrets
   secretKeys:
     apiSecretKey: PENPOT_SECRET_KEY
@@ -18,6 +18,34 @@ config:
     existingSecret: penpot-secrets
     secretKeys:
       redisUriKey: PENPOT_REDIS_URI
+
+mcp:
+  replicaCount: 1
+  autoscaling:
+    hpa:
+      enabled: false
+  service:
+    type: ClusterIP
+    httpPort: 4401
+    wsPort: 4402
+
+frontend:
+  replicaCount: 1
+  autoscaling:
+    hpa:
+      enabled: false
+
+backend:
+  replicaCount: 1
+  autoscaling:
+    hpa:
+      enabled: false
+
+exporter:
+  replicaCount: 1
+  autoscaling:
+    hpa:
+      enabled: false
 
 persistence:
   assets:
