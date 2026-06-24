@@ -9,3 +9,6 @@ resources:
   - radarr.yaml
   - sonarr.yaml
   - transmission.yaml
+  - dispatcharr.yaml
+  - teamarr.yaml
+  - acestream.yaml

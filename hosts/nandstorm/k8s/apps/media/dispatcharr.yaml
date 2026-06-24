@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcharr
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dispatcharr
+  template:
+    metadata:
+      labels:
+        app: dispatcharr
+    spec:
+      containers:
+      - name: dispatcharr
+        image: ghcr.io/dispatcharr/dispatcharr:latest
+        ports:
+        - containerPort: 9191
+          name: http
+        - containerPort: 9192
+          name: hdhr
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "America/Los_Angeles"
+        - name: DISPATCHARR_ENV
+          value: "aio"
+        - name: REDIS_HOST
+          value: "localhost"
+        - name: CELERY_BROKER_URL
+          value: "redis://localhost:6379/0"
+        - name: DISPATCHARR_LOG_LEVEL
+          value: "info"
+        volumeMounts:
+        - name: config
+          mountPath: /data
+        - name: media
+          mountPath: /media
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: dispatcharr-config-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatcharr
+  namespace: media
+spec:
+  selector:
+    app: dispatcharr
+  ports:
+  - name: http
+    port: 9191
+    targetPort: 9191
+  - name: hdhr
+    port: 9192
+    targetPort: 9192
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatcharr-hdhr
+  namespace: media
+  annotations:
+    metallb.universe.tf/allow-shared-ip: dispatcharr
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: dispatcharr
+  ports:
+  - name: hdhr
+    port: 9192
+    targetPort: 9192
+    protocol: UDP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dispatcharr
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - dispatcharr.thejeffer.net
+    secretName: dispatcharr-tls
+  rules:
+  - host: dispatcharr.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dispatcharr
+            port:
+              number: 9191

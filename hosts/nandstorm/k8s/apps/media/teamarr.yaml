@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teamarr
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teamarr
+  template:
+    metadata:
+      labels:
+        app: teamarr
+    spec:
+      containers:
+      - name: teamarr
+        image: ghcr.io/sethwv/teamarr:latest
+        ports:
+        - containerPort: 9195
+          name: http
+        env:
+        - name: PUID
+          value: "0"
+        - name: GUID
+          value: "0"
+        - name: TZ
+          value: "America/Los_Angeles"
+        volumeMounts:
+        - name: config
+          mountPath: /data
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: teamarr-config-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: teamarr
+  namespace: media
+spec:
+  selector:
+    app: teamarr
+  ports:
+  - name: http
+    port: 9195
+    targetPort: 9195
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: teamarr
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - teamarr.thejeffer.net
+    secretName: teamarr-tls
+  rules:
+  - host: teamarr.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: teamarr
+            port:
+              number: 9195

@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceserve
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceserve
+  template:
+    metadata:
+      labels:
+        app: aceserve
+    spec:
+      containers:
+      - name: aceserve
+        image: jopsis/aceserve:latest
+        ports:
+        - containerPort: 6878
+          name: http
+        - containerPort: 62062
+          name: api
+        - containerPort: 8621
+          name: p2p
+        env:
+        - name: TZ
+          value: "America/Los_Angeles"
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceserve
+  namespace: media
+spec:
+  selector:
+    app: aceserve
+  ports:
+  - name: http
+    port: 6878
+    targetPort: 6878
+  - name: api
+    port: 62062
+    targetPort: 62062
+  - name: p2p
+    port: 8621
+    targetPort: 8621
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpaceproxy
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpaceproxy
+  template:
+    metadata:
+      labels:
+        app: httpaceproxy
+    spec:
+      containers:
+      - name: httpaceproxy
+        image: jopsis/httpaceproxy:latest
+        ports:
+        - containerPort: 8888
+          name: http
+        env:
+        - name: TZ
+          value: "America/Los_Angeles"
+        - name: ACEPROXY_HOST
+          value: "0.0.0.0"
+        - name: ACEPROXY_PORT
+          value: "8888"
+        - name: ACESTREAM_HOST
+          value: "aceserve"
+        - name: ACESTREAM_API_PORT
+          value: "62062"
+        - name: ACESTREAM_HTTP_PORT
+          value: "6878"
+        - name: MAX_CONNECTIONS
+          value: "20"
+        - name: MAX_CONCURRENT_CHANNELS
+          value: "10"
+        - name: ENABLED_PLUGINS
+          value: "newera,elcano,acepl,af1c1onados,aio,stat,statplugin"
+        - name: AIO_PLUGINS
+          value: "newera,elcano,acepl,af1c1onados"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /stat
+            port: 8888
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /stat
+            port: 8888
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: acestream-proxy-config-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpaceproxy
+  namespace: media
+spec:
+  selector:
+    app: httpaceproxy
+  ports:
+  - name: http
+    port: 8888
+    targetPort: 8888
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: httpaceproxy
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - acestream.thejeffer.net
+    secretName: acestream-proxy-tls
+  rules:
+  - host: acestream.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: httpaceproxy
+            port:
+              number: 8888

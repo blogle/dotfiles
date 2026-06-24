@@ -262,4 +262,103 @@ spec:
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests: { storage: 250Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dispatcharr-config-pv
+  labels: { app: dispatcharr, component: config }
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/dispatcharr
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dispatcharr-config-pvc
+  namespace: media
+spec:
+  storageClassName: ""
+  volumeName: dispatcharr-config-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 2Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: teamarr-config-pv
+  labels: { app: teamarr, component: config }
+spec:
+  capacity: { storage: 1Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/teamarr
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: teamarr-config-pvc
+  namespace: media
+spec:
+  storageClassName: ""
+  volumeName: teamarr-config-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 1Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: acestream-proxy-config-pv
+  labels: { app: acestream-proxy, component: config }
+spec:
+  capacity: { storage: 1Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/acestream-proxy
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: acestream-proxy-config-pvc
+  namespace: media
+spec:
+  storageClassName: ""
+  volumeName: acestream-proxy-config-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 1Gi }
 
