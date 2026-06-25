@@ -12,3 +12,4 @@ resources:
   - dispatcharr.yaml
   - teamarr.yaml
   - acestream.yaml
+  - m3u-playlists.yaml

@@ -1,0 +1,34 @@
+# Ace Stream Engine address used by the generator. On the laptop this is
+# expected to be reached via a local kubectl port-forward.
+engineAddr: 127.0.0.1:6878
+
+playlists:
+- outputPath: ./out/dispatcharr_all_channels.m3u8
+  headerTemplate: |
+    #EXTM3U url-tvg="http://epg.one/epg2.xml.gz" tvg-shift=0 deinterlace=1 m3uautoload=1
+  entryTemplate: |
+    #EXTINF:-1 group-title="{{.Categories}}",{{.Name}}
+    http://httpaceproxy.media.svc.cluster.local:8888/infohash/{{.Infohash}}/stream.mp4
+  categoryRxToCategoryMap: {}
+  nameRxToCategoriesMap: {}
+  nameRxFilter: []
+  nameRxBlacklist: []
+  categoriesFilter: []
+  categoriesFilterStrict: false
+  categoriesBlacklist: []
+  languagesFilter: []
+  languagesFilterStrict: false
+  languagesBlacklist: []
+  countriesFilter: []
+  countriesFilterStrict: false
+  countriesBlacklist: []
+  statusFilter:
+  - 1
+  - 2
+  availabilityThreshold: 0.0
+  availabilityUpdatedThreshold: 876000h0m0s
+  removeDeadSources: false
+  useMpegTsAnalyzer: false
+  checkRespTimeout: 20s
+  removeDeadLinkTemplate: http://httpaceproxy.media.svc.cluster.local:8888/infohash/{{.Infohash}}/stream.mp4
+  removeDeadWorkers: 1
