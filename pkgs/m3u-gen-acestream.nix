@@ -8,7 +8,7 @@ buildGoModule rec {
     owner = "SCP002";
     repo = "m3u_gen_acestream";
     rev = "v${version}";
-    hash = "sha256-rS1njbOKx/7GFqm09O1YxLnc6LgB6+Qgc6l4gv6f1qM=";
+    hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
   };
 
   goModulesPath = "src";
