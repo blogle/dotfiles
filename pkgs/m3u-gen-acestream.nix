@@ -14,6 +14,9 @@ buildGoModule rec {
   modRoot = "src";
   vendorHash = "sha256-DRAnEl/lk9dVdvYxUfwGmokLP59QFdqgJWBzgceceSA=";
 
+  # Tests require a running Ace Stream engine
+  doCheck = false;
+
   meta = with lib; {
     description = "M3U playlist generator for Ace Stream";
     homepage = "https://github.com/SCP002/m3u_gen_acestream";
