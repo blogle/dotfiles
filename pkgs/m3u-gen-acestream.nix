@@ -12,7 +12,7 @@ buildGoModule rec {
   };
 
   goModulesPath = "src";
-  vendorSha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
   # disableCheck = true;
 
   meta = with lib; {
