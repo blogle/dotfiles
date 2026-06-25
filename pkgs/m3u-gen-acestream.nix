@@ -12,7 +12,7 @@ buildGoModule rec {
   };
 
   modRoot = "src";
-  vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  vendorHash = "sha256-DRAnEl/lk9dVdvYxUfwGmokLP59QFdqgJWBzgceceSA=";
 
   meta = with lib; {
     description = "M3U playlist generator for Ace Stream";
