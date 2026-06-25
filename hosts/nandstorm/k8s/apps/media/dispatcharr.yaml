@@ -36,6 +36,10 @@ spec:
           value: "redis://localhost:6379/0"
         - name: DISPATCHARR_LOG_LEVEL
           value: "info"
+        - name: DJANGO_SECRET_KEY
+          value: "E2vBMpN8LHfwwx3V381ZT8NR4jCsYgpzDWhRCh2iO_k"
+        - name: DB_ENGINE
+          value: "sqlite"
         volumeMounts:
         - name: config
           mountPath: /data

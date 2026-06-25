@@ -3,6 +3,8 @@ final: prev: {
     cbt = final.callPackage ./cbt.nix {};
     #obsidian = final.callPackage ./obsidian.nix {};
 
+    m3u-gen-acestream = final.callPackage ./m3u-gen-acestream.nix {};
+
     openfoam = let 
       openfoam = final.callPackage ./openfoam-com/generic.nix {
         version = "2406";
