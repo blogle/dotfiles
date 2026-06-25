@@ -11,6 +11,7 @@ buildGoModule rec {
     hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
   };
 
+  subModules = [ "src" ];
   goModulesPath = "src";
   vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
   # disableCheck = true;
