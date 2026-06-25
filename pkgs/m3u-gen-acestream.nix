@@ -1,20 +1,39 @@
-{ lib, fetchFromGitHub, buildGoModule }:
+{ lib, fetchFromGitHub, go }:
 
-buildGoModule rec {
+lib.cleanSourceWith {
+  src = fetchFromGitHub {
+    owner = "SCP002";
+    repo = "m3u_gen_acestream";
+    rev = "v2.2.2";
+    hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
+  };
+  filter = path: type: !(path == "./go-deps.nix" && type == "regular");
+} // {
   pname = "m3u-gen-acestream";
   version = "2.2.2";
 
   src = fetchFromGitHub {
     owner = "SCP002";
     repo = "m3u_gen_acestream";
-    rev = "v${version}";
+    rev = "v2.2.2";
     hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
   };
 
-  subModules = [ "src" ];
-  goModulesPath = "src";
-  vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-  # disableCheck = true;
+  nativeBuildInputs = [ go ];
+  buildInputs = [ ];
+
+  buildPhase = ''
+    export GOCACHE=$(pwd)/.cache/go-build
+    export GOMODCACHE=$(pwd)/.cache/go-mod
+    cd src
+    go mod download
+    go build -o m3u_gen_acestream m3u_gen_acestream.go
+  '';
+
+  installPhase = ''
+    mkdir -p $out/bin
+    cp src/m3u_gen_acestream $out/bin/
+  '';
 
   meta = with lib; {
     description = "M3U playlist generator for Ace Stream";
