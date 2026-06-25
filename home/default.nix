@@ -90,6 +90,7 @@ in
     pkgs.jq
     pkgs.kubectl
     pkgs.kubeseal
+    pkgs.m3u-gen-acestream
     pkgs.ngrok
     pkgs.nmap
     pkgs.opencode
