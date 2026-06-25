@@ -1,21 +1,13 @@
-{ lib, fetchFromGitHub, go }:
+{ lib, fetchFromGitHub, go, stdenv }:
 
-lib.cleanSourceWith {
-  src = fetchFromGitHub {
-    owner = "SCP002";
-    repo = "m3u_gen_acestream";
-    rev = "v2.2.2";
-    hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
-  };
-  filter = path: type: !(path == "./go-deps.nix" && type == "regular");
-} // {
+stdenv.mkDerivation rec {
   pname = "m3u-gen-acestream";
   version = "2.2.2";
 
   src = fetchFromGitHub {
     owner = "SCP002";
     repo = "m3u_gen_acestream";
-    rev = "v2.2.2";
+    rev = "v${version}";
     hash = "sha256-CXrNhSzst6Ecv0nU63lc2es8CLPGWrweimPTV88MwnY=";
   };
 
