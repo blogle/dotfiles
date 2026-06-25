@@ -121,19 +121,6 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 10
           failureThreshold: 3
-      - name: acestream-charset-proxy
-        image: acestream-charset-proxy:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8889
-          name: http-charset
-        resources:
-          limits:
-            memory: "64Mi"
-            cpu: "100m"
-          requests:
-            memory: "16Mi"
-            cpu: "25m"
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -151,9 +138,6 @@ spec:
   - name: http
     port: 8888
     targetPort: 8888
-  - name: http-charset
-    port: 8889
-    targetPort: 8889
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -178,4 +162,4 @@ spec:
           service:
             name: httpaceproxy
             port:
-              number: 8889
+              number: 8888
