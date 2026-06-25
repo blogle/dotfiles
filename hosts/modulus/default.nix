@@ -21,6 +21,10 @@
     };
 
     kernelPackages = pkgs.linuxPackages;
+
+    extraModprobeConfig = [
+      "options iwlwifi power_scheme=1"
+    ];
   };
 
   # Enable perf in the kernel

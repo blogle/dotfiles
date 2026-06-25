@@ -1,9 +1,0 @@
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: httpaceproxy-content-type
-  namespace: media
-spec:
-  headers:
-    customResponseHeaders:
-      Content-Type: "application/x-mpegurl; charset=utf-8"

@@ -12,4 +12,3 @@ resources:
   - dispatcharr.yaml
   - teamarr.yaml
   - acestream.yaml
-  - httpaceproxy-middleware.yaml
