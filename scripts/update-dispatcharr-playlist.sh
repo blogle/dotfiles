@@ -4,10 +4,12 @@ set -euo pipefail
 ROOT_DIR=$(git rev-parse --show-toplevel)
 CFG_PATH="$ROOT_DIR/m3u_gen_acestream.yaml"
 OUT_PATH="$ROOT_DIR/out/dispatcharr_all_channels.m3u8"
+ENGLISH_OUT_PATH="$ROOT_DIR/out/english_channels.m3u8"
 NAMESPACE="media"
 ACESTREAM_SERVICE="svc/aceserve"
 PLAYLIST_LABEL="app=m3u-playlists"
 PLAYLIST_DEST="/usr/share/nginx/html/dispatcharr_all_channels.m3u8"
+ENGLISH_DEST="/usr/share/nginx/html/english_channels.m3u8"
 PORT_FORWARD_LOG="/tmp/opencode/aceserve-port-forward.log"
 
 cleanup() {
@@ -21,6 +23,11 @@ trap cleanup EXIT
 
 mkdir -p "$ROOT_DIR/out"
 
+# Generate English channels M3U from GitLab hanssettings repo
+echo "Fetching English channels from GitLab..."
+python3 "$ROOT_DIR/scripts/parse_hanssettings.py" --output "$ENGLISH_OUT_PATH"
+
+# Ace Stream playlist generation
 kubectl port-forward -n "$NAMESPACE" "$ACESTREAM_SERVICE" 6878:6878 >"$PORT_FORWARD_LOG" 2>&1 &
 PORT_FORWARD_PID=$!
 
@@ -45,6 +52,10 @@ if [[ -z "$PLAYLIST_POD" ]]; then
   exit 1
 fi
 
+# Copy to pod via kubectl (works from anywhere with kubeconfig)
 kubectl cp "$OUT_PATH" "$NAMESPACE/$PLAYLIST_POD:$PLAYLIST_DEST"
+kubectl cp "$ENGLISH_OUT_PATH" "$NAMESPACE/$PLAYLIST_POD:$ENGLISH_DEST"
 
-printf 'Published %s\n' "https://acestream.thejeffer.net/playlists/dispatcharr_all_channels.m3u8"
+printf 'Published %s\n' \
+  "https://acestream.thejeffer.net/playlists/dispatcharr_all_channels.m3u8" \
+  "https://acestream.thejeffer.net/playlists/english_channels.m3u8"
