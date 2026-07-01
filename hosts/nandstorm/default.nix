@@ -16,9 +16,15 @@
     ];
 
   # Reset the machine to a clean state on boot
-  boot.initrd.postDeviceCommands = lib.mkAfter ''
-    zfs rollback -r rpool/local/root@blank
-  '';
+  boot.initrd.systemd.services.zfs-rollback = {
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.zfs}/bin/zfs rollback -r rpool/local/root@blank";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+    before = [ "initrd-root-fs.target" ];
+  };
 
 
   environment.etc.machine-id.source = ./machine-id;
@@ -34,8 +40,20 @@
       "/var/lib/rancher"
       "/var/lib/kubelet"
       "/var/lib/containerd"
+      # Application persistent data (hostPath volumes under /persist)
+      "/persist/acestream-proxy"
+      "/persist/bitmagnet"
+      "/persist/dispatcharr"
+      "/persist/dojo"
+      "/persist/jellyfin"
+      "/persist/jellyseerr"
       "/persist/m3u-playlists"
       "/persist/penpot"
+      "/persist/prowlarr"
+      "/persist/radarr"
+      "/persist/sonarr"
+      "/persist/teamarr"
+      "/persist/transmission"
     ];
 
   };
