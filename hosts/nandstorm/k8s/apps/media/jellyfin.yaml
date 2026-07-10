@@ -23,9 +23,7 @@ spec:
           value: "0"
         - name: GUID
           value: "0"
-        resources:
-          limits:
-            nvidia.com/gpu: 1
+        resources: {}
         volumeMounts:
         - name: config
           mountPath: /config
