@@ -19,6 +19,9 @@
   systemd.services.k3s = {
     after = [ "NetworkManager-wait-online.service" "systemd-time-wait-sync.service" ];
     wants = [ "NetworkManager-wait-online.service" "systemd-time-wait-sync.service" ];
+    # The default KillMode=process leaves containerd shims holding the
+    # persistent k3s mount open, preventing future NixOS activations.
+    serviceConfig.KillMode = lib.mkForce "control-group";
 
     preStart = ''
       set -euo pipefail

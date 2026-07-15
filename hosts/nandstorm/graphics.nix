@@ -1,15 +1,18 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
+let
+  nvidiaPackage = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+in
 with config.boot.kernelPackages; {
 
   environment.systemPackages = [
     pkgs.cudatoolkit
-    nvidia_x11
+    nvidiaPackage
   ];
 
   boot = {
     blacklistedKernelModules = ["nouveau"];
-    extraModulePackages = [ nvidia_x11 ];
+    kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
   };
 
   #virtualization.docker.enableNvidia = true;
@@ -20,8 +23,15 @@ with config.boot.kernelPackages; {
   };
 
   hardware.nvidia = {
-    open = true;
+    # Titan V is supported by the proprietary 580.xx legacy driver.
+    package = nvidiaPackage;
+    open = false;
     modesetting = { enable = true; };
   };
+
+  # A kernel update cannot load its matching NVIDIA module until reboot.
+  # Skip CDI generation during that interim rather than failing activation.
+  systemd.services.nvidia-container-toolkit-cdi-generator.serviceConfig.ExecCondition =
+    lib.getExe' nvidiaPackage "nvidia-smi";
 
 }
