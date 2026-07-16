@@ -40,20 +40,8 @@
       "/var/lib/rancher"
       "/var/lib/kubelet"
       "/var/lib/containerd"
-      # Application persistent data (hostPath volumes under /persist)
-      "/persist/acestream-proxy"
-      "/persist/bitmagnet"
-      "/persist/dispatcharr"
-      "/persist/dojo"
-      "/persist/jellyfin"
-      "/persist/jellyseerr"
-      "/persist/m3u-playlists"
-      "/persist/penpot"
-      "/persist/prowlarr"
-      "/persist/radarr"
-      "/persist/sonarr"
-      "/persist/teamarr"
-      "/persist/transmission"
+      # /persist is a dedicated ZFS dataset. Do not list its children here:
+      # impermanence would bind /persist/persist/<name> over the real ZFS path.
     ];
 
   };
