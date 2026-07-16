@@ -85,3 +85,9 @@ Service remains ClusterIP-only.
 
 OpenCode has no manifest in this repository. Add `auth-sso-auth@kubernetescrd`
 to every OpenCode ingress route once its deployment location is identified.
+
+## Jellyfin
+
+See [Jellyfin browser SSO maintenance](jellyfin-sso-maintenance.md). Jellyfin
+is intentionally excluded from Traefik forward-auth so native clients retain
+local-account login.
