@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyauth
+  namespace: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinyauth
+  template:
+    metadata:
+      labels:
+        app: tinyauth
+    spec:
+      containers:
+      - name: tinyauth
+        image: ghcr.io/steveiliop56/tinyauth:v5
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: TINYAUTH_APPURL
+          value: https://auth.thejeffer.net
+        - name: TINYAUTH_DATABASE_PATH
+          value: /data/tinyauth.db
+        - name: TINYAUTH_AUTH_SECURECOOKIE
+          value: "true"
+        - name: TINYAUTH_ANALYTICS_ENABLED
+          value: "false"
+        - name: TINYAUTH_OAUTH_AUTOREDIRECT
+          value: pocketid
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: tinyauth-credentials
+              key: client-id
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: tinyauth-credentials
+              key: client-secret
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL
+          value: https://id.thejeffer.net/authorize
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL
+          value: https://id.thejeffer.net/api/oidc/token
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_USERINFOURL
+          value: https://id.thejeffer.net/api/oidc/userinfo
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_REDIRECTURL
+          value: https://auth.thejeffer.net/api/oauth/callback/pocketid
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_SCOPES
+          value: openid email profile groups
+        - name: TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME
+          value: Pocket ID
+        - name: TINYAUTH_APPS_SONARR_CONFIG_DOMAIN
+          value: sonarr.thejeffer.net
+        - name: TINYAUTH_APPS_SONARR_OAUTH_GROUPS
+          value: media-users
+        - name: TINYAUTH_APPS_RADARR_CONFIG_DOMAIN
+          value: radarr.thejeffer.net
+        - name: TINYAUTH_APPS_RADARR_OAUTH_GROUPS
+          value: media-users
+        - name: TINYAUTH_APPS_SEERR_CONFIG_DOMAIN
+          value: seerr.thejeffer.net
+        - name: TINYAUTH_APPS_SEERR_OAUTH_GROUPS
+          value: media-users
+        - name: TINYAUTH_APPS_DISPATCHARR_CONFIG_DOMAIN
+          value: dispatcharr.thejeffer.net
+        - name: TINYAUTH_APPS_DISPATCHARR_OAUTH_GROUPS
+          value: media-users
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          exec:
+            command: [tinyauth, healthcheck]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: [tinyauth, healthcheck]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+      volumes:
+      - name: data
+        hostPath:
+          path: /persist/tinyauth
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinyauth
+  namespace: auth
+spec:
+  type: ClusterIP
+  selector:
+    app: tinyauth
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tinyauth
+  namespace: auth
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - auth.thejeffer.net
+    secretName: tinyauth-tls
+  rules:
+  - host: auth.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tinyauth
+            port:
+              name: http
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sso-auth
+  namespace: auth
+spec:
+  forwardAuth:
+    address: http://tinyauth.auth.svc.cluster.local:3000/api/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+    - remote-user
+    - remote-sub
+    - remote-name
+    - remote-email
+    - remote-groups
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sso-errors
+  namespace: auth
+spec:
+  errors:
+    status:
+    - "401-403"
+    service:
+      name: tinyauth
+      namespace: auth
+      port: 3000
+    query: /login?redirect_uri={url}

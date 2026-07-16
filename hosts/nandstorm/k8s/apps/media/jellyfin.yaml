@@ -27,6 +27,9 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
+        # Do not attach Traefik forwardAuth to Jellyfin. Native TV/mobile
+        # clients use Jellyfin local accounts; browser-only Pocket ID SSO is
+        # configured separately with jellyfin-plugin-sso.
         - name: media
           mountPath: /media
       volumes:

@@ -61,6 +61,9 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # External auth is configured in config.xml only after this forwardAuth
+    # gate is live. Do not add a direct Service exposure for this app.
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
 spec:
   tls:
   - hosts:

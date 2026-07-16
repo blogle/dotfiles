@@ -1,0 +1,6 @@
+resources:
+  - namespace.yaml
+  - pocket-id.yaml
+  - pocket-id-secrets.sealed.yaml
+  - tinyauth.yaml
+  - tinyauth-credentials.sealed.yaml
