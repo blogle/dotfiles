@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: muxarr
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: muxarr
+  template:
+    metadata:
+      labels:
+        app: muxarr
+    spec:
+      containers:
+      - name: muxarr
+        image: ghcr.io/kirovair/muxarr:latest
+        # Muxarr's wrapper cannot remap appuser to UID 0. Media is already
+        # root-owned for the existing media workloads, so run the app directly.
+        command: [dotnet, Muxarr.Web.dll]
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        ports:
+        - containerPort: 8183
+          name: http
+        env:
+        - name: TZ
+          value: America/Los_Angeles
+        volumeMounts:
+        - name: config
+          mountPath: /data
+        - name: media
+          mountPath: /media
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: muxarr-config-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: muxarr
+  namespace: media
+spec:
+  type: ClusterIP
+  selector:
+    app: muxarr
+  ports:
+  - name: http
+    port: 8183
+    targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: muxarr
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+spec:
+  tls:
+  - hosts:
+    - muxarr.thejeffer.net
+    secretName: muxarr-tls
+  rules:
+  - host: muxarr.thejeffer.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: muxarr
+            port:
+              name: http

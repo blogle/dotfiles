@@ -68,6 +68,10 @@ spec:
           value: dispatcharr.thejeffer.net
         - name: TINYAUTH_APPS_DISPATCHARR_OAUTH_GROUPS
           value: media-users
+        - name: TINYAUTH_APPS_MUXARR_CONFIG_DOMAIN
+          value: muxarr.thejeffer.net
+        - name: TINYAUTH_APPS_MUXARR_OAUTH_GROUPS
+          value: media-users
         volumeMounts:
         - name: data
           mountPath: /data

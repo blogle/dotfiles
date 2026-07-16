@@ -8,6 +8,7 @@ resources:
   - prowlarr.yaml
   - radarr.yaml
   - sonarr.yaml
+  - muxarr.yaml
   - transmission.yaml
   - dispatcharr.yaml
   - teamarr.yaml

@@ -299,6 +299,39 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
+  name: muxarr-config-pv
+  labels: { app: muxarr, component: config }
+spec:
+  capacity: { storage: 1Gi }
+  accessModes: [ "ReadWriteOnce" ]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [ "nandstorm" ]
+  hostPath:
+    path: /persist/muxarr
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: muxarr-config-pvc
+  namespace: media
+spec:
+  storageClassName: ""
+  volumeName: muxarr-config-pv
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests: { storage: 1Gi }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
   name: teamarr-config-pv
   labels: { app: teamarr, component: config }
 spec:
@@ -361,4 +394,3 @@ spec:
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests: { storage: 1Gi }
-
