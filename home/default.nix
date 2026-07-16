@@ -250,6 +250,7 @@ in
         process = "${pkgs.git-lfs}/bin/git-lfs filter-process --skip";
         required = true;
       };
+      init.defaultBranch = "master";
     };
   };
 
