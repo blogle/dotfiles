@@ -71,6 +71,19 @@ SSO-created account receives no library or administrative access until the
 local Jellyfin administrator grants it explicitly. Do not enable group-to-role
 mapping until that initial flow has been tested with a non-administrator.
 
+## Known Limitation
+
+`jellyfin-plugin-sso` self-service account linking is broken upstream: it can
+create a new Jellyfin account instead of mapping the Pocket ID identity to the
+currently signed-in local account. The issue remains unresolved and the plugin
+repository is archived. Do not use `/SSOViews/linking` to migrate an existing
+local account.
+
+Use SSO-created accounts as separate accounts, grant their permissions with a
+retained local administrator, and keep existing local accounts for native
+clients and their existing watch history. Do not delete a local account merely
+because an SSO account has been created.
+
 ## Add Login Button
 
 Under Dashboard > General > Branding, add this to Login Disclaimer:
@@ -103,7 +116,7 @@ a.raised.emby-button {
 2. Complete Pocket ID authentication and confirm the new Jellyfin account has
    no unexpected permissions.
 3. Sign in with the retained local administrator and grant the intended
-   libraries and permissions to the SSO account.
+   libraries and permissions to the separate SSO account.
 4. Confirm a TV or mobile client can still sign in with its existing local
    Jellyfin account through `10.0.0.101:8096`.
 5. Confirm Jellyfin's normal web login still works with local accounts.
