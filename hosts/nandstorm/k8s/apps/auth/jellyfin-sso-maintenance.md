@@ -79,10 +79,12 @@ currently signed-in local account. The issue remains unresolved and the plugin
 repository is archived. Do not use `/SSOViews/linking` to migrate an existing
 local account.
 
-Use SSO-created accounts as separate accounts, grant their permissions with a
-retained local administrator, and keep existing local accounts for native
-clients and their existing watch history. Do not delete a local account merely
-because an SSO account has been created.
+The workaround is claim-based matching. Set **Set default username claim** to
+`preferred_username` and ensure Pocket ID emits that claim with the exact,
+case-sensitive username of the existing Jellyfin account. A normal SSO login
+then selects that existing account. Do not use this approach until the emitted
+value has been verified; otherwise the plugin creates another account. Keep a
+local administrator account as a recovery path for native clients.
 
 ## Add Login Button
 
