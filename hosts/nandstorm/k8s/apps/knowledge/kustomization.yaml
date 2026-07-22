@@ -1,0 +1,6 @@
+resources:
+  - namespace.yaml
+  - storage.yaml
+  - markdown-vault-mcp.yaml
+  - ignis.yaml
+  - tunnel-credentials.sealed.yaml

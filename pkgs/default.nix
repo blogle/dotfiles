@@ -1,5 +1,7 @@
 final: prev: {
 
+  tunnel-client = final.callPackage ./tunnel-client.nix {};
+
     cbt = final.callPackage ./cbt.nix {};
     #obsidian = final.callPackage ./obsidian.nix {};
 

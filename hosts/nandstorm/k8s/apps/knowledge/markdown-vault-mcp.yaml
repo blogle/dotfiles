@@ -1,0 +1,172 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: markdown-vault-mcp
+  namespace: knowledge
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: markdown-vault-mcp
+  template:
+    metadata:
+      labels:
+        app: markdown-vault-mcp
+    spec:
+      containers:
+        - name: markdown-vault-mcp
+          image: ghcr.io/pvliesdonk/markdown-vault-mcp:v3.1.0
+          args:
+            - markdown-vault-mcp
+            - serve
+            - --transport
+            - http
+            - --host
+            - 127.0.0.1
+            - --port
+            - "8000"
+            - --http-path
+            - /mcp
+          env:
+            - name: MARKDOWN_VAULT_MCP_SOURCE_DIR
+              value: /data/vaults
+            - name: MARKDOWN_VAULT_MCP_READ_ONLY
+              value: "false"
+            - name: MARKDOWN_VAULT_MCP_INDEX_PATH
+              value: /data/state/index.db
+            - name: MARKDOWN_VAULT_MCP_EMBEDDINGS_PATH
+              value: /data/state/embeddings/embeddings
+            - name: MARKDOWN_VAULT_MCP_STATE_PATH
+              value: /data/state/state.json
+            - name: MARKDOWN_VAULT_MCP_KV_STORE_URL
+              value: file:///data/state/kv
+            - name: MARKDOWN_VAULT_MCP_EMBEDDING_PROVIDER
+              value: fastembed
+            - name: MARKDOWN_VAULT_MCP_FASTEMBED_MODEL
+              value: BAAI/bge-small-en-v1.5
+            - name: MARKDOWN_VAULT_MCP_FASTEMBED_CACHE_DIR
+              value: /data/state/fastembed
+            - name: MARKDOWN_VAULT_MCP_FILE_WATCHER
+              value: "true"
+            - name: MARKDOWN_VAULT_MCP_FILE_WATCHER_DEBOUNCE_S
+              value: "2.0"
+            - name: MARKDOWN_VAULT_MCP_EXCLUDE
+              value: .obsidian/**,.trash/**,.git/**
+            - name: MARKDOWN_VAULT_MCP_INDEXED_FIELDS
+              value: tags,aliases,type,status,year
+            - name: MARKDOWN_VAULT_MCP_DISABLE_APPS_UI
+              value: "true"
+            - name: MARKDOWN_VAULT_MCP_BUILD_TIMEOUT_S
+              value: "300"
+            - name: FASTMCP_ENABLE_RICH_LOGGING
+              value: "false"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          startupProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - import socket; socket.create_connection(("127.0.0.1", 8000), 2).close()
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 2
+          readinessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - import socket; socket.create_connection(("127.0.0.1", 8000), 2).close()
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - import socket; socket.create_connection(("127.0.0.1", 8000), 2).close()
+            periodSeconds: 30
+            timeoutSeconds: 2
+          volumeMounts:
+            - name: state
+              mountPath: /data/state
+            - name: vaults
+              mountPath: /data/vaults
+        - name: tunnel-client
+          image: alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until nc -z 127.0.0.1 8000; do
+                sleep 1
+              done
+              exec /usr/local/bin/tunnel-client run
+          env:
+            - name: CONTROL_PLANE_TUNNEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tunnel-credentials
+                  key: CONTROL_PLANE_TUNNEL_ID
+            - name: CONTROL_PLANE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tunnel-credentials
+                  key: CONTROL_PLANE_API_KEY
+            - name: MCP_SERVER_URL
+              value: http://127.0.0.1:8000/mcp
+            - name: HEALTH_LISTEN_ADDR
+              value: :8080
+            - name: LOG_LEVEL
+              value: info
+            - name: LOG_FORMAT
+              value: json
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 30
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: tunnel-client
+              mountPath: /usr/local/bin/tunnel-client
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: markdown-vault-mcp-state
+        - name: vaults
+          hostPath:
+            path: /persist/knowledge/vaults
+            type: DirectoryOrCreate
+        - name: tunnel-client
+          hostPath:
+            path: /run/current-system/sw/bin/tunnel-client
+            type: File

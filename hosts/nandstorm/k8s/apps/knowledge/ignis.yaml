@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ignis
+  namespace: knowledge
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ignis
+  template:
+    metadata:
+      labels:
+        app: ignis
+    spec:
+      containers:
+        - name: ignis
+          image: nobbe/ignis:0.8.8
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: VAULT_ROOT
+              value: /vaults
+            - name: DATA_ROOT
+              value: /app/data
+            - name: OBSIDIAN_VERSION
+              value: 1.12.7
+            - name: OBSIDIAN_ASSETS_PATH
+              value: /app/obsidian-app
+            - name: AUTO_CREATE_DEFAULT
+              value: "false"
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: vaults
+              mountPath: /vaults
+            - name: ignis-data
+              mountPath: /app/data
+            - name: ignis-obsidian-app
+              mountPath: /app/obsidian-app
+      volumes:
+        - name: vaults
+          hostPath:
+            path: /persist/knowledge/vaults
+            type: DirectoryOrCreate
+        - name: ignis-data
+          persistentVolumeClaim:
+            claimName: ignis-data
+        - name: ignis-obsidian-app
+          persistentVolumeClaim:
+            claimName: ignis-obsidian-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ignis
+  namespace: knowledge
+spec:
+  type: ClusterIP
+  selector:
+    app: ignis
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ignis
+  namespace: knowledge
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - obsidian.thejeffer.net
+      secretName: obsidian-tls
+  rules:
+    - host: obsidian.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ignis
+                port:
+                  name: http

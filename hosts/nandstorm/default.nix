@@ -28,6 +28,12 @@
 
 
   environment.etc.machine-id.source = ./machine-id;
+  environment.systemPackages = [ pkgs.tunnel-client ];
+
+  systemd.tmpfiles.rules = [
+    "d /persist/knowledge/vaults 0775 1000 1000 -"
+  ];
+
   environment.persistence."/persist" = {
     enable = true;
     hideMounts = true;
