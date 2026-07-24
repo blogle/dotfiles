@@ -99,6 +99,7 @@ in
     pkgs.ripgrep
     pkgs.socat
     pkgs.spotify
+    pkgs.telegram-desktop
     pkgs.uv
     pkgs.vlc
     pkgs.wget
