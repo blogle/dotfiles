@@ -15,16 +15,20 @@ spec:
       labels:
         app: markdown-vault-mcp
     spec:
+      enableServiceLinks: false
       containers:
         - name: markdown-vault-mcp
           image: ghcr.io/pvliesdonk/markdown-vault-mcp:v3.1.0
+          ports:
+            - name: http
+              containerPort: 8000
           args:
             - markdown-vault-mcp
             - serve
             - --transport
             - http
             - --host
-            - 127.0.0.1
+            - 0.0.0.0
             - --port
             - "8000"
             - --http-path
@@ -170,3 +174,43 @@ spec:
           hostPath:
             path: /run/current-system/sw/bin/tunnel-client
             type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: markdown-vault-mcp
+  namespace: knowledge
+spec:
+  type: ClusterIP
+  selector:
+    app: markdown-vault-mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: markdown-vault-mcp
+  namespace: knowledge
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - markdown-vault-mcp.thejeffer.net
+      secretName: markdown-vault-mcp-tls
+  rules:
+    - host: markdown-vault-mcp.thejeffer.net
+      http:
+        paths:
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: markdown-vault-mcp
+                port:
+                  name: http

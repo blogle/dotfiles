@@ -3,8 +3,15 @@
 The `knowledge` namespace runs Ignis and markdown-vault-mcp against one shared,
 human-owned Markdown root. Ignis is available at
 `https://obsidian.thejeffer.net` through Traefik, cert-manager, and the existing
-Tinyauth middleware. The MCP server has no Service or Ingress: it binds only to
-pod loopback and the same-pod OpenAI tunnel-client reaches `/mcp` there.
+Tinyauth middleware. The MCP server is also available at
+`https://markdown-vault-mcp.thejeffer.net/mcp` through the private
+Traefik/MetalLB path for tailnet clients. The same pod's OpenAI tunnel-client
+continues to reach
+`http://127.0.0.1:8000/mcp` for ChatGPT.
+
+The MCP pod disables Kubernetes service-link environment injection. Otherwise
+the identically named Service injects `MARKDOWN_VAULT_MCP_PORT=tcp://...`, which
+conflicts with the application's integer `MARKDOWN_VAULT_MCP_PORT` setting.
 
 ## Storage
 
@@ -46,6 +53,7 @@ Alpine runtime containing CA certificates. It does not mount `/nix/store`.
 
 ```sh
 kubectl -n knowledge get deployments,pods,pvc,service,ingress
+kubectl -n knowledge describe ingress markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c tunnel-client
 kubectl -n knowledge rollout restart deployment/markdown-vault-mcp

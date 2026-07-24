@@ -135,8 +135,9 @@ confirming its application cache persisted.
 - `https://obsidian.thejeffer.net`: HTTP `401`, proving Tinyauth protection
 - HTTP redirects permanently to HTTPS
 - Ignis has only a ClusterIP Service
-- No MCP Service, Ingress, NodePort, or LoadBalancer exists
-- MCP listens only at `127.0.0.1:8000`
+- MCP has a ClusterIP Service and private Traefik Ingress
+- MCP listens at pod address `:8000`; the tunnel sidecar uses `127.0.0.1:8000`
+- Tailnet clients use `https://markdown-vault-mcp.thejeffer.net/mcp` through private Traefik
 
 ## Validation
 
