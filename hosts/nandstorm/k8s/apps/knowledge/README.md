@@ -9,6 +9,68 @@ Traefik/MetalLB path for tailnet clients. The same pod's OpenAI tunnel-client
 continues to reach
 `http://127.0.0.1:8000/mcp` for ChatGPT.
 
+The namespace also contains two external GHCR collectors. Their image tags are
+version placeholders in `kustomization.yaml`, so releases can be updated using
+Kustomize's `images` overrides rather than using `latest`.
+
+## Collectors
+
+`telegram-collector` is a one-replica `Recreate` Deployment. It watches the
+configured Telegram streams and writes to the live vault at
+`The Chadlands/70 Sources/Telegram`, while its SQLite database, Telegram
+session, archive, and work directories live in `telegram-collector-state`.
+The config uses the verified Mud Room (`-5184613712`) and Player
+(`-1003944547386`) streams, both with a `2026-07-01` backfill. The DM stream is
+intentionally omitted until its verified Telegram ID is resolved; do not infer
+or invent an ID.
+
+The Telegram auth Job is intentionally suspended. Create the credentials
+Secret as `telegram-credentials`, then authenticate against the shared state
+claim with:
+
+```sh
+kubectl -n knowledge scale deployment/telegram-collector --replicas=0
+kubectl -n knowledge patch job telegram-collector-auth -p '{"spec":{"suspend":false}}'
+kubectl -n knowledge wait --for=condition=Ready pod -l app=telegram-collector-auth --timeout=60s
+kubectl -n knowledge attach -it "$(kubectl -n knowledge get pod -l app=telegram-collector-auth -o jsonpath='{.items[0].metadata.name}')"
+kubectl -n knowledge scale deployment/telegram-collector --replicas=1
+```
+
+After authentication, the Deployment reuses `/state/telegram.session`. To
+resolve the omitted DM before adding it, run the same image with
+`--config /etc/telegram-collector/config.yaml chats --json` and inspect its
+output. Do not add a stream until its chat ID is confirmed.
+
+`chatgpt-collector` runs daily at 03:30 in `America/Los_Angeles` with
+`concurrencyPolicy: Forbid`. It maps the `The Chadlands` project to the root
+of `The Chadlands/70 Sources/Strategy Sessions/Raw Export`; raw incremental
+state and manifests stay in `chatgpt-collector-state`.
+
+No plaintext credentials or SealedSecret ciphertext are committed here. Create
+namespace-scoped SealedSecrets from local plaintext files using the repository
+helper, for example:
+
+```sh
+./scripts/seal-secret.sh --name telegram-credentials -n knowledge \
+  --file TELEGRAM_API_ID=/secure/telegram-api-id \
+  --file TELEGRAM_API_HASH=/secure/telegram-api-hash \
+  --file TELEGRAM_PHONE=/secure/telegram-phone \
+  --output-dir hosts/nandstorm/k8s/apps/knowledge --scope strict
+./scripts/seal-secret.sh --name chatgpt-credentials -n knowledge \
+  --file CHATGPT_TOKEN=/secure/chatgpt-token \
+  --output-dir hosts/nandstorm/k8s/apps/knowledge --scope strict
+```
+
+Keep generated sealed manifests in this directory and add them to the
+Kustomization only once they contain real ciphertext. The workloads reference
+the documented Secret names, so `kubectl kustomize` does not require those
+secrets to render.
+
+The login code and optional 2FA password are entered through the interactive
+auth Job and are not retained in the Secret. Delete and recreate the completed
+Job before repeating authentication because Kubernetes Job pod templates are
+immutable.
+
 The MCP pod disables Kubernetes service-link environment injection. Otherwise
 the identically named Service injects `MARKDOWN_VAULT_MCP_PORT=tcp://...`, which
 conflicts with the application's integer `MARKDOWN_VAULT_MCP_PORT` setting.
@@ -21,16 +83,49 @@ folder, or domain taxonomy is created by this deployment. Every top-level
 directory users create under `/vaults` is an independent Ignis vault, while
 markdown-vault-mcp recursively indexes their Markdown as one corpus.
 
+Each collector mounts only its disjoint owned source subtree at `/output`:
+Telegram mounts `The Chadlands/70 Sources/Telegram`, and ChatGPT mounts
+`The Chadlands/70 Sources/Strategy Sessions/Raw Export`. These directories must
+exist in the live vault before rollout. They are paths within the same durable
+vault hostPath, not second vault copies or Git checkouts.
+
 Application-owned state uses dynamically provisioned `local-path` claims:
 
 - `markdown-vault-mcp-state` at `/data/state` contains the rebuildable SQLite
   index, vector data, MCP/session state, key-value data, and FastEmbed cache.
 - `ignis-data` at `/app/data` contains Ignis application data.
 - `ignis-obsidian-app` at `/app/obsidian-app` caches Obsidian 1.12.7 assets.
+- `telegram-collector-state` at `/state` contains the SQLite cursor database,
+  Telegram session, archive, and work files.
+- `chatgpt-collector-state` at `/state` contains incremental exporter data and
+  run manifests.
 
 The claims contain no human-authored Markdown. MCP state is disposable and can
 be rebuilt from the vault, though retaining it avoids reindexing and repeated
 model downloads.
+
+Collector packages and OCI images are validated in their source repositories,
+not repackaged by this host flake:
+
+```sh
+(cd ../telegram_collector && nix develop --command cargo test --all && nix build .#default .#ociImage)
+(cd ../chatgpt_collector && nix flake check && nix build .#collector .#upstream .#oci)
+(cd ../ignis && npm test && npm run lint && node scripts/child-process-harness.mjs)
+python3 -B ../chadlands/tools/compare_sources.py --help
+kubectl kustomize hosts/nandstorm/k8s >/dev/null
+kubectl apply --dry-run=client -k hosts/nandstorm/k8s
+nix flake check --no-build
+```
+
+The GHCR tags in `kustomization.yaml` are release placeholders. Confirm that a
+corresponding image has been published before rollout; this repository does not
+assume that a tag exists or pull an image during rendering.
+
+For an upgrade, publish immutable collector image tags from the tested source
+revisions, replace the two `newTag` values in `kustomization.yaml`, inspect
+`kubectl diff -k hosts/nandstorm/k8s`, then apply. Roll back by restoring the
+previous known-good tags and applying again. Collector state PVCs and published
+Markdown are retained across either operation.
 
 Filesystem watching handles edits inside existing vaults. Adding a completely
 new top-level vault may require `kubectl -n knowledge rollout restart
@@ -53,9 +148,13 @@ Alpine runtime containing CA certificates. It does not mount `/nix/store`.
 
 ```sh
 kubectl -n knowledge get deployments,pods,pvc,service,ingress
+kubectl -n knowledge get cronjob,job
 kubectl -n knowledge describe ingress markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c tunnel-client
+kubectl -n knowledge logs deployment/telegram-collector
+kubectl -n knowledge logs job/telegram-collector-auth
+kubectl -n knowledge create job --from=cronjob/chatgpt-collector "chatgpt-collector-manual-$(date +%s)"
 kubectl -n knowledge rollout restart deployment/markdown-vault-mcp
 kubectl -n knowledge rollout restart deployment/ignis
 ```

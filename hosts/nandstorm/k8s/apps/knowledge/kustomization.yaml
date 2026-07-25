@@ -4,3 +4,12 @@ resources:
   - markdown-vault-mcp.yaml
   - ignis.yaml
   - tunnel-credentials.sealed.yaml
+  - telegram-collector.yaml
+  - chatgpt-collector.yaml
+
+images:
+  # Update these version tags together with the corresponding image release.
+  - name: ghcr.io/blogle/telegram-markdown-collector
+    newTag: v0.1.0
+  - name: ghcr.io/blogle/chatgpt-markdown-collector
+    newTag: v0.1.0
