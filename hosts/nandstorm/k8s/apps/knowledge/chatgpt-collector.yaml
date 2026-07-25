@@ -11,6 +11,8 @@ data:
       concurrency: 3
       delay_ms: 250
       timeout_ms: 600000
+    auth:
+      preflight: true
     token_env: CHATGPT_TOKEN
     state_dir: /state
     output_dir: /output
@@ -33,14 +35,15 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      backoffLimit: 1
+      # Authentication failures require intervention; do not retry the same token.
+      backoffLimit: 0
       activeDeadlineSeconds: 3600
       template:
         metadata:
           labels:
             app: chatgpt-collector
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           terminationGracePeriodSeconds: 30
           nodeSelector:
             kubernetes.io/hostname: nandstorm

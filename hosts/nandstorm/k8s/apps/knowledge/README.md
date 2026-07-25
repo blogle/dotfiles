@@ -44,7 +44,20 @@ output. Do not add a stream until its chat ID is confirmed.
 `chatgpt-collector` runs daily at 03:30 in `America/Los_Angeles` with
 `concurrencyPolicy: Forbid`. It maps the `The Chadlands` project to the root
 of `The Chadlands/70 Sources/Strategy Sessions/Raw Export`; raw incremental
-state and manifests stay in `chatgpt-collector-state`.
+state and manifests stay in `chatgpt-collector-state`. Every run performs an
+authentication preflight. Intervention-required authentication failures exit
+with code 3, preserve the last valid publication, record a safe classification,
+and are not retried with the same credential.
+
+Pinned `chatgpt-exporter` 1.1.0 supports only a bearer access token; it has no
+refresh token, cookie jar, browser session, OAuth, or login command. The current
+integration is therefore an alerted manual-renewal fallback, not production-
+ready renewable authentication. After obtaining a fresh `accessToken` from
+`https://chatgpt.com/api/auth/session` in an already authenticated browser,
+replace only the `CHATGPT_TOKEN` value in `chatgpt-credentials`. A newly created
+manual Job reads the updated Secret and reuses the existing state PVC; the
+CronJob itself does not need to be recreated. Never store a password, 2FA code,
+browser profile, cookie jar, or token in this repository.
 
 No plaintext credentials or SealedSecret ciphertext are committed here. Create
 namespace-scoped SealedSecrets from local plaintext files using the repository
@@ -104,14 +117,18 @@ The claims contain no human-authored Markdown. MCP state is disposable and can
 be rebuilt from the vault, though retaining it avoids reindexing and repeated
 model downloads.
 
-Collector packages and OCI images are validated in their source repositories,
-not repackaged by this host flake:
+Application packages and OCI images are independently validated and published
+by their owning repositories. This host flake deliberately does not use sibling
+workspace path inputs or redefine their packages: the collector repositories do
+not yet have immutable remotes, and Kubernetes consumes OCI artifacts directly.
+Once remotes exist, production promotion pins published image digests here; a
+local path input must never appear in a production lock file.
+
+This repository validates only integration concerns:
 
 ```sh
-(cd ../telegram_collector && nix develop --command cargo test --all && nix build .#default .#ociImage)
-(cd ../chatgpt_collector && nix flake check && nix build .#collector .#upstream .#oci)
-(cd ../ignis && npm test && npm run lint && node scripts/child-process-harness.mjs)
-python3 -B ../chadlands/tools/compare_sources.py --help
+bash scripts/check-knowledge-boundaries.sh
+bash scripts/test-knowledge-isolated.sh
 kubectl kustomize hosts/nandstorm/k8s >/dev/null
 kubectl apply --dry-run=client -k hosts/nandstorm/k8s
 nix flake check --no-build
@@ -121,11 +138,18 @@ The GHCR tags in `kustomization.yaml` are release placeholders. Confirm that a
 corresponding image has been published before rollout; this repository does not
 assume that a tag exists or pull an image during rendering.
 
-For an upgrade, publish immutable collector image tags from the tested source
-revisions, replace the two `newTag` values in `kustomization.yaml`, inspect
+For an upgrade, publish collector images from tested source revisions, resolve
+their registry digests, replace the image references with those immutable
+digests, inspect
 `kubectl diff -k hosts/nandstorm/k8s`, then apply. Roll back by restoring the
 previous known-good tags and applying again. Collector state PVCs and published
 Markdown are retained across either operation.
+
+Ignis remains on the upstream image. The child-process-compatible source keeps
+Git out of its default image and exposes an explicit `IGNIS_INCLUDE_GIT=true`
+build option. Deploying that feature requires a separately published,
+digest-pinned downstream image and an explicit decision to enable
+`IGNIS_CHILD_PROCESS`; neither is selected by these manifests yet.
 
 Filesystem watching handles edits inside existing vaults. Adding a completely
 new top-level vault may require `kubectl -n knowledge rollout restart
