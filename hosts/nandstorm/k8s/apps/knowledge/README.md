@@ -9,9 +9,9 @@ Traefik/MetalLB path for tailnet clients. The same pod's OpenAI tunnel-client
 continues to reach
 `http://127.0.0.1:8000/mcp` for ChatGPT.
 
-The namespace also contains two external GHCR collectors. Their image tags are
-version placeholders in `kustomization.yaml`, so releases can be updated using
-Kustomize's `images` overrides rather than using `latest`.
+The namespace also contains two external GHCR collectors. Their production
+manifest digests are centralized in `kustomization.yaml`; release tags are not
+used for deployment.
 
 ## Collectors
 
@@ -37,12 +37,18 @@ kubectl -n knowledge scale deployment/telegram-collector --replicas=1
 ```
 
 After authentication, the Deployment reuses `/state/telegram.session`. To
-resolve the omitted DM before adding it, run the same image with
-`--config /etc/telegram-collector/config.yaml chats --json` and inspect its
-output. Do not add a stream until its chat ID is confirmed.
+populate Telegram channel access hashes in a fresh session, run the same image
+once with `--config /etc/telegram-collector/config.yaml chats --json` before
+starting the watcher. The API ID/hash identify the application; the resulting
+user session is long-lived and normally survives pod restarts and upgrades on
+the state PVC. A new login code is needed only after session revocation,
+security invalidation, or state loss. To resolve the omitted DM before adding
+it, inspect the same `chats --json` output. Do not add a stream until its chat
+ID is confirmed.
 
-`chatgpt-collector` runs daily at 03:30 in `America/Los_Angeles` with
-`concurrencyPolicy: Forbid`. It maps the `The Chadlands` project to the root
+`chatgpt-collector` is configured for 03:30 in `America/Los_Angeles` with
+`concurrencyPolicy: Forbid`, but remains suspended until renewable
+authentication is proven. It maps the `The Chadlands` project to the root
 of `The Chadlands/70 Sources/Strategy Sessions/Raw Export`; raw incremental
 state and manifests stay in `chatgpt-collector-state`. Every run performs an
 authentication preflight. Intervention-required authentication failures exit
@@ -59,9 +65,9 @@ manual Job reads the updated Secret and reuses the existing state PVC; the
 CronJob itself does not need to be recreated. Never store a password, 2FA code,
 browser profile, cookie jar, or token in this repository.
 
-No plaintext credentials or SealedSecret ciphertext are committed here. Create
-namespace-scoped SealedSecrets from local plaintext files using the repository
-helper, for example:
+No plaintext credentials are committed here. Namespace-bound SealedSecret
+ciphertext may be committed. Create it from local plaintext files using the
+repository helper, for example:
 
 ```sh
 ./scripts/seal-secret.sh --name telegram-credentials -n knowledge \
@@ -119,10 +125,9 @@ model downloads.
 
 Application packages and OCI images are independently validated and published
 by their owning repositories. This host flake deliberately does not use sibling
-workspace path inputs or redefine their packages: the collector repositories do
-not yet have immutable remotes, and Kubernetes consumes OCI artifacts directly.
-Once remotes exist, production promotion pins published image digests here; a
-local path input must never appear in a production lock file.
+workspace path inputs or redefine their packages. Kubernetes consumes
+digest-pinned OCI artifacts directly; a local path input must never appear in a
+production lock file.
 
 This repository validates only integration concerns:
 
@@ -134,9 +139,9 @@ kubectl apply --dry-run=client -k hosts/nandstorm/k8s
 nix flake check --no-build
 ```
 
-The GHCR tags in `kustomization.yaml` are release placeholders. Confirm that a
-corresponding image has been published before rollout; this repository does not
-assume that a tag exists or pull an image during rendering.
+The GHCR digests in `kustomization.yaml` are resolved from published, locally
+pulled release images. Confirm and smoke-test each replacement digest before
+rollout; rendering itself does not pull images.
 
 For an upgrade, publish collector images from tested source revisions, resolve
 their registry digests, replace the image references with those immutable

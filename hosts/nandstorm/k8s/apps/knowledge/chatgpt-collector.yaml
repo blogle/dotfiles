@@ -27,6 +27,8 @@ metadata:
   name: chatgpt-collector
   namespace: knowledge
 spec:
+  # Manual-only until renewable authentication is available.
+  suspend: true
   schedule: "30 3 * * *"
   timeZone: America/Los_Angeles
   concurrencyPolicy: Forbid

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegram-collector-config
+  namespace: knowledge
+data:
+  config.yaml: |
+    timezone: America/Los_Angeles
+    telegram:
+      api_id_env: TELEGRAM_API_ID
+      api_hash_env: TELEGRAM_API_HASH
+      session_path: /state/telegram.session
+      phone_env: TELEGRAM_PHONE
+      code_env: TELEGRAM_CODE
+      password_env: TELEGRAM_PASSWORD
+    state:
+      database: /state/state.sqlite3
+      archive_root: /state/archive
+      work: /state/work
+    output:
+      root: /output
+      attachment_root: /output/Attachments
+    health:
+      listen: 0.0.0.0:8080
+    streams:
+      - chat_id: -5184613712
+        slug: mud-room
+        title: Mud Room
+        output_subdirectory: Mud Room
+        backfill:
+          from: 2026-07-01
+      - chat_id: -1003944547386
+        slug: player
+        title: Player
+        output_subdirectory: Player
+        backfill:
+          from: 2026-07-01

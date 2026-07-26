@@ -1,15 +1,19 @@
 resources:
   - namespace.yaml
   - storage.yaml
+  - telegram-state.yaml
+  - telegram-config.yaml
+  - telegram-credentials-knowledge.sealed.yaml
+  - telegram-deployment.yaml
+  - telegram-auth-job.yaml
   - markdown-vault-mcp.yaml
   - ignis.yaml
   - tunnel-credentials.sealed.yaml
-  - telegram-collector.yaml
   - chatgpt-collector.yaml
 
 images:
-  # Update these version tags together with the corresponding image release.
+  # Production collectors are pinned to verified registry manifests.
   - name: ghcr.io/blogle/telegram-markdown-collector
-    newTag: v0.1.0
+    digest: sha256:1ef74504a92f665b4f22dd95c3d07368ae6097c1fa4beb9a53ac9fb6ac4df7d0
   - name: ghcr.io/blogle/chatgpt-markdown-collector
-    newTag: v0.1.0
+    digest: sha256:c793113ce3922d055d3e3bcc8f5537a445bfa137c10191dae11d2444da6e8dc8
