@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: chatgpt-collector-config
   namespace: knowledge
+  labels:
+    app: chatgpt-collector
 data:
   config.yaml: |
     exporter:
@@ -13,6 +15,8 @@ data:
       timeout_ms: 600000
     auth:
       preflight: true
+    publication:
+      max_markdown_bytes: 49152
     token_env: CHATGPT_TOKEN
     state_dir: /state
     output_dir: /output
@@ -26,6 +30,8 @@ kind: CronJob
 metadata:
   name: chatgpt-collector
   namespace: knowledge
+  labels:
+    app: chatgpt-collector
 spec:
   # Manual-only until renewable authentication is available.
   suspend: true
@@ -36,10 +42,14 @@ spec:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        app: chatgpt-collector
     spec:
       # Authentication failures require intervention; do not retry the same token.
       backoffLimit: 0
       activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
       template:
         metadata:
           labels:

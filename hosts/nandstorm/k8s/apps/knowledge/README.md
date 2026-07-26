@@ -47,23 +47,53 @@ it, inspect the same `chats --json` output. Do not add a stream until its chat
 ID is confirmed.
 
 `chatgpt-collector` is configured for 03:30 in `America/Los_Angeles` with
-`concurrencyPolicy: Forbid`, but remains suspended until renewable
-authentication is proven. It maps the `The Chadlands` project to the root
+`concurrencyPolicy: Forbid`, but remains permanently suspended for the current
+manual operating model. It maps the `The Chadlands` project to the root
 of `The Chadlands/70 Sources/Strategy Sessions/Raw Export`; raw incremental
 state and manifests stay in `chatgpt-collector-state`. Every run performs an
 authentication preflight. Intervention-required authentication failures exit
 with code 3, preserve the last valid publication, record a safe classification,
 and are not retried with the same credential.
 
-Pinned `chatgpt-exporter` 1.1.0 supports only a bearer access token; it has no
-refresh token, cookie jar, browser session, OAuth, or login command. The current
-integration is therefore an alerted manual-renewal fallback, not production-
-ready renewable authentication. After obtaining a fresh `accessToken` from
-`https://chatgpt.com/api/auth/session` in an already authenticated browser,
-replace only the `CHATGPT_TOKEN` value in `chatgpt-credentials`. A newly created
-manual Job reads the updated Secret and reuses the existing state PVC; the
-CronJob itself does not need to be recreated. Never store a password, 2FA code,
-browser profile, cookie jar, or token in this repository.
+Pinned `chatgpt-exporter` 1.1.0 supports only a short-lived ChatGPT web-session
+bearer token. Automatic scheduled export is disabled; manual one-command export
+is supported:
+
+```sh
+chatgpt-export-now
+```
+
+Open `https://chatgpt.com/api/auth/session` in a logged-in browser and paste the
+whole one-line response into the hidden prompt. The command accepts either the
+JSON response or its `accessToken`, validates JWT shape and expiry, performs a
+read-only local collector preflight, confirms the intended cluster context and
+suspended CronJob, creates a temporary `chatgpt-credentials` Secret, and starts
+a uniquely named Job. It follows logs and deletes the Secret only after the Job
+terminates. The token is never sealed, committed, passed in process arguments,
+or retained after a completed run.
+
+Raw exporter JSON and Markdown remain unchanged on `chatgpt-collector-state`.
+Vault publication limits Markdown to 48 KiB targets: oversized conversations
+become a small index containing ordered Obsidian transclusions plus stable,
+message-boundary `.part-NNNN.md` notes. This keeps MCP retrieval bounded while
+preserving the complete raw source outside the indexed vault.
+
+Successful and failed Jobs have a 24-hour TTL. Pass
+`--delete-successful-job` to remove a successful Job immediately. A failed Job
+is retained for diagnosis while the temporary Secret is still deleted:
+
+```sh
+kubectl -n knowledge get jobs -l app=chatgpt-collector
+kubectl -n knowledge logs job/<failed-job>
+kubectl -n knowledge describe job/<failed-job>
+kubectl -n knowledge delete job/<failed-job>
+```
+
+If the command is interrupted while the Job may still be active, it deliberately
+retains the Secret and prints exact inspection and cleanup commands. Never store
+a password, 2FA code, browser profile, cookie jar, session response, or token in
+this repository. Revoke browser sessions from ChatGPT account security settings
+when account access should be invalidated.
 
 No plaintext credentials are committed here. Namespace-bound SealedSecret
 ciphertext may be committed. Create it from local plaintext files using the
@@ -75,15 +105,11 @@ repository helper, for example:
   --file TELEGRAM_API_HASH=/secure/telegram-api-hash \
   --file TELEGRAM_PHONE=/secure/telegram-phone \
   --output-dir hosts/nandstorm/k8s/apps/knowledge --scope strict
-./scripts/seal-secret.sh --name chatgpt-credentials -n knowledge \
-  --file CHATGPT_TOKEN=/secure/chatgpt-token \
-  --output-dir hosts/nandstorm/k8s/apps/knowledge --scope strict
 ```
 
-Keep generated sealed manifests in this directory and add them to the
-Kustomization only once they contain real ciphertext. The workloads reference
-the documented Secret names, so `kubectl kustomize` does not require those
-secrets to render.
+Keep generated Telegram sealed manifests in this directory and add them to the
+Kustomization only once they contain real ciphertext. Do not create a ChatGPT
+SealedSecret; `chatgpt-export-now` owns its short-lived Secret lifecycle.
 
 The login code and optional 2FA password are entered through the interactive
 auth Job and are not retained in the Secret. Delete and recreate the completed
@@ -183,7 +209,9 @@ kubectl -n knowledge logs deployment/markdown-vault-mcp -c markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c tunnel-client
 kubectl -n knowledge logs deployment/telegram-collector
 kubectl -n knowledge logs job/telegram-collector-auth
-kubectl -n knowledge create job --from=cronjob/chatgpt-collector "chatgpt-collector-manual-$(date +%s)"
+chatgpt-export-now
+kubectl -n knowledge get cronjob/chatgpt-collector -o jsonpath='{.spec.suspend}{"\n"}'
+kubectl -n knowledge get secret/chatgpt-credentials
 kubectl -n knowledge rollout restart deployment/markdown-vault-mcp
 kubectl -n knowledge rollout restart deployment/ignis
 ```

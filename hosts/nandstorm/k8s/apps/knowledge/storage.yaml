@@ -42,6 +42,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: chatgpt-collector-state
   namespace: knowledge
+  labels:
+    app: chatgpt-collector
 spec:
   storageClassName: local-path
   accessModes:

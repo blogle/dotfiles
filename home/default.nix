@@ -31,6 +31,17 @@ let
     ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} "$DISPLAY"
   '';
 
+  chatgptExportNow = pkgs.writeShellApplication {
+    name = "chatgpt-export-now";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.docker
+      pkgs.jq
+      pkgs.kubectl
+    ];
+    text = builtins.readFile ../scripts/chatgpt-export-now.sh;
+  };
+
   xplugRc = pkgs.writeShellScript "xplugrc" ''
     set -eu
 
@@ -69,6 +80,7 @@ in
     pkgs.xplugd
     pkgs.util-linux
     applyKeyboard
+    chatgptExportNow
     pkgs.agenix
     pkgs.alsa-utils
     pkgs.arandr
