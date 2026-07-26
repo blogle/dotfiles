@@ -20,6 +20,7 @@ data:
     output:
       root: /output
       attachment_root: /output/Attachments
+      max_markdown_bytes: 49152
     health:
       listen: 0.0.0.0:8080
     streams:

@@ -10,10 +10,13 @@ resources:
   - ignis.yaml
   - tunnel-credentials.sealed.yaml
   - chatgpt-collector.yaml
+  - chadlands-collector.yaml
 
 images:
   # Production collectors are pinned to verified registry manifests.
   - name: ghcr.io/blogle/telegram-markdown-collector
-    digest: sha256:1ef74504a92f665b4f22dd95c3d07368ae6097c1fa4beb9a53ac9fb6ac4df7d0
+    digest: sha256:4897499715eed82a58790e5bb4369916bbbda49991f50ce6d873ff98ef04582f
   - name: ghcr.io/blogle/chatgpt-markdown-collector
     digest: sha256:c8e57e4125780589274456ec574161744af30dd422cc6081ba7df39d755d6fa6
+  - name: ghcr.io/blogle/chadlands-static-collector
+    digest: sha256:284723bc395ac90706ae6b7565e297a0b62f1e73cf9ae9b819fcb07232ad5e9b

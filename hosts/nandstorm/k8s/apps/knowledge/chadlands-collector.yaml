@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: chadlands-collector
+  namespace: knowledge
+  labels:
+    app: chadlands-collector
+spec:
+  schedule: "0 7 * * *"
+  timeZone: America/Los_Angeles
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: chadlands-collector
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: chadlands-collector
+        spec:
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          nodeSelector:
+            kubernetes.io/hostname: nandstorm
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+          containers:
+            - name: chadlands-collector
+              image: ghcr.io/blogle/chadlands-static-collector:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: vault-sources
+                  mountPath: /output
+          volumes:
+            - name: vault-sources
+              hostPath:
+                path: /persist/knowledge/vaults/The Chadlands/70 Sources/Codex Snapshots
+                type: Directory

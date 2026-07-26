@@ -8,5 +8,7 @@ if git -C "$root" grep -nEi '(CREATE TABLE|backend-api/conversations|message_cre
 fi
 telegram=$(awk '/path: \/persist\/knowledge\/vaults/{sub(/^[[:space:]]*path:[[:space:]]*/, ""); print; exit}' "$root/$dir/telegram-deployment.yaml")
 chatgpt=$(awk '/path: \/persist\/knowledge\/vaults/{sub(/^[[:space:]]*path:[[:space:]]*/, ""); print; exit}' "$root/$dir/chatgpt-collector.yaml")
-test -n "$telegram" && test -n "$chatgpt" && test "$telegram" != "$chatgpt"
+chadlands=$(awk '/path: \/persist\/knowledge\/vaults/{sub(/^[[:space:]]*path:[[:space:]]*/, ""); print; exit}' "$root/$dir/chadlands-collector.yaml")
+test -n "$telegram" && test -n "$chatgpt" && test -n "$chadlands"
+test "$telegram" != "$chatgpt" && test "$telegram" != "$chadlands" && test "$chatgpt" != "$chadlands"
 echo 'knowledge deployment boundary audit passed'

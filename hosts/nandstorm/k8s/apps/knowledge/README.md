@@ -9,7 +9,7 @@ Traefik/MetalLB path for tailnet clients. The same pod's OpenAI tunnel-client
 continues to reach
 `http://127.0.0.1:8000/mcp` for ChatGPT.
 
-The namespace also contains two external GHCR collectors. Their production
+The namespace also contains three external GHCR collectors. Their production
 manifest digests are centralized in `kustomization.yaml`; release tags are not
 used for deployment.
 
@@ -78,6 +78,14 @@ become a small index containing ordered Obsidian transclusions plus stable,
 message-boundary `.part-NNNN.md` notes. This keeps MCP retrieval bounded while
 preserving the complete raw source outside the indexed vault.
 
+`chadlands-collector` runs every day at 07:00 in `America/Los_Angeles`, so the
+schedule follows Pacific daylight-saving time. It fetches the public Chadlands
+Codex and map, then writes immutable captures, the latest `current/` copy, and
+`fetches.jsonl` directly under `The Chadlands/70 Sources/Codex Snapshots`. The
+CronJob is pinned to the verified GHCR digest for collector commit
+`ba5ebd16cf25757bfb8e08328765c481e1de9a10`. The GHCR package must remain
+public because the pod deliberately has no registry credential.
+
 Successful and failed Jobs have a 24-hour TTL. Pass
 `--delete-successful-job` to remove a successful Job immediately. A failed Job
 is retained for diagnosis while the temporary Secret is still deleted:
@@ -128,11 +136,12 @@ folder, or domain taxonomy is created by this deployment. Every top-level
 directory users create under `/vaults` is an independent Ignis vault, while
 markdown-vault-mcp recursively indexes their Markdown as one corpus.
 
-Each collector mounts only its disjoint owned source subtree at `/output`:
-Telegram mounts `The Chadlands/70 Sources/Telegram`, and ChatGPT mounts
-`The Chadlands/70 Sources/Strategy Sessions/Raw Export`. These directories must
-exist in the live vault before rollout. They are paths within the same durable
-vault hostPath, not second vault copies or Git checkouts.
+Each collector mounts only its owned source subtree at `/output`: Telegram
+mounts `The Chadlands/70 Sources/Telegram`, ChatGPT mounts `The Chadlands/70
+Sources/Strategy Sessions/Raw Export`, and the Chadlands collector mounts `The
+Chadlands/70 Sources/Codex Snapshots`. These directories must exist in the live
+vault before rollout. They are paths within the same durable vault hostPath,
+not second vault copies or Git checkouts.
 
 Application-owned state uses dynamically provisioned `local-path` claims:
 
@@ -209,6 +218,8 @@ kubectl -n knowledge logs deployment/markdown-vault-mcp -c markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c tunnel-client
 kubectl -n knowledge logs deployment/telegram-collector
 kubectl -n knowledge logs job/telegram-collector-auth
+kubectl -n knowledge create job --from=cronjob/chadlands-collector chadlands-collector-manual
+kubectl -n knowledge logs -l app=chadlands-collector --prefix
 chatgpt-export-now
 kubectl -n knowledge get cronjob/chatgpt-collector -o jsonpath='{.spec.suspend}{"\n"}'
 kubectl -n knowledge get secret/chatgpt-credentials
