@@ -18,7 +18,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: markdown-vault-mcp
-          image: ghcr.io/pvliesdonk/markdown-vault-mcp:v3.1.0
+          image: ghcr.io/blogle/markdown-vault-mcp@sha256:8b221e11d80d4ae47d89c6eb956d7d42828830981d2ef60641b5d1659c606b4f
           ports:
             - name: http
               containerPort: 8000
@@ -36,6 +36,8 @@ spec:
           env:
             - name: MARKDOWN_VAULT_MCP_SOURCE_DIR
               value: /data/vaults
+            - name: MARKDOWN_VAULT_MCP_VAULT_ID
+              value: nandstorm-knowledge
             - name: MARKDOWN_VAULT_MCP_READ_ONLY
               value: "false"
             - name: MARKDOWN_VAULT_MCP_INDEX_PATH
