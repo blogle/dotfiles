@@ -86,8 +86,9 @@
 
   services.resolved.enable = true;
 
-  # Set your time zone.
-  time.timeZone = "Americas/Los_Angeles";
+  # Keep the host clock synchronized and display local Pacific time.
+  services.timesyncd.enable = true;
+  time.timeZone = "America/Los_Angeles";
 
   # Select internationalisation properties.
   # i18n.defaultLocale = "en_US.UTF-8";
