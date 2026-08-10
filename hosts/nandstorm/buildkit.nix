@@ -32,6 +32,7 @@ in
         "--addr" "unix:///run/buildkit/buildkitd.sock"
         "--addr" "tcp://0.0.0.0:${toString buildkitPort}"
         "--config" "/etc/buildkit/buildkitd.toml"
+        "--cdi-disabled"
       ];
       Restart = "always";
       RestartSec = 5;
