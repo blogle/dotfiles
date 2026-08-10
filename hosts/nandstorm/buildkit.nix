@@ -27,10 +27,11 @@ in
     requires = [ "k3s.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = [
+      ExecStart = lib.escapeShellArgs [
         "${pkgs.buildkit}/bin/buildkitd"
         "--addr" "unix:///run/buildkit/buildkitd.sock"
         "--addr" "tcp://0.0.0.0:${toString buildkitPort}"
+        "--config" "/etc/buildkit/buildkitd.toml"
       ];
       Restart = "always";
       RestartSec = 5;
