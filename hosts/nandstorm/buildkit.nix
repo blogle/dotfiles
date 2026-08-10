@@ -8,7 +8,7 @@ let
 
     [worker.containerd]
       enabled = true
-      address = "unix:///run/k3s/containerd/containerd.sock"
+      address = "/run/k3s/containerd/containerd.sock"
       namespace = "k8s.io"
       platforms = ["linux/amd64"]
   '';
