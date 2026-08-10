@@ -73,3 +73,21 @@ The server must load the `br_netfilter` and `overlay` kernel modules,
 enable bridge firewalling and allow IPv4 forwarding so the bundled flannel CNI
 works correctly.  This is handled in `hosts/nandstorm/default.nix` but is worth
 noting when porting the configuration to other machines.
+
+## Deploying NixOS changes
+
+Remote hosts (like `nandstorm`) are deployed via [deploy-rs](https://github.com/serokell/deploy-rs):
+
+```sh
+deploy .#nandstorm
+```
+
+This builds the NixOS closure locally and activates it on the remote host over SSH.
+Use `deploy` instead of `sudo nixos-rebuild switch` for remote machines —
+`nixos-rebuild` requires root on the target and is intended for local use only.
+
+To check what would change without applying:
+
+```sh
+deploy .#nandstorm --dry-activate
+```

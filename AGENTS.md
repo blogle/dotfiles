@@ -12,8 +12,8 @@
 ## Build, Test, and Development Commands
 - `nix flake check`: Run flake and deploy checks.
 - `home-manager switch --flake .#home`: Apply Home Manager config.
-- `sudo nixos-rebuild {build,test,switch} --flake .#<host>`: Build or activate a host.
-- `nix run github:serokell/deploy-rs -- .#nandstorm`: Remote deploy via deploy-rs.
+- `deploy .#<host>` or `nix run github:serokell/deploy-rs -- .#<host>`: Deploy NixOS config to a remote host via deploy-rs (primary method for remote hosts like nandstorm).
+- `sudo nixos-rebuild switch --flake .#<host>`: Local rebuild only (use when physically on the machine, e.g., on modulus).
 - `kubectl diff -k hosts/nandstorm/k8s && kubectl apply -k hosts/nandstorm/k8s`: Review and apply k8s changes.
 
 ## Coding Style & Naming Conventions
