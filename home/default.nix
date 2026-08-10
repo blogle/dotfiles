@@ -75,6 +75,7 @@ in
   home.packages =
   [
     pkgs.autorandr
+    pkgs.box
     pkgs.xplugd
     pkgs.util-linux
     applyKeyboard

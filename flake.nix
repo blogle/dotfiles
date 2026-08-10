@@ -11,6 +11,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    bubblebox = {
+      url = "github:blogle/bubblebox";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -44,6 +49,7 @@
         };
 
         overlays = [
+          inputs.bubblebox.overlays.default
           inputs.nur.overlays.default
           inputs.rust-overlay.overlays.default
           (import ./pkgs)

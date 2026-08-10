@@ -23,6 +23,26 @@
         "type": "github"
       }
     },
+    "bubblebox": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786321928,
+        "narHash": "sha256-nFtSWVIl8k0CVnUk/AdRxChOvOyJPe1kC0aajz/oK+w=",
+        "owner": "blogle",
+        "repo": "bubblebox",
+        "rev": "645b2f5a77d9fb1287a2392a5e3c38680beb2281",
+        "type": "github"
+      },
+      "original": {
+        "owner": "blogle",
+        "repo": "bubblebox",
+        "type": "github"
+      }
+    },
     "darwin": {
       "inputs": {
         "nixpkgs": [
@@ -286,6 +306,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "bubblebox": "bubblebox",
         "deploy-rs": "deploy-rs",
         "hm": "hm",
         "impermanence": "impermanence",
