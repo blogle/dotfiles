@@ -18,7 +18,9 @@ spec:
       enableServiceLinks: false
       containers:
         - name: markdown-vault-mcp
-          image: ghcr.io/blogle/markdown-vault-mcp@sha256:8b221e11d80d4ae47d89c6eb956d7d42828830981d2ef60641b5d1659c606b4f
+          image: ghcr.io/blogle/markdown-vault-mcp:downstream-6f29b2e
+          # Temporary until the fork package grants Actions write access.
+          imagePullPolicy: Never
           ports:
             - name: http
               containerPort: 8000
@@ -61,7 +63,7 @@ spec:
             - name: MARKDOWN_VAULT_MCP_EXCLUDE
               value: .obsidian/**,.trash/**,.git/**
             - name: MARKDOWN_VAULT_MCP_INDEXED_FIELDS
-              value: tags,aliases,type,status,year
+              value: tags,aliases,type,status,year,knowledge_scope,retrieval_tier,turn,lifecycle
             - name: MARKDOWN_VAULT_MCP_DISABLE_APPS_UI
               value: "true"
             - name: MARKDOWN_VAULT_MCP_BUILD_TIMEOUT_S
