@@ -24,8 +24,6 @@ let
 
   python = pkgs.python313;
 
-  rust = pkgs.rust-bin.stable.latest.default;
-
   applyKeyboard = pkgs.writeShellScriptBin "apply-keyboard" ''
     set -eu
     ${pkgs.xorg.xkbcomp}/bin/xkbcomp ${./config/qgmlwy.xkb} "$DISPLAY"
@@ -92,7 +90,7 @@ in
     pkgs.docker-compose
     pkgs.flameshot
     pkgs.ffmpeg-full
-    pkgs.gemini-cli
+    pkgs.gh
     pkgs.git
     pkgs.gnumake
     pkgs.google-chrome
@@ -103,7 +101,6 @@ in
     pkgs.kubectl
     pkgs.kubeseal
     pkgs.m3u-gen-acestream
-    pkgs.ngrok
     pkgs.nmap
     pkgs.opencode
     pkgs.pavucontrol
@@ -119,10 +116,6 @@ in
     pkgs.xdg-utils
     pkgs.zip
     pkgs.unzip
-    pkgs.unityhub
-    pkgs.zoom-us
-    python
-    rust
     st
     vim
   ];

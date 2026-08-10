@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - https://github.com/blogle/opencode-pod-plugin//deploy/base?ref=0c471ef27fe13f7ee6910fe4933b9f0bcb9e3b51
+  - certificate.yaml
+  - storage.yaml
+  - adapter-internal-token-opencode-system.sealed.yaml
+
+configMapGenerator:
+  - name: opencode-platform-config
+    namespace: opencode-system
+    behavior: replace
+    files:
+      - platform.yaml=config/platform.yaml
+  - name: opencode-projects-config
+    namespace: opencode-system
+    behavior: replace
+    files:
+      - projects.yaml=config/projects.yaml
+
+images:
+  - name: ghcr.io/blogle/opencode-central
+    newTag: 0c471ef27fe13f7ee6910fe4933b9f0bcb9e3b51
+  - name: ghcr.io/blogle/opencode-gateway
+    newTag: 0c471ef27fe13f7ee6910fe4933b9f0bcb9e3b51
+
+patches:
+  - target:
+      kind: Deployment
+      name: central
+      namespace: opencode-system
+    patch: |-
+      - op: add
+        path: /spec/template/spec/initContainers/0
+        value:
+          name: state-permissions
+          image: busybox:1.37.0
+          command: [sh, -c, "chown 1000:1000 /state && chmod 0770 /state"]
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, FOWNER]
+          volumeMounts:
+            - name: state
+              mountPath: /state
+  - target:
+      kind: Deployment
+      name: gateway
+      namespace: opencode-system
+    patch: |-
+      - op: add
+        path: /spec/template/spec/initContainers
+        value:
+          - name: state-permissions
+            image: busybox:1.37.0
+            command: [sh, -c, "chown 65532:65532 /state && chmod 0770 /state"]
+            securityContext:
+              runAsNonRoot: false
+              runAsUser: 0
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: [ALL]
+                add: [CHOWN, FOWNER]
+            volumeMounts:
+              - name: state
+                mountPath: /state
+  - target:
+      kind: PersistentVolumeClaim
+      name: central-state
+      namespace: opencode-system
+    patch: |-
+      - op: add
+        path: /spec/storageClassName
+        value: ""
+      - op: add
+        path: /spec/volumeName
+        value: opencode-central-state
+  - target:
+      kind: PersistentVolumeClaim
+      name: gateway-state
+      namespace: opencode-system
+    patch: |-
+      - op: add
+        path: /spec/storageClassName
+        value: ""
+      - op: add
+        path: /spec/volumeName
+        value: opencode-gateway-state

@@ -13,6 +13,7 @@
     ./tailscale.nix
     ./kube.nix
     ./nvidia-k3s.nix
+    ./buildkit.nix
     ];
 
   # Reset the machine to a clean state on boot
@@ -32,6 +33,8 @@
 
   systemd.tmpfiles.rules = [
     "d /persist/knowledge/vaults 0775 1000 1000 -"
+    "d /persist/opencode/central 0770 1000 1000 -"
+    "d /persist/opencode/gateway 0770 65532 65532 -"
   ];
 
   environment.persistence."/persist" = {
