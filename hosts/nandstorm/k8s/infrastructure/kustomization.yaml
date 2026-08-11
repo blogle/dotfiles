@@ -6,5 +6,6 @@ resources:
   - external-dns.yaml
   - metallb
   - nvidia
+  - observability
   - traefik.yaml
   - keel.yaml

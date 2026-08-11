@@ -1,0 +1,269 @@
+---
+# Exportarr instances for the *arr stack. Each Deployment runs a tiny
+# Exportarr sidecar that scrapes its arr's API and exposes Prometheus
+# metrics at :9704; the matching ServiceMonitor lets Prometheus (which is
+# configured with an empty match-all ruleSelector, see
+# infrastructure/observability/kube-prometheus-stack.yaml) pick it up.
+#
+# These exporters + ServiceMonitors live in the `media` namespace next to
+# the apps they observe (per spec): app-specific telemetry intent stays
+# colocated with the app. Shared platform backends stay in `observability`.
+#
+# LOWER-VALUE: this is media-stack low-value telemetry, so the ServiceMonitors
+# scrape at the spec's `lowValueServiceScrapeInterval` (60s).
+#
+# TODO(operator): create the per-app API-key Secrets used below so the
+# exporters can actually authenticate. Example for sonarr:
+#   kubectl -n media create secret generic sonarr-exportarr-secrets \
+#     --from-literal=apikey="$(grep ApiKey /persist/sonarr/config.xml | ...)"
+# Each secretKeyRef is marked `optional: true` so the exporters remain up
+# (but useless until the secret exists) — `kubectl describe deploy` will
+# show the missing ref once it is added.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr-exporter
+  namespace: media
+  labels:
+    app: sonarr-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarr-exporter
+  template:
+    metadata:
+      labels:
+        app: sonarr-exporter
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:v1.6.0
+          imagePullPolicy: IfNotPresent
+          command: ["/exportarr"]
+          args: ["sonarr"]
+          env:
+            - name: INTERFACE
+              value: "0.0.0.0"
+            - name: URL
+              value: http://sonarr.media.svc.cluster.local:8989
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sonarr-exportarr-secrets
+                  key: apikey
+                  optional: true
+            - name: PORT
+              value: "9704"
+          ports:
+            - containerPort: 9704
+              name: metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr-exporter
+  namespace: media
+  labels:
+    app: sonarr-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: sonarr-exporter
+  ports:
+    - name: metrics
+      port: 9704
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sonarr-exporter
+  namespace: media
+  labels:
+    app: sonarr-exporter
+spec:
+  selector:
+    matchLabels:
+      app: sonarr-exporter
+  namespaceSelector:
+    matchNames:
+      - media
+  endpoints:
+    - port: metrics
+      interval: 60s
+      scrapeTimeout: 30s
+      path: /metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr-exporter
+  namespace: media
+  labels:
+    app: radarr-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr-exporter
+  template:
+    metadata:
+      labels:
+        app: radarr-exporter
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:v1.6.0
+          imagePullPolicy: IfNotPresent
+          command: ["/exportarr"]
+          args: ["radarr"]
+          env:
+            - name: INTERFACE
+              value: "0.0.0.0"
+            - name: URL
+              value: http://radarr.media.svc.cluster.local:7878
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: radarr-exportarr-secrets
+                  key: apikey
+                  optional: true
+            - name: PORT
+              value: "9704"
+          ports:
+            - containerPort: 9704
+              name: metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr-exporter
+  namespace: media
+  labels:
+    app: radarr-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: radarr-exporter
+  ports:
+    - name: metrics
+      port: 9704
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: radarr-exporter
+  namespace: media
+  labels:
+    app: radarr-exporter
+spec:
+  selector:
+    matchLabels:
+      app: radarr-exporter
+  namespaceSelector:
+    matchNames:
+      - media
+  endpoints:
+    - port: metrics
+      interval: 60s
+      scrapeTimeout: 30s
+      path: /metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr-exporter
+  namespace: media
+  labels:
+    app: prowlarr-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr-exporter
+  template:
+    metadata:
+      labels:
+        app: prowlarr-exporter
+    spec:
+      containers:
+        - name: exportarr
+          image: ghcr.io/onedr0p/exportarr:v1.6.0
+          imagePullPolicy: IfNotPresent
+          command: ["/exportarr"]
+          args: ["prowlarr"]
+          env:
+            - name: INTERFACE
+              value: "0.0.0.0"
+            - name: URL
+              value: http://prowlarr.media.svc.cluster.local:9696
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: prowlarr-exportarr-secrets
+                  key: apikey
+                  optional: true
+            - name: PORT
+              value: "9704"
+          ports:
+            - containerPort: 9704
+              name: metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr-exporter
+  namespace: media
+  labels:
+    app: prowlarr-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: prowlarr-exporter
+  ports:
+    - name: metrics
+      port: 9704
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prowlarr-exporter
+  namespace: media
+  labels:
+    app: prowlarr-exporter
+spec:
+  selector:
+    matchLabels:
+      app: prowlarr-exporter
+  namespaceSelector:
+    matchNames:
+      - media
+  endpoints:
+    - port: metrics
+      interval: 60s
+      scrapeTimeout: 30s
+      path: /metrics

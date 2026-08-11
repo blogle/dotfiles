@@ -1,0 +1,102 @@
+---
+# Loki: logs backend, single-binary filesystem storage. Deployed in
+# single-binary mode (1 replica) because nandstorm is a single-node k3s
+# cluster; the simple-scalable/distributed modes are pointless here.
+#
+# Chart: grafana/loki
+# Pinned version: 6.55.0 (https://grafana.github.io/helm-charts)
+# Follow-up: verify value keys against the chart CHANGELOG on bump. The v6
+# `loki` chart removed a number of legacy `loki-distributed` keys; the
+# single-binary path above is the post-v6 layout.
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: loki
+  namespace: kube-system
+spec:
+  repo: https://grafana.github.io/helm-charts
+  chart: loki
+  version: 6.55.0
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    deploymentMode: SingleBinary
+
+    loki:
+      commonConfig:
+        replication_factor: 1
+      # Filesystem storage: chunks + index on the Loki PVC. No object store.
+      storage:
+        type: filesystem
+      # Compactor MUST run with retention_enabled=true or logs live forever.
+      compactor:
+        retention_enabled: true
+        delete_request_store: filesystem
+      # Bounded ingestion. The spec mandates explicit ingestion limits.
+      limits_config:
+        retention_period: 168h
+        ingestion_rate_mb: 2
+        ingestion_burst_size_mb: 4
+        per_stream_rate_limit: 1MB
+        per_stream_rate_limit_burst: 5MB
+        max_global_streams_per_user: 5000
+        # Protect against unbounded stream cardinality. Appropriate Loki
+        # labels are listed in docs/observability.md; high-cardinality values
+        # (trace_id, request_id, user_id, ip, ...) MUST stay in structured
+        # log fields, never as labels.
+        reject_old_samples: true
+        reject_old_samples_max_age: 168h
+        max_label_name_length: 1024
+        max_label_value_length: 4096
+        max_label_names_per_series: 30
+      schemaConfig:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: filesystem
+            schema: v13
+            index:
+              prefix: loki_index_
+              period: 24h
+
+    singleBinary:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      persistence:
+        enabled: true
+        storageClassName: local-path
+        size: 20Gi
+        accessModes: ["ReadWriteOnce"]
+
+    # Disable the distributed read/write/backend statefulsets; SingleBinary
+    # mode runs everything in one pod.
+    write:
+      replicas: 0
+    read:
+      replicas: 0
+    backend:
+      replicas: 0
+
+    # Gateway (nginx) fronts Loki on :80 (DNS: loki-gateway.observability).
+    # Grafana's Loki datasource points at this service; alloy-logs pushes
+    # here too. Keeping gateway enabled lets everything talk to a single
+    # upstream and keeps the chunk/index single-binary untouched.
+    gateway:
+      enabled: true
+      service:
+        type: ClusterIP
+
+    # The gateway-service port (80) is what everyone references.
+    service:
+      type: ClusterIP
+
+    sidecar:
+      datasources:
+        enabled: false
+      dashboards:
+        enabled: false

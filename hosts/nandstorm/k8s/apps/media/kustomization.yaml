@@ -14,3 +14,4 @@ resources:
   - teamarr.yaml
   - acestream.yaml
   - m3u-playlists.yaml
+  - exportarr.yaml

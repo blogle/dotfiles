@@ -4,3 +4,4 @@ resources:
   - pocket-id-secrets.sealed.yaml
   - tinyauth.yaml
   - tinyauth-credentials.sealed.yaml
+  - tinyauth-grafana-oidc-v3.sealed.yaml

@@ -1,0 +1,118 @@
+---
+# Probe (Prometheus Operator CRD) definitions for synthetic checks of
+# self-hosted services deployed in this repo. Each Probe scans a target
+# URL through blackbox-exporter at the spec's `lowValueServiceScrapeInterval`
+# cadence (60s) — they're "is it up"-style checks, not high-value
+# infrastructure.
+#
+# All targets are publicly-resolvable TLS hostnames fronted by Traefik + the
+# letsencrypt ClusterIssuer + tinyauth forward-auth. Probe success implies
+# HTTPS availability AND a valid TLS chain (blackbox's http_2xx also exposes
+# `ssl_cert_not_after_seconds` for cert-expiry alerting and dashboards).
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: grafana-public
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  interval: 60s
+  scrapeTimeout: 10s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc.cluster.local:9115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://grafana.thejeffer.net
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: opencode-public
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  interval: 60s
+  scrapeTimeout: 10s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc.cluster.local:9115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://opencode.thejeffer.net
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: sonarr-public
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  interval: 60s
+  scrapeTimeout: 10s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc.cluster.local:9115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://sonarr.thejeffer.net
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: tinyauth-public
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  interval: 60s
+  scrapeTimeout: 10s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc.cluster.local:9115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://auth.thejeffer.net
+---
+# Registry of cert-expiry alerts: the http_2xx module surfaces
+# `probe_ssl_earliest_cert_expiry` so the alert-rules.yaml PrometheusRule
+# can warn before certs lapse. The TLS-validity requirement from the spec
+# is met by Probe success (validating the chain) plus the expiry metric
+# surface — alert logic lives in alert-rules.yaml once a cert-warning rule
+# is added.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: tcp-check-observability-tempo
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  interval: 60s
+  scrapeTimeout: 5s
+  module: tcp_connect
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.observability.svc.cluster.local:9115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - tempo.observability.svc.cluster.local:3200
+        - loki-gateway.observability.svc.cluster.local:80
+        - alloy-otel.observability.svc.cluster.local:4317

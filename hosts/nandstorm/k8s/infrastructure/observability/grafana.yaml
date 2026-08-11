@@ -1,0 +1,165 @@
+---
+# Single-pane Grafana UI. Deployed separately from kube-prometheus-stack so
+# datasources, ingress, and tinyauth forward-auth can be managed in one place
+# (the spec requires that bundle-Grafana be disabled when Grafana is installed
+# outside the kube-prometheus-stack chart; see kube-prometheus-stack.yaml).
+#
+# Chart: grafana/grafana
+# Pinned version: 10.5.15 (https://grafana.github.io/helm-charts)
+# Follow-up: verify value keys against the chart CHANGELOG on bump.
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: grafana
+  namespace: kube-system
+spec:
+  repo: https://grafana.github.io/helm-charts
+  chart: grafana
+  version: 10.5.15
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    replicas: 1
+    envFromSecret: grafana-oidc-v3
+    env:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Tinyauth
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "true"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email groups
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: https://auth.thejeffer.net/authorize
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: https://auth.thejeffer.net/api/oidc/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: https://auth.thejeffer.net/api/oidc/userinfo
+
+    # Public exposure follows the repo convention used by sonarr/tinyauth/etc.:
+    # Traefik `websecure` entrypoint + the letsencrypt ClusterIssuer + the SSO
+    # forward-auth middlewares. Grafana is therefore NOT exposed publicly
+    # without authentication even though its internal admin is left to the
+    # chart-default random password (retrieve with:
+    #   kubectl -n observability get secret grafana -o jsonpath='{.data.admin-password}' | base64 -d
+    # ). Anonymous access is disabled so dashboards remain SSO-gated.
+    adminUser: admin
+    # adminPassword left unset on purpose: chart generates a random initial
+    # password and stores it in the `grafana` Secret. Rotate via the secret or
+    # the web UI after first login through the SSO gate.
+    admin:
+      existingSecret: ""
+
+    grafana.ini:
+      server:
+        root_url: https://grafana.thejeffer.net/
+        enable_gzip: true
+      log:
+        mode: console
+      analytics:
+        reporting_enabled: false
+        check_for_updates: false
+        check_for_plugin_updates: false
+
+    service:
+      type: ClusterIP
+      port: 80
+
+    persistence:
+      enabled: true
+      type: pvc
+      storageClassName: local-path
+      accessModes: ["ReadWriteOnce"]
+      size: 2Gi
+      finalizers:
+        - kubernetes.io/pvc-protection
+
+    # The existing PVC may contain directories created by an older Grafana
+    # process that the chart's root init container cannot chown. Grafana runs
+    # correctly against the existing volume without this init step.
+    initChownData:
+      enabled: false
+
+    # Datasources are provisioned declaratively. The chart rolls these into a
+    # ConfigMap Grafana reads on startup; later edits must bump the
+    # `datasources` block here, not the UI.
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            access: proxy
+            url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+            isDefault: true
+            jsonData:
+              timeInterval: 30s
+          - name: Loki
+            type: loki
+            access: proxy
+            url: http://loki-gateway.observability.svc.cluster.local
+            jsonData:
+              maxLines: 1000
+          - name: Tempo
+            type: tempo
+            access: proxy
+            url: http://tempo.observability.svc.cluster.local:3200
+            jsonData:
+              tracesToLogsV2:
+                datasourceUid: loki
+                filterByTraceID: true
+                tags: ["namespace", "app", "container"]
+
+    # The dashboard sidecar imports any ConfigMap labelled
+    # `grafana_dashboard=1` from ALL namespaces. crossNamespace search lets
+    # app namespaces ship their own dashboards next to their workloads, and
+    # picks up the bundled k8s dashboards shipped in dashboards.yaml.
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: sidecar
+            orgId: 1
+            folder: ""
+            type: file
+            disableDeletion: false
+            updateIntervalSeconds: 30
+            allowUiUpdates: true
+            options:
+              path: /var/lib/grafana/dashboards/sidecar
+
+    sidecar:
+      dashboards:
+        enabled: true
+        searchNamespace: ALL
+        label: grafana_dashboard
+        labelValue: "1"
+        folder: /var/lib/grafana/dashboards/sidecar
+        provider:
+          name: sidecar
+          orgid: 1
+          folder: ""
+          type: file
+          disableDelete: false
+          allowUiUpdates: true
+          updateIntervalSeconds: 30
+
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      path: /
+      pathType: Prefix
+      hosts:
+        - grafana.thejeffer.net
+      tls:
+        - secretName: grafana-tls
+          hosts:
+            - grafana.thejeffer.net
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 512Mi

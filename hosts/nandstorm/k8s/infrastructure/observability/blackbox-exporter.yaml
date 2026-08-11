@@ -1,0 +1,85 @@
+---
+# blackbox-exporter: synthetic HTTP/TCP checks of self-hosted services.
+#
+# Chart: prometheus-community/blackbox-exporter
+# Pinned version: 11.17.2
+# Follow-up: VERIFY chart value keys on bump.
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: blackbox-exporter
+  namespace: kube-system
+spec:
+  repo: https://prometheus-community.github.io/helm-charts
+  chart: prometheus-blackbox-exporter
+  version: 11.17.2
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    kind: Deployment
+
+    service:
+      type: ClusterIP
+
+    # We define Probes (not ServiceMonitors) for the synthetic checks, so the
+    # chart's own self-monitor ServiceMonitor is left disabled to avoid
+    # creating duplicate/blank monitors.
+    serviceMonitor:
+      enabled: false
+
+    # Default modules cover http_2xx, http_post_2xx, tcp_connect, icmp, etc.
+    # Keep defaults; Probes reference module names directly.
+    config:
+      modules:
+        http_2xx:
+          prober: http
+          timeout: 10s
+          http:
+            valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+            valid_status_codes: []
+            follow_redirects: true
+            preferred_ip_protocol: ip4
+        http_2xx_no_tls_verify:
+          # For internal ClusterIP-only services that use self-signed or
+          # cluster-issuer-pending certs.
+          prober: http
+          timeout: 10s
+          http:
+            follow_redirects: true
+            fail_if_ssl: false
+            preferred_ip_protocol: ip4
+        tcp_connect:
+          prober: tcp
+          timeout: 5s
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
+---
+# Self-scrape ServiceMonitor so Prometheus pulls blackbox exporter metrics.
+# Demonstrates the ServiceMonitor CRD from Prometheus Operator with a
+# non-core/non-platform-collector app and gives operator visibility into the
+# exporter's own health.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blackbox-exporter
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-blackbox-exporter
+  namespaceSelector:
+    matchNames:
+      - observability
+  endpoints:
+    - port: http
+      interval: 30s
+      scrapeTimeout: 10s
+      path: /metrics

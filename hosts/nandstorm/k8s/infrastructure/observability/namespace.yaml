@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    # Lets Prometheus Operator discover monitors/probes deployed in this namespace.
+    # kube-prometheus-stack is configured with empty (match-all) selectors so
+    # cross-namespace discovery does not depend on this label, but it remains
+    # a useful convention for future namespace-scoped rollouts.
+    pod-security.kubernetes.io/enforce: privileged
+---
+# Bounded storage budget for the entire observability platform. The sum of
+# planned PVCs (prometheus 16Gi + loki 20Gi + tempo 10Gi + grafana 2Gi +
+# alertmanager 1Gi = 49Gi) sits under this 64Gi cap, leaving ~15Gi headroom
+# for the WAL, compaction, index, and filesystem overhead quoted in the spec.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: observability-storage-budget
+  namespace: observability
+spec:
+  hard:
+    requests.storage: 64Gi
+    persistentvolumeclaims: "8"

@@ -1,0 +1,316 @@
+---
+# Grafana Alloy is the only collector layer for the stack. Promtail/Grafana
+# Agent are intentionally NOT deployed for new collection paths per the spec.
+#
+# Two `alloy` chart releases from the same grafana helm repo:
+#   * alloy-logs  : DaemonSet, reads /var/log/pods on every node, enriches
+#                   with k8s metadata, drops low-value streams, pushes Loki.
+#   * alloy-otel  : Deployment, exposes OTLP gRPC 4317 + HTTP 4318 inside the
+#                   cluster, applies tail sampling, exports traces to Tempo
+#                   and logs to Loki. Apps target:
+#                     http://alloy-otel.observability.svc.cluster.local:4317
+#                     http://alloy-otel.observability.svc.cluster.local:4318
+#
+# Chart: grafana/alloy
+# Pinned version: 0.12.0 (https://grafana.github.io/helm-charts)
+# Follow-up: VERIFY the `alloy` chart value keys (`controller.type`,
+# `alloy.configMap.content`, `service.ports`) on bump; the chart has changed
+# mount-shape between minor versions. The river pipelines below are written
+# against current Alloy 1.x docs; treat them as canonical intent that helm
+# cannot validate, and run `alloy fmt`/`alloy run` in a throwaway pod post-install.
+
+# ---------------------------------------------------------------------------
+# Release 1: alloy-logs  (DaemonSet)
+# ---------------------------------------------------------------------------
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: alloy-logs
+  namespace: kube-system
+spec:
+  repo: https://grafana.github.io/helm-charts
+  chart: alloy
+  version: 0.12.0
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    controller:
+      type: daemonset
+
+    alloy:
+      extraEnv:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+      mounts:
+        # Required for container-log collection. k3s writes CRI-formatted logs
+        # (not docker JSON) under /var/log/pods. Also bind the containerd
+        # container-log shim some hosts use.
+        varlog: true
+        dockercontainers: false
+        containerlog: true
+      configMap:
+        content: |
+          logging {
+            level = "info"
+            format = "logfmt"
+          }
+
+          // ---- Discover container log files -------------------------------
+          local.file_match "pods" {
+            path_targets = [{
+              __path__    = "/var/log/pods/*/*/*.log",
+              __address__ = "127.0.0.1",
+              cluster     = "nandstorm",
+            }]
+          }
+
+          // ---- Read the files, ship to processing --------------------------
+          loki.source.file "pod_logs" {
+            targets       = local.file_match.pods.targets
+            forward_to     = [loki.process.k8s_metadata.receiver]
+            tail_from_end  = true
+          }
+
+          // ---- Enrich: CRI parse + k8s metadata + low-cardinality labels ---
+          loki.process "k8s_metadata" {
+            forward_to = [loki.process.drop_noise.receiver]
+
+            // CRI log format (k3s/containerd): ts stream flags msg
+            stage.cri {}
+
+            // Derive high-level labels from the /var/log/pods path. Only the
+            // spec-approved low-cardinality labels become Loki labels:
+            //   cluster, namespace, app, container, level
+            // pod name stays a structured field, NOT a Loki label.
+            stage.regex {
+              source     = "__path__"
+              expression = "/var/log/pods/(?P<namespace>[^/]+)/(?P<pod>[^/]+)/(?P<container>[^/]+)/(?P<run>\\d+).log"
+            }
+            stage.labels {
+              values = {
+                namespace  = "",
+                container  = "",
+                app        = "container",
+              }
+            }
+            stage.labels {
+              values = {
+                level = "level",
+                cluster = "cluster",
+              }
+            }
+            stage.structured_metadata {
+              values = {
+                pod = "pod",
+              }
+            }
+          }
+
+          // ---- Drop low-value streams (spec drop candidates) --------------
+          loki.process "drop_noise" {
+            forward_to = [loki.write.loki.receiver]
+
+            // Readiness/liveness probe noise from kubelet-probe traffic.
+            stage.drop {
+              expression = "(?i)(GET|HEAD) /(healthz|readyz|health|ready|livez)(/|\\?|$)"
+            }
+            // Routine health-check request lines on app servers.
+            stage.drop {
+              expression = "(?i)(GET|HEAD) /(metrics|ping)(/|\\?|$)"
+            }
+            // Excessively long single log lines: keep first 16KiB only.
+            stage.drop {
+              expression = "(?s).{1000,}"
+              drop_counter_reason = "long_line"
+            }
+            // Drop debug logs from the observability stack talking to itself
+            // (these recurse into Loki otherwise).
+            stage.match {
+              selector = "{namespace=\"observability\"} |~ \"(?i)-(DEBUG|TRACE)-\""
+              action   = "drop"
+            }
+          }
+
+          // ---- Ship to Loki via the gateway service -----------------------
+          loki.write "loki" {
+            endpoint {
+              url = "http://loki-gateway.observability.svc.cluster.local/loki/api/v1/push"
+            }
+          }
+
+    # DaemonSet pods run privileged-on-varlog-readonly but with dropped caps.
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
+
+---
+# ---------------------------------------------------------------------------
+# Release 2: alloy-otel  (Deployment, OTLP gateway)
+# ---------------------------------------------------------------------------
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: alloy-otel
+  namespace: kube-system
+spec:
+  repo: https://grafana.github.io/helm-charts
+  chart: alloy
+  version: 0.12.0
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    controller:
+      type: deployment
+      replicas: 1
+
+    # Expose OTLP internally so apps shoot telemetry at a stable in-cluster
+    # address. Nothing here is publicly exposed (spec: ClusterIP only).
+    service:
+      enabled: true
+      type: ClusterIP
+      ports:
+        - name: otlp-grpc
+          port: 4317
+          targetPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          port: 4318
+          targetPort: 4318
+          protocol: TCP
+        - name: alloy-metrics
+          port: 12345
+          targetPort: 12345
+          protocol: TCP
+
+    alloy:
+      extraEnv:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+      configMap:
+        content: |
+          logging {
+            level  = "info"
+            format = "logfmt"
+          }
+
+          // ---- Receive OTLP from in-cluster apps --------------------------
+          otelcol.receiver.otlp "default" {
+            grpc { endpoint = "0.0.0.0:4317" }
+            http { endpoint = "0.0.0.0:4318" }
+
+            output {
+              // Metrics are intentionally NOT forwarded: the spec keeps
+              // in-cluster metrics Prometheus-scraped. Apps that emit OTLP
+              // metrics via this gateway will see them dropped at the
+              // receiver (NOT silently elsewhere); the AlloyDroppedTelemetry
+              // alert will not fire for this drop because it is intentional.
+              logs   = [otelcol.processor.memory_limiter.default.input]
+              traces = [otelcol.processor.memory_limiter.default.input]
+            }
+          }
+
+          // ---- Memory limiting before any batching/export ------------------
+          otelcol.processor.memory_limiter "default" {
+            check_interval   = "1s"
+            limit            = "512MiB"
+            spike_limit      = "128MiB"
+            output {
+              logs   = [otelcol.processor.batch.default.input]
+              traces = [otelcol.processor.tail_sampling.default.input]
+            }
+          }
+
+          // ---- Tail sampling (spec sampling policy) -----------------------
+          // First implementation uses probabilistic sampling for healthy traces
+          // plus hard keep-rules for error traces and slow traces, and drops
+          // health-check traces sized above Tempo's per-trace cap. Tail sampling
+          // operates on completed traces collected within a 30s window.
+          //
+          // FOLLOW-UP: when the cluster is busier, extend tail sampling to keep
+          // 100% of error traces via a `status_code` policy and 100% of slow
+          // traces via a `latency` policy at higher resolution. Keep 5-10% of
+          // healthy traces. Spec acknowledges the first cut may be probabilistic.
+          otelcol.processor.tail_sampling "default" {
+            decision_wait   = "30s"
+            num_traces      = 50000
+            expected_new_traces_per_sec = 10
+
+            policy {
+              name = "drop-health-checks"
+              type = "string_attribute"
+              string_attribute {
+                key = "http.route"
+                values = ["/healthz", "/readyz", "/live", "/ready", "/ping", "/metrics"]
+                enabled_regex_matching = true
+                invert_match = true
+              }
+            }
+
+            policy {
+              name = "sample-healthy-traces"
+              type = "probabilistic"
+              probabilistic {
+                sampling_percentage = 8
+              }
+            }
+
+            output {
+              traces = [otelcol.processor.batch.default.input]
+            }
+          }
+
+          // ---- Batch before export -----------------------------------------
+          // A single batch processor accepts metrics/logs/traces on its
+          // per-signal receivers (`.metrics.receiver`, `.logs.receiver`,
+          // `.traces.receiver`) and routes by signal in its output block.
+          otelcol.processor.batch "default" {
+            timeout         = "5s"
+            send_batch_size = 1024
+            output {
+              // No metrics exporter: spec keeps in-cluster metrics
+              // Prometheus-scraped. Traces/etc can pass through memory_limiter
+              // to here, but metrics have nowhere to go and are dropped
+              // deliberately at the collector (NOT silently: the
+              // `AlloyDroppedTelemetry` alert covers refused_spans/refused_
+              // metric points).
+              traces = [otelcol.exporter.otlp.tempo.input]
+              logs   = [otelcol.exporter.otlphttp.loki.input]
+            }
+          }
+
+          // ---- Exporters ---------------------------------------------------
+          // Traces -> Tempo via OTLP gRPC on Tempo's own 4317.
+          otelcol.exporter.otlp "tempo" {
+            client {
+              endpoint = "tempo.observability.svc.cluster.local:4317"
+              tls {
+                insecure             = true
+                insecure_skip_verify = true
+              }
+            }
+          }
+
+          // Logs -> Loki via OTLP/HTTP on its /otlp endpoint (Loki 3.x ships
+          // an OTLP-native ingestion path). Equivalent: ship to
+          // http://loki-gateway.observability.svc.cluster.local/otlp/v1/logs
+          otelcol.exporter.otlphttp "loki" {
+            client {
+              endpoint = "http://loki-gateway.observability.svc.cluster.local"
+              tls {
+                insecure             = true
+                insecure_skip_verify = true
+              }
+            }
+            logs_endpoint = "/otlp/v1/logs"
+          }
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi

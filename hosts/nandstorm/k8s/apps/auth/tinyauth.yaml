@@ -72,6 +72,22 @@ spec:
           value: muxarr.thejeffer.net
         - name: TINYAUTH_APPS_MUXARR_OAUTH_GROUPS
           value: media-users
+        - name: TINYAUTH_APPS_GRAFANA_CONFIG_DOMAIN
+          value: grafana.thejeffer.net
+        - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: tinyauth-grafana-oidc-v3
+              key: client-id
+        - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: tinyauth-grafana-oidc-v3
+              key: client-secret
+        - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_TRUSTEDREDIRECTURIS
+          value: https://grafana.thejeffer.net/login/generic_oauth
+        - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_NAME
+          value: Grafana
         volumeMounts:
         - name: data
           mountPath: /data

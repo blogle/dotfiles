@@ -1,0 +1,174 @@
+---
+# kube-prometheus-stack installs Prometheus Operator + Prometheus + Alertmanager
+# + kube-state-metrics + node-exporter + the default Kubernetes dashboards/rules.
+# Deployed via the rancher HelmChart CRD, mirroring the existing cert-manager /
+# external-dns / keel convention. Prometheus Operator CRDs (ServiceMonitor,
+# PodMonitor, PrometheusRule, Probe) are installed by this chart and underpin
+# every other observability resource in this repo.
+#
+# Chart: prometheus-community/kube-prometheus-stack
+# Pinned version: 88.2.0 (see https://github.com/prometheus-community/helm-charts)
+# Operator follow-up: bump the pin and verify the value keys below against the
+# chart CHANGELOG; kube-prometheus-stack renames values occasionally.
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: kube-prometheus-stack
+  namespace: kube-system
+spec:
+  repo: https://prometheus-community.github.io/helm-charts
+  chart: kube-prometheus-stack
+  version: 88.2.0
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    # Grafana is deployed separately (see grafana.yaml) so that datasources,
+    # ingress, and tinyauth SSO are managed in one place.
+    grafana:
+      enabled: false
+      forceDeployDatasources: false
+
+    # RBAC: Kubernetes 1.25+ removed PodSecurityPolicy; k3s disables it.
+    global:
+      rbac:
+        pspEnabled: false
+
+    prometheusOperator:
+      installCRDs: true
+
+    defaultRules:
+      create: true
+      rules:
+        alertmanager: true
+        etcd: false              # k3s hides etcd from the API server
+        configReloaders: true
+        general: true
+        k8s: true
+        kubeApiserverAvailability: true
+        kubeApiserverBurnrate: true
+        kubeApiserverSlos: true
+        kubePrometheusNodeRecording: true
+        kubernetesApps: true
+        kubernetesResources: true
+        kubernetesStorage: true
+        kubernetesSystem: true
+        kubeSchedulerAlerting: false   # not exposed via k3s svc by default
+        kubeSchedulerRecording: false
+        network: true
+        node: true
+        nodeExporterAlerting: true
+        nodeExporterRecording: true
+        prometheus: true
+        prometheusNodeWarning: true
+        windows: false
+
+    alertmanager:
+      enabled: true
+      alertmanagerSpec:
+        # 1Gi alertmanager state. Bounded under the observability ResourceQuota.
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 1Gi
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+
+    # Prometheus CRDs govern monitor discovery. Empty (match-all) selectors let
+    # a single Prometheus evaluate ServiceMonitor/PodMonitor/Probe/PrometheusRule
+    # objects from any namespace, so app-specific telemetry intent can stay
+    # next to the apps it observes (e.g. apps/media/exportarr.yaml).
+    prometheus:
+      prometheusSpec:
+        scrapeInterval: 30s
+        evaluationInterval: 30s
+        retention: 10d
+        retentionSize: 12GiB
+        # 16Gi PVC; 12GiB size-based retention leaves ~4Gi for WAL/compaction.
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 16Gi
+        resources:
+          requests:
+            cpu: 250m
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+        # Cross-namespace monitor discovery. Each *SelectorNilUsesHelmValues
+        # defaults to true (matches the labels Helm applied to its own monitors),
+        # which would hide app-deployed monitors. Set them to false and supply
+        # empty selectors so every monitor in the cluster is picked up.
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        probeSelectorNilUsesHelmValues: false
+        serviceMonitorSelector: {}
+        podMonitorSelector: {}
+        ruleSelector: {}
+        probeSelector: {}
+        # Discover monitor objects from every namespace, not only the
+        # Prometheus namespace. This is what makes media/app ServiceMonitors
+        # work while remaining colocated with their workloads.
+        serviceMonitorNamespaceSelector: {}
+        podMonitorNamespaceSelector: {}
+        ruleNamespaceSelector: {}
+        probeNamespaceSelector: {}
+        # Keep kubelet/kube-state-metrics at the 15s "critical" cadence; the
+        # 30s default above is the floor for everything else, and low-value
+        # app scrapes bump themselves to 60s in their own ServiceMonitors.
+        enableAdminAPI: false
+
+    kube-state-metrics:
+      enabled: true
+      # 15s cadence on kube-state-metrics matches the criticalInfra interval.
+      prometheusScrape:
+        enabled: true
+      selfMonitor:
+        enabled: true
+      serviceMonitor:
+        interval: 15s
+        scrapeTimeout: 15s
+
+    prometheus-node-exporter:
+      enabled: true
+      hostRootFsMount:
+        enabled: true
+      serviceMonitor:
+        interval: 15s
+        scrapeTimeout: 15s
+
+    # Critical-infrastructure kubelet scraping: 15s cadence.
+    kubelet:
+      enabled: true
+      serviceMonitor:
+        interval: 15s
+        cAdvisor: true
+        probes: true
+
+    # k3s does not surface kubeController/kubeScheduler as in-cluster services;
+    # leave these on default and let them simply fail to scrape (they show up
+    # in the alert-rules.yaml Prometheus target-down rule for transparency).
+    kubeControllerManager:
+      enabled: true
+      serviceMonitor:
+        interval: 15s
+    kubeScheduler:
+      enabled: false
+    kubeProxy:
+      enabled: false
+
+    # core-dns scraping (k3s uses CoreDNS).
+    kubeStateMetrics:
+      enabled: true

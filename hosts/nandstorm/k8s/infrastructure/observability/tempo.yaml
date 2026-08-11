@@ -1,0 +1,91 @@
+---
+# Tempo: traces backend, single-node filesystem storage. nandstorm is a
+# single-node cluster so the distributed `tempo-distributed` chart is
+# unnecessary; the monolithic `tempo` chart is fine here.
+#
+# Chart: grafana/tempo
+# Pinned version: 1.24.4 (https://grafana.github.io/helm-charts)
+# Follow-up: the `tempo` chart has been the deprecated-fast-track chart for a
+# while; if you migrate to `tempo-distributed` keep this bounded-cache policy
+# (72h, 10Gi) but reshape the value keys. The ingestion knobs below map to the
+# names used by the spec and to Tempo's `limits`/`distributor` config blocks;
+# VERIFY each key against the chart README once on-cluster.
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: tempo
+  namespace: kube-system
+spec:
+  repo: https://grafana.github.io/helm-charts
+  chart: tempo
+  version: 1.24.4
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    # Tempo is a bounded trace CACHE, not long-term storage. 72h retention,
+    # 10Gi PVC, per-trace/max-rate caps — see spec. Applications push traces
+    # to the Alloy OTLP gateway (alloy-otel.observability), NOT directly here.
+    tempo:
+      retention: 72h
+      server:
+        http_listen_port: 3200
+        log_level: warn
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+      ingester:
+        lifecycler:
+          ring:
+            kvstore:
+              store: inmemory
+            replication_factor: 1
+          heartbeat_period: 5s
+        trace_idle_period: 1m
+        max_block_bytes: 1048576
+        max_block_duration: 5m
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /var/tempo/traces
+          wal:
+            path: /var/tempo/wal
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      readinessProbe:
+        initialDelaySeconds: 90
+        periodSeconds: 10
+        failureThreshold: 12
+      livenessProbe:
+        initialDelaySeconds: 120
+        periodSeconds: 10
+        failureThreshold: 6
+
+    persistence:
+      enabled: true
+      storageClassName: local-path
+      accessModes: ["ReadWriteOnce"]
+      size: 10Gi
+
+    service:
+      type: ClusterIP
+
+    # Tempo is never exposed publicly; only Cluster-internal. The OTLP
+    # endpoints (4317/4318) are reached by alloy-otel. The Query/UI port 3200
+    # is reached by Grafana's Tempo datasource and any admin-side kubectl port-forward.
+    # The `tempo` chart already ports grafana-friendly 3100 + 4317 + 4318 in the
+    # `tempo` Service; nothing additional needs configuring.
+
+    # Disable admin API and multi-tenant mode; single-tenant local back end only.
+    admin:
+      enabled: false
+    gateway:
+      enabled: false

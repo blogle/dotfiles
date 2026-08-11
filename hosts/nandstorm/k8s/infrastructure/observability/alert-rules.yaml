@@ -1,0 +1,177 @@
+---
+# Custom alert rules for the observability platform. Deployed as a
+# PrometheusRule so Prometheus Operator evaluates it alongside the
+# kube-prometheus-stack default rules (which already cover node/CPU/disk
+# basics). Prometheus is configured with an empty (match-all) ruleSelector,
+# so this rule in any namespace is picked up; keeping it in `observability`
+# puts platform-self-health where the platform lives.
+#
+# Notification receiver: Alertmanager is deployed with no notification channel
+# wired yet. Alerts are queryable via the Alertmanager UI and Grafana; until a
+# receiver (Discord/Slack/SMTP) is added in alertmanagerSpec the only output
+# is the Alertmanager + Grafana alert panels. See docs/observability.md.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability-alerts
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: observability
+spec:
+  groups:
+    - name: observability.storage
+      interval: 30s
+      rules:
+        - alert: ObservabilityPvcUsageWarning
+          expr: |
+            (kubelet_volume_stats_used_bytes{namespace="observability"}
+              / kubelet_volume_stats_capacity_bytes{namespace="observability"}) > 0.70
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Observability PVC {{ $labels.persistentvolumeclaim }} above 70%"
+            description: "PVC {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is above 70% used for >15m."
+
+        - alert: ObservabilityPvcUsageCritical
+          expr: |
+            (kubelet_volume_stats_used_bytes{namespace="observability"}
+              / kubelet_volume_stats_capacity_bytes{namespace="observability"}) > 0.85
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Observability PVC {{ $labels.persistentvolumeclaim }} above 85%"
+            description: "PVC {{ $labels.persistentvolumeclaim }} is above 85% used; retention/compaction may already be too loose."
+
+        - alert: NodeFilesystemPressure
+          expr: |
+            (node_filesystem_avail_bytes{fstype!~"tmpfs|nsfs|overlay", mountpoint!~"/run.*|/var/lib/(docker|kubelet)/.*"}
+              / node_filesystem_size_bytes{fstype!~"tmpfs|nsfs|overlay", mountpoint!~"/run.*|/var/lib/(docker|kubelet)/.*"}) < 0.10
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} filesystem {{ $labels.mountpoint }} nearly full"
+            description: "Less than 10% free on {{ $labels.mountpoint }} of {{ $labels.instance }}."
+
+    - name: observability.prometheus
+      interval: 30s
+      rules:
+        - alert: PrometheusTargetDown
+          expr: up == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Prometheus target {{ $labels.job }} down"
+            description: "Target {{ $labels.instance }} (job={{ $labels.job }}) has been unreachable for 5m."
+
+        - alert: PrometheusTargetDownCritical
+          expr: |
+            up{job=~"kubelet|node-exporter|kube-state-metrics|prometheus"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critical Prometheus target {{ $labels.job }} down"
+            description: "Core scrape target {{ $labels.instance }} is down; observability fidelity is degraded."
+
+        - alert: PrometheusTsdbStoragePressure
+          expr: prometheus_tsdb_head_series > 1000000
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Prometheus TSDB series count very high"
+            description: "Prometheus {{ $labels.instance }} head series above 1M; check for high-cardinality labels or scrape explosion."
+
+        - alert: PrometheusTsdbIngestionStuck
+          expr: rate(prometheus_tsdb_reloads_total[10m]) > 0 and on(instance) increase(prometheus_tsdb_reloads_failures_total[10m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Prometheus TSDB reload failures"
+            description: "Prometheus {{ $labels.instance }} is failing TSDB reloads."
+
+    - name: observability.loki
+      interval: 30s
+      rules:
+        - alert: LokiIngestionRejected
+          expr: rate(loki_discarded_samples_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Loki discarding samples (rate-limit/oversized)"
+            description: "Loki {{ $labels.pod }} is discarding samples; raise limits or reduce stream cardinality."
+
+        - alert: LokiRequestRateLimited
+          expr: |
+            sum(rate(loki_request_duration_seconds_count{status_code="429"}[5m])) by (pod) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Loki returning 429 (Too Many Requests)"
+            description: "Loki {{ $labels.pod }} is returning 429s; tenants are hitting ingestion rate limits."
+
+    - name: observability.tempo
+      interval: 30s
+      rules:
+        - alert: TempoDiscardedSpans
+          expr: rate(tempo_discarded_spans_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tempo discarding spans"
+            description: "Tempo {{ $labels.pod }} is discarding spans (reason={{ $labels.reason }}); traces are exceeding limits or rate."
+
+    - name: observability.collector
+      interval: 30s
+      rules:
+        - alert: AlloyDroppedTelemetry
+          expr: |
+            rate(otelcol_exporter_send_failed_spans[5m]) > 0
+            or rate(otelcol_processor_refused_spans[5m]) > 0
+            or rate(otelcol_exporter_send_failed_metric_points[5m]) > 0
+            or rate(otelcol_exporter_enqueue_failed_log_records[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Alloy dropping telemetry (exporter failures / refusals)"
+            description: "Alloy {{ $labels.pod }} is dropping telemetry; check downstream backends (Loki/Tempo) and limits."
+
+        - alert: AlloyCollectorDown
+          expr: up{job=~".*alloy.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Alloy collector {{ $labels.instance }} down"
+            description: "Alloy instance {{ $labels.instance }} is unreachable; logs/traces/metrics routing is interrupted."
+
+    - name: observability.kubernetes
+      interval: 30s
+      rules:
+        - alert: KubernetesNodeNotReady
+          expr: kube_node_status_condition{condition="Ready", status!="true"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} NotReady"
+            description: "Node {{ $labels.node }} has been NotReady for 5m."
+
+        - alert: PodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace=~"observability|media|opencode-system|knowledge|auth"}[1h]) > 5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crash-looping"
+            description: "Container {{ $labels.container }} restarted >5 times in the last hour."

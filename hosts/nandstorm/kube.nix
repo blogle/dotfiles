@@ -10,6 +10,15 @@
       "--disable-network-policy"
       "--write-kubeconfig-mode=644"
       "--flannel-iface=eno1"
+      # Node-local container-log rotation. Caps each container's logs at
+      # ~15MiB (5MiB max file * 3 files) so a chatty pod cannot fill the
+      # node filesystem before Loki collects them. These knob names mirror
+      # the kubelet flags `--container-log-max-size` / `--container-log-max-files`.
+      # See docs/observability.md "Disk safety and retention".
+      # Follow-up: k3s `--kubelet-arg` forwards these to the kubelet; a k3s
+      # restart is required to pick them up (`systemctl restart k3s`).
+      "--kubelet-arg=container-log-max-size=5Mi"
+      "--kubelet-arg=container-log-max-files=3"
     ];
   };
 
