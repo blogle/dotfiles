@@ -51,11 +51,13 @@ spec:
             - name: MARKDOWN_VAULT_MCP_KV_STORE_URL
               value: file:///data/state/kv
             - name: MARKDOWN_VAULT_MCP_EMBEDDING_PROVIDER
-              value: fastembed
-            - name: MARKDOWN_VAULT_MCP_FASTEMBED_MODEL
-              value: BAAI/bge-small-en-v1.5
-            - name: MARKDOWN_VAULT_MCP_FASTEMBED_CACHE_DIR
-              value: /data/state/fastembed
+              value: ollama
+            - name: OLLAMA_HOST
+              value: http://ollama.ai.svc.cluster.local:11434
+            - name: MARKDOWN_VAULT_MCP_OLLAMA_MODEL
+              value: qwen3-embedding:0.6b
+            - name: MARKDOWN_VAULT_MCP_OLLAMA_CPU_ONLY
+              value: "false"
             - name: MARKDOWN_VAULT_MCP_FILE_WATCHER
               value: "true"
             - name: MARKDOWN_VAULT_MCP_FILE_WATCHER_DEBOUNCE_S
@@ -67,7 +69,7 @@ spec:
             - name: MARKDOWN_VAULT_MCP_DISABLE_APPS_UI
               value: "true"
             - name: MARKDOWN_VAULT_MCP_BUILD_TIMEOUT_S
-              value: "300"
+              value: "14400"
             - name: FASTMCP_ENABLE_RICH_LOGGING
               value: "false"
           resources:

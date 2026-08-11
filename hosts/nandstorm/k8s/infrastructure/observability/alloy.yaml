@@ -63,6 +63,7 @@ spec:
               __path__    = "/var/log/pods/*/*/*.log",
               __address__ = "127.0.0.1",
               cluster     = "nandstorm",
+              node        = "nandstorm",
             }]
           }
 
@@ -82,15 +83,15 @@ spec:
 
             // Derive high-level labels from the /var/log/pods path. Only the
             // spec-approved low-cardinality labels become Loki labels:
-            //   cluster, namespace, app, container, level
-            // pod name stays a structured field, NOT a Loki label.
+            //   cluster, namespace, pod, node, app, container, level
             stage.regex {
-              source     = "__path__"
-              expression = "/var/log/pods/(?P<namespace>[^/]+)/(?P<pod>[^/]+)/(?P<container>[^/]+)/(?P<run>\\d+).log"
+              source     = "filename"
+              expression = "/var/log/pods/(?P<namespace>[^_]+)_(?P<pod>[^_]+)_(?P<pod_uid>[0-9a-f-]+)/(?P<container>[^/]+)/(?P<run>\\d+)\\.log"
             }
             stage.labels {
               values = {
                 namespace  = "",
+                pod        = "",
                 container  = "",
                 app        = "container",
               }
@@ -99,11 +100,7 @@ spec:
               values = {
                 level = "level",
                 cluster = "cluster",
-              }
-            }
-            stage.structured_metadata {
-              values = {
-                pod = "pod",
+                node = "node",
               }
             }
           }

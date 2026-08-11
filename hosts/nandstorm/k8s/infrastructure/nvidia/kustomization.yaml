@@ -1,3 +1,4 @@
 resources:
   - nvidia-device-plugin.yaml
   - gpu-smoke-test.yaml
+  - dcgm-exporter.yaml

@@ -122,6 +122,10 @@ up. The Alloy logs DaemonSet tails from `/var/log/pods`, applies the
 drop filters enumerated below in "Log drop policy", then forwards to the
 Loki gateway.
 
+Loki runs in single-tenant mode with `auth_enabled: false`. Alloy and Grafana
+therefore do not need an `X-Scope-OrgID`; enabling multi-tenancy requires
+updating both clients at the same time.
+
 ### Loki ingestion limits
 
 Set in `loki.limits_config` in `infrastructure/observability/loki.yaml`:
@@ -152,14 +156,14 @@ Loki labels are kept **low-cardinality**. The Alloy log collector only
 extracts these as Loki labels:
 
 ```
-cluster   namespace   app   container   level
+cluster   namespace   pod   node   app   container   level
 ```
 
-Anything else (`pod` name, `trace_id`, `request_id`, `user_id`, `ip`,
-`path`, `session_id`, ...) MUST stay in structured log fields (Alloy
-promotes `pod` to `structured_metadata`, never a label). The Loki
-`max_global_streams_per_user` cap and `max_label_names_per_series: 30`
-provide a hard backstop.
+Pod and node are labels because infrastructure dashboards must pivot directly
+to a workload instance. Everything else (`trace_id`, `request_id`, `user_id`,
+`ip`, `path`, `session_id`, ...) MUST stay in structured log fields. The Loki
+`max_global_streams_per_user` cap and `max_label_names_per_series: 30` provide
+a hard backstop.
 
 ## Log drop policy (Alloy logs DaemonSet)
 
@@ -170,7 +174,7 @@ low-value streams before they hit Loki:
   CRI lines `(GET|HEAD) /(healthz|readyz|health|ready|livez)/?`.
 * Routine health-check request lines on app servers — `(GET|HEAD)
   /(metrics|ping)/?`.
-* Excessively long single log lines — drops lines longer than 16KiB.
+* Excessively long single log lines — drops lines of 1,000 or more characters.
 * Debug/trace log lines from the observability stack talking to itself,
   where `namespace="observability"` and the line matches `-(DEBUG|TRACE)-`.
 

@@ -33,8 +33,12 @@
 
   systemd.tmpfiles.rules = [
     "d /persist/knowledge/vaults 0775 1000 1000 -"
+    "d /persist/llm/ollama 0755 root root -"
     "d /persist/opencode/central 0770 1000 1000 -"
     "d /persist/opencode/gateway 0770 65532 65532 -"
+    # CDI hooks run in the host mount namespace. NVIDIA's device plugin emits
+    # this FHS path even though the toolkit itself lives in the Nix store.
+    "L+ /usr/bin/nvidia-ctk - - - - ${config.hardware.nvidia-container-toolkit.package}/bin/nvidia-ctk"
   ];
 
   environment.persistence."/persist" = {

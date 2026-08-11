@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dcgm-exporter
+  namespace: kube-system
+  labels:
+    app: dcgm-exporter
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  template:
+    metadata:
+      labels:
+        app: dcgm-exporter
+    spec:
+      hostPID: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - nandstorm
+      containers:
+        - name: dcgm-exporter
+          image: nvcr.io/nvidia/k8s/dcgm-exporter:4.4.2-4.7.1-ubuntu22.04@sha256:6b5975cdd430d05692c92137bb264938196ee9165e55205a0e31a5e89a9873ee
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DCGM_EXPORTER_KUBERNETES
+              value: "true"
+            - name: DCGM_EXPORTER_KUBERNETES_GPU_ID_TYPE
+              value: uid
+            - name: LD_LIBRARY_PATH
+              value: /usr/local/dcgm/lib64:/run/opengl-driver/lib:/usr/local/nvidia/lib64
+          ports:
+            - name: metrics
+              containerPort: 9400
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: pod-resources
+              mountPath: /var/lib/kubelet/pod-resources
+              readOnly: true
+            - name: opengl-driver
+              mountPath: /run/opengl-driver
+              readOnly: true
+            - name: nix-store
+              mountPath: /nix/store
+              readOnly: true
+            - name: dev-nvidiactl
+              mountPath: /dev/nvidiactl
+            - name: dev-nvidia0
+              mountPath: /dev/nvidia0
+            - name: dev-nvidia1
+              mountPath: /dev/nvidia1
+            - name: dev-nvidia2
+              mountPath: /dev/nvidia2
+            - name: dev-nvidia-uvm
+              mountPath: /dev/nvidia-uvm
+            - name: dev-nvidia-uvm-tools
+              mountPath: /dev/nvidia-uvm-tools
+            - name: dev-nvidia-modeset
+              mountPath: /dev/nvidia-modeset
+      volumes:
+        - name: pod-resources
+          hostPath:
+            path: /var/lib/kubelet/pod-resources
+        - name: opengl-driver
+          hostPath:
+            path: /run/opengl-driver
+        - name: nix-store
+          hostPath:
+            path: /nix/store
+        - name: dev-nvidiactl
+          hostPath:
+            path: /dev/nvidiactl
+        - name: dev-nvidia0
+          hostPath:
+            path: /dev/nvidia0
+        - name: dev-nvidia1
+          hostPath:
+            path: /dev/nvidia1
+        - name: dev-nvidia2
+          hostPath:
+            path: /dev/nvidia2
+        - name: dev-nvidia-uvm
+          hostPath:
+            path: /dev/nvidia-uvm
+        - name: dev-nvidia-uvm-tools
+          hostPath:
+            path: /dev/nvidia-uvm-tools
+        - name: dev-nvidia-modeset
+          hostPath:
+            path: /dev/nvidia-modeset
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcgm-exporter
+  namespace: kube-system
+  labels:
+    app: dcgm-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: dcgm-exporter
+  ports:
+    - name: metrics
+      port: 9400
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dcgm-exporter
+  namespace: kube-system
+  labels:
+    app: dcgm-exporter
+spec:
+  selector:
+    matchLabels:
+      app: dcgm-exporter
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

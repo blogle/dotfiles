@@ -86,6 +86,7 @@ spec:
         apiVersion: 1
         datasources:
           - name: Prometheus
+            uid: prometheus
             type: prometheus
             access: proxy
             url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
@@ -93,12 +94,14 @@ spec:
             jsonData:
               timeInterval: 30s
           - name: Loki
+            uid: loki
             type: loki
             access: proxy
             url: http://loki-gateway.observability.svc.cluster.local
             jsonData:
               maxLines: 1000
           - name: Tempo
+            uid: tempo
             type: tempo
             access: proxy
             url: http://tempo.observability.svc.cluster.local:3200

@@ -1,4 +1,5 @@
 resources:
+  - ai
   - auth
   - media
   - bitmagnet

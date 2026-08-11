@@ -23,6 +23,9 @@ spec:
     deploymentMode: SingleBinary
 
     loki:
+      # Single-tenant homelab. Without this, Loki requires X-Scope-OrgID and
+      # rejects both Alloy ingestion and Grafana queries with HTTP 401.
+      auth_enabled: false
       commonConfig:
         replication_factor: 1
       # Filesystem storage: chunks + index on the Loki PVC. No object store.

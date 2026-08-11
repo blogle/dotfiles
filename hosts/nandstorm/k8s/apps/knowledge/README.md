@@ -146,7 +146,8 @@ not second vault copies or Git checkouts.
 Application-owned state uses dynamically provisioned `local-path` claims:
 
 - `markdown-vault-mcp-state` at `/data/state` contains the rebuildable SQLite
-  index, vector data, MCP/session state, key-value data, and FastEmbed cache.
+  index, persistent Ollama-backed vector data, MCP/session state, and key-value
+  data. Embedding inference itself runs on the shared Ollama service.
 - `ignis-data` at `/app/data` contains Ignis application data.
 - `ignis-obsidian-app` at `/app/obsidian-app` caches Obsidian 1.12.7 assets.
 - `telegram-collector-state` at `/state` contains the SQLite cursor database,
@@ -225,4 +226,20 @@ kubectl -n knowledge get cronjob/chatgpt-collector -o jsonpath='{.spec.suspend}{
 kubectl -n knowledge get secret/chatgpt-credentials
 kubectl -n knowledge rollout restart deployment/markdown-vault-mcp
 kubectl -n knowledge rollout restart deployment/ignis
+```
+
+Markdown Vault uses `OllamaProvider` at
+`http://ollama.ai.svc.cluster.local:11434` with
+`qwen3-embedding:0.6b`. FTS/BM25 remains in `index.db`; vectors remain at the
+existing `/data/state/embeddings/embeddings` path. Hybrid search is the normal
+preferred retrieval mode.
+
+Force a complete vector rebuild and inspect its state from inside the pod:
+
+```sh
+kubectl -n knowledge exec deployment/markdown-vault-mcp \
+  -c markdown-vault-mcp -- python -c $'import asyncio\nfrom fastmcp import Client\nasync def main():\n    async with Client("http://127.0.0.1:8000/mcp") as c:\n        print((await c.call_tool("build_embeddings", {"force": True})).data)\nasyncio.run(main())'
+
+kubectl -n knowledge logs deployment/markdown-vault-mcp \
+  -c markdown-vault-mcp | grep build_embeddings
 ```

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-gpu-dashboard
+  namespace: ai
+  labels:
+    grafana_dashboard: "1"
+data:
+  ollama-gpu.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {"type":"stat","title":"Ollama available replicas","datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"kube_deployment_status_replicas_available{namespace=\"ai\",deployment=\"ollama\"}","refId":"A"}],"gridPos":{"h":5,"w":6,"x":0,"y":0}},
+        {"type":"timeseries","title":"Ollama CPU cores","datasource":{"type":"prometheus","uid":"prometheus"},"targets":[{"expr":"sum(rate(container_cpu_usage_seconds_total{namespace=\"ai\",pod=~\"ollama-.*\",container=\"ollama\"}[5m]))","legendFormat":"CPU","refId":"A"}],"gridPos":{"h":8,"w":9,"x":6,"y":0}},
+        {"type":"timeseries","title":"Ollama memory","datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"unit":"bytes"}},"targets":[{"expr":"container_memory_working_set_bytes{namespace=\"ai\",pod=~\"ollama-.*\",container=\"ollama\"}","legendFormat":"RAM","refId":"A"}],"gridPos":{"h":8,"w":9,"x":15,"y":0}},
+        {"type":"timeseries","title":"GPU utilization","datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100}},"targets":[{"expr":"DCGM_FI_DEV_GPU_UTIL","legendFormat":"GPU {{gpu}} {{modelName}}","refId":"A"}],"gridPos":{"h":8,"w":12,"x":0,"y":8}},
+        {"type":"timeseries","title":"GPU framebuffer used","datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"unit":"bytes"}},"targets":[{"expr":"DCGM_FI_DEV_FB_USED * 1024 * 1024","legendFormat":"GPU {{gpu}}","refId":"A"}],"gridPos":{"h":8,"w":12,"x":12,"y":8}},
+        {"type":"timeseries","title":"GPU temperature","datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"unit":"celsius"}},"targets":[{"expr":"DCGM_FI_DEV_GPU_TEMP","legendFormat":"GPU {{gpu}}","refId":"A"}],"gridPos":{"h":8,"w":12,"x":0,"y":16}},
+        {"type":"timeseries","title":"GPU power","datasource":{"type":"prometheus","uid":"prometheus"},"fieldConfig":{"defaults":{"unit":"watt"}},"targets":[{"expr":"DCGM_FI_DEV_POWER_USAGE","legendFormat":"GPU {{gpu}}","refId":"A"}],"gridPos":{"h":8,"w":12,"x":12,"y":16}},
+        {"type":"logs","title":"Ollama logs","datasource":{"type":"loki","uid":"loki"},"targets":[{"expr":"{namespace=\"ai\",app=\"ollama\"}","refId":"A"}],"gridPos":{"h":10,"w":24,"x":0,"y":24}}
+      ],
+      "refresh": "30s",
+      "schemaVersion": 41,
+      "tags": ["ai", "ollama", "gpu"],
+      "templating": {"list": []},
+      "time": {"from":"now-1h","to":"now"},
+      "title": "Ollama and NVIDIA GPUs",
+      "uid": "ollama-gpu",
+      "version": 1
+    }

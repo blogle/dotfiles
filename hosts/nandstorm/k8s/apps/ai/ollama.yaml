@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ai
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  strategy:
+    # The pod owns every schedulable GPU; RollingUpdate would require six.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      enableServiceLinks: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - nandstorm
+      containers:
+        - name: ollama
+          image: docker.io/ollama/ollama:0.32.6@sha256:6b1ea96f5e72f4fbeaa3ddce98dafec32682b17a94f3e635417aafdf2eaed43a
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OLLAMA_HOST
+              value: 0.0.0.0:11434
+            - name: OLLAMA_KEEP_ALIVE
+              value: 5m
+            - name: OLLAMA_SCHED_SPREAD
+              value: "false"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "3"
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
+            - name: OLLAMA_DEBUG
+              value: "false"
+            - name: OLLAMA_NO_CLOUD
+              value: "true"
+          ports:
+            - name: http
+              containerPort: 11434
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+            limits:
+              cpu: "12"
+              memory: 32Gi
+              nvidia.com/gpu: "3"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            failureThreshold: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            failureThreshold: 6
+            periodSeconds: 30
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+        - name: model-bootstrap
+          image: docker.io/curlimages/curl:8.16.0@sha256:5a91ea0c9c3ee27b4abe657b68cf6bf0676afa13b236b3bda34283cb3924d4f6
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              endpoint=http://127.0.0.1:11434
+              until curl -fsS "$endpoint/api/version" >/dev/null; do sleep 2; done
+              for model in qwen3.5:9b phi4-mini-reasoning:3.8b qwen3-embedding:0.6b; do
+                echo "ensuring model ${model}"
+                curl -fsS --no-progress-meter -X POST "$endpoint/api/pull" \
+                  -H 'Content-Type: application/json' \
+                  -d "{\"name\":\"${model}\",\"stream\":false}" >/dev/null
+              done
+              touch /bootstrap/ready
+              echo "required models are present"
+              exec sleep infinity
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 250m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          readinessProbe:
+            exec:
+              command:
+                - test
+                - -f
+                - /bootstrap/ready
+            periodSeconds: 10
+          volumeMounts:
+            - name: bootstrap
+              mountPath: /bootstrap
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+        - name: bootstrap
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: ai
+  labels:
+    app: ollama
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http

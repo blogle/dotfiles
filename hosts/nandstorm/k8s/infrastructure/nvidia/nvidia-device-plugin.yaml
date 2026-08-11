@@ -12,12 +12,41 @@ spec:
       labels:
         app: nvidia-device-plugin
     spec:
+      # CDI hooks execute in the host namespace. NixOS has no FHS
+      # /usr/bin/nvidia-ctk, while the plugin-generated CDI spec assumes it.
+      # Repair that stable hook path before registering the plugin. The NixOS
+      # configuration creates the same symlink during normal host activation.
+      initContainers:
+      - name: install-nvidia-ctk-hook
+        image: alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+        command:
+        - /bin/sh
+        - -ec
+        - |
+          toolkit=""
+          for candidate in /nix/store/*-nvidia-container-toolkit-1.18.2/bin/nvidia-ctk; do
+            [ -x "$candidate" ] && toolkit="$candidate"
+          done
+          [ -n "$toolkit" ]
+          ln -sf "$toolkit" /host/usr/bin/nvidia-ctk
+          test -x /host/usr/bin/nvidia-ctk
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-usr-bin
+          mountPath: /host/usr/bin
+        - name: nix-store
+          mountPath: /nix/store
+          readOnly: true
       containers:
       - name: nvidia-device-plugin
         image: nvcr.io/nvidia/k8s-device-plugin:v0.19.2
         args:
         - "--fail-on-init-error=false"
-        - "--device-list-strategy=cdi-cri"
+        # Use the host-generated nvidia.com/gpu CDI spec. The plugin-generated
+        # cdi-cri spec assumes an FHS host hook path, which NixOS does not have.
+        - "--device-list-strategy=cdi-annotations"
+        - "--device-id-strategy=index"
         env:
         - name: LD_LIBRARY_PATH
           value: /run/opengl-driver/lib
@@ -63,6 +92,10 @@ spec:
         - name: dev-nvidia-modeset
           mountPath: /dev/nvidia-modeset
       volumes:
+      - name: host-usr-bin
+        hostPath:
+          path: /usr/bin
+          type: DirectoryOrCreate
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
