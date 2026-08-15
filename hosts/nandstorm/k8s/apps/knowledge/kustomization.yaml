@@ -19,4 +19,4 @@ images:
   - name: ghcr.io/blogle/chatgpt-markdown-collector
     digest: sha256:c8e57e4125780589274456ec574161744af30dd422cc6081ba7df39d755d6fa6
   - name: ghcr.io/blogle/chadlands-static-collector
-    digest: sha256:c1b19b42a7f62bb21a895b4c71d3a646720f94984956cc91ca3cab001c8b0fc4
+    digest: sha256:1c12867a15fb22a85f8465b26e905e5db40004abb1588bfcdd987d340c2634f2
