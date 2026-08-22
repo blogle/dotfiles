@@ -13,10 +13,12 @@ resources:
   - chadlands-collector.yaml
 
 images:
+  - name: ghcr.io/blogle/markdown-vault-mcp
+    digest: sha256:5159abb66d7f397329df825485312ee661f9a1f8cc9996bd5e55a0d17ffc882f
   # Production collectors are pinned to verified registry manifests.
   - name: ghcr.io/blogle/telegram-markdown-collector
     digest: sha256:4897499715eed82a58790e5bb4369916bbbda49991f50ce6d873ff98ef04582f
   - name: ghcr.io/blogle/chatgpt-markdown-collector
-    digest: sha256:c8e57e4125780589274456ec574161744af30dd422cc6081ba7df39d755d6fa6
+    digest: sha256:e0f8790cae3cb1270801d0f59eccbb8f036ba873fe41057ac98e837a862d08b4
   - name: ghcr.io/blogle/chadlands-static-collector
     digest: sha256:1c12867a15fb22a85f8465b26e905e5db40004abb1588bfcdd987d340c2634f2
