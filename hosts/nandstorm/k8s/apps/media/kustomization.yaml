@@ -2,6 +2,7 @@ resources:
   - media-namespace.yaml
   - media-volumes.yaml
   - flaresolverr.yaml
+  - jellyfin-sso-oidc.sealed.yaml
   - jellyfin.yaml
   - seerr.yaml
   - seerr-redirect.yaml

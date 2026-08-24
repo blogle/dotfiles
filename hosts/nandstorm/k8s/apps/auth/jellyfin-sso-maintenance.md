@@ -38,15 +38,10 @@ kubectl -n media rollout status deployment/jellyfin --timeout=180s
 ## Install Plugin
 
 1. Sign in to the Jellyfin web UI with the retained local administrator.
-2. Add this plugin repository under Dashboard > Plugins > Repositories:
-
-   ```text
-   https://raw.githubusercontent.com/9p4/jellyfin-plugin-sso/manifest-release/manifest.json
-   ```
-
-3. Install `SSO-Auth`, pin the compatible release rather than a nightly, and
-   restart Jellyfin when prompted. The upstream project is archived and labels
-   itself alpha software; do not install a nightly build in production.
+2. `SSO-Auth` is installed declaratively by the Jellyfin deployment init
+   container at version `4.0.0.4`, which is compatible with Jellyfin 10.11.
+   Restart the deployment after changing this pinned version. Do not install a
+   nightly build in production.
 
 ## Configure Pocket ID
 

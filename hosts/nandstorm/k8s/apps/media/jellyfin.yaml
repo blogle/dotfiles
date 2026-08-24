@@ -13,6 +13,112 @@ spec:
       labels:
         app: jellyfin
     spec:
+      initContainers:
+      # Jellyfin stores manually installed plugins on the persistent volume.
+      # Reinstall the SSO plugin if it is removed so browser OIDC remains
+      # available after a pod recreation.
+      - name: install-sso-plugin
+        image: alpine:3.22
+        command:
+        - sh
+        - -ec
+        - |
+          plugin_dir=/config/data/plugins/SSO-Auth_4.0.0.4
+          if [ ! -f "$plugin_dir/SSO-Auth.dll" ]; then
+            mkdir -p "$plugin_dir"
+            apk add --no-cache curl unzip
+            curl --fail --location --silent --show-error \
+              https://github.com/9p4/jellyfin-plugin-sso/releases/download/v4.0.0.4/sso-authentication_4.0.0.4.zip \
+              -o /tmp/sso-authentication.zip
+            echo 'c09f16ba31059a434ddd7f811e4f9608d4b4c4514cc80a5bf1ca33bee61e1107  /tmp/sso-authentication.zip' | sha256sum -c -
+            unzip -q /tmp/sso-authentication.zip -d "$plugin_dir"
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: sso-oidc
+          mountPath: /run/secrets/jellyfin-sso-oidc
+          readOnly: true
+      - name: configure-sso
+        image: alpine:3.22
+        command:
+        - sh
+        - -ec
+        - |
+          apk add --no-cache libxml2-utils
+          config=/config/data/plugins/configurations/SSO-Auth.xml
+          xml_escape() {
+            sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' -e "s/'/\&apos;/g"
+          }
+          client_id=$(xml_escape < /run/secrets/jellyfin-sso-oidc/client-id)
+          client_secret=$(xml_escape < /run/secrets/jellyfin-sso-oidc/client-secret)
+          tmp=$(mktemp)
+          cat > "$tmp" <<EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <PluginConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <SamlConfigs />
+            <OidConfigs>
+              <item>
+                <key><string>PocketID</string></key>
+                <value><PluginConfiguration>
+                  <OidEndpoint>https://id.thejeffer.net/.well-known/openid-configuration</OidEndpoint>
+                  <OidClientId>${client_id}</OidClientId>
+                  <OidSecret>${client_secret}</OidSecret>
+                  <Enabled>true</Enabled>
+                  <EnableAuthorization>false</EnableAuthorization>
+                  <EnableAllFolders>false</EnableAllFolders>
+                  <EnabledFolders />
+                  <AdminRoles />
+                  <Roles />
+                  <EnableFolderRoles>false</EnableFolderRoles>
+                  <EnableLiveTvRoles>false</EnableLiveTvRoles>
+                  <EnableLiveTv>false</EnableLiveTv>
+                  <EnableLiveTvManagement>false</EnableLiveTvManagement>
+                  <LiveTvRoles />
+                  <LiveTvManagementRoles />
+                  <FolderRoleMappings />
+                  <RoleClaim>groups</RoleClaim>
+                  <OidScopes><string>groups</string></OidScopes>
+                  <SchemeOverride>https</SchemeOverride>
+                  <NewPath>true</NewPath>
+                  <DefaultUsernameClaim>preferred_username</DefaultUsernameClaim>
+                  <DisableHttps>false</DisableHttps>
+                  <DisablePushedAuthorization>false</DisablePushedAuthorization>
+                  <DoNotValidateEndpoints>false</DoNotValidateEndpoints>
+                  <DoNotValidateIssuerName>false</DoNotValidateIssuerName>
+                  <DoNotLoadProfile>false</DoNotLoadProfile>
+                  <CanonicalLinks />
+                </PluginConfiguration></value>
+              </item>
+            </OidConfigs>
+          </PluginConfiguration>
+          EOF
+          xmllint --noout "$tmp"
+          install -D -m 600 "$tmp" "$config"
+          unset client_id client_secret
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: sso-oidc
+          mountPath: /run/secrets/jellyfin-sso-oidc
+          readOnly: true
+      - name: configure-branding
+        image: alpine:3.22
+        command:
+        - sh
+        - -ec
+        - |
+          cat > /config/branding.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <LoginDisclaimer>&lt;form action="/sso/OID/start/PocketID"&gt;&lt;button class="raised block emby-button button-submit" type="submit"&gt;Sign in with Pocket ID&lt;/button&gt;&lt;/form&gt;</LoginDisclaimer>
+            <CustomCss>.disclaimerContainer { display: block; }</CustomCss>
+            <SplashscreenEnabled>false</SplashscreenEnabled>
+          </BrandingOptions>
+          EOF
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: jellyfin
         image: lscr.io/linuxserver/jellyfin:10.11.11ubu2404-ls36
@@ -39,6 +145,9 @@ spec:
       - name: media
         persistentVolumeClaim:
           claimName: media-pvc
+      - name: sso-oidc
+        secret:
+          secretName: jellyfin-sso-oidc
 ---
 apiVersion: v1
 kind: Service

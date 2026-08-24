@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chadlands-validator
+  namespace: knowledge
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: chadlands-validator
+  template:
+    metadata:
+      labels:
+        app: chadlands-validator
+    spec:
+      containers:
+        - name: validator
+          image: ghcr.io/blogle/chadlands-validator:v0.1.0
+          args:
+            - watch
+            - --vault
+            - /vault
+            - --debounce-ms
+            - "5000"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: vault
+              mountPath: /vault
+              readOnly: false
+            - name: tmp
+              mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: vault
+          hostPath:
+            path: /persist/knowledge/vaults/The Chadlands
+            type: Directory
+        - name: tmp
+          emptyDir: {}

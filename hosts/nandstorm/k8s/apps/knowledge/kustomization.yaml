@@ -11,6 +11,7 @@ resources:
   - tunnel-credentials.sealed.yaml
   - chatgpt-collector.yaml
   - chadlands-collector.yaml
+  - chadlands-validator.yaml
 
 images:
   - name: ghcr.io/blogle/markdown-vault-mcp
@@ -22,3 +23,5 @@ images:
     digest: sha256:e0f8790cae3cb1270801d0f59eccbb8f036ba873fe41057ac98e837a862d08b4
   - name: ghcr.io/blogle/chadlands-static-collector
     digest: sha256:1c12867a15fb22a85f8465b26e905e5db40004abb1588bfcdd987d340c2634f2
+  - name: ghcr.io/blogle/chadlands-validator
+    digest: sha256:25d575f930cbdd005a133212b00a0673d0d7d54323ffad9fe62f6a5c88fb0d37

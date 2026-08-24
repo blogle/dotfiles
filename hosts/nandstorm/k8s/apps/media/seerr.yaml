@@ -24,7 +24,9 @@ spec:
           mountPath: /app/config
       containers:
       - name: seerr
-        image: ghcr.io/seerr-team/seerr:v3.3.0
+        # v3.4 adds Jellyfin Quick Connect, which works with Jellyfin's OIDC
+        # browser login without relaying a password through Seerr.
+        image: ghcr.io/seerr-team/seerr:v3.4.1
         ports:
         - containerPort: 5055
         securityContext:

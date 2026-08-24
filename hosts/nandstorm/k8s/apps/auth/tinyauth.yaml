@@ -64,6 +64,10 @@ spec:
           value: seerr.thejeffer.net
         - name: TINYAUTH_APPS_SEERR_OAUTH_GROUPS
           value: media-users
+        - name: TINYAUTH_APPS_TRANSMISSION_CONFIG_DOMAIN
+          value: transmission.thejeffer.net
+        - name: TINYAUTH_APPS_TRANSMISSION_OAUTH_GROUPS
+          value: media-users
         - name: TINYAUTH_APPS_DISPATCHARR_CONFIG_DOMAIN
           value: dispatcharr.thejeffer.net
         - name: TINYAUTH_APPS_DISPATCHARR_OAUTH_GROUPS

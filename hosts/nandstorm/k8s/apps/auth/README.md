@@ -37,17 +37,16 @@ identity provider.
    and add approved people to it. The current media apps require that group;
    future apps can require independent groups such as `dev-users`.
 5. Install `jellyfin-plugin-sso` from
-   `https://raw.githubusercontent.com/9p4/jellyfin-plugin-sso/manifest-release/manifest.json`.
-   Create a separate Pocket ID client with callback URL
+   the version pinned in `../media/jellyfin.yaml`. Create a separate Pocket ID
+   client with callback URL
    `https://jellyfin.thejeffer.net/sso/OID/redirect/PocketID`, then configure
    the plugin API with issuer `https://id.thejeffer.net`, that client ID and
    secret, and an explicit user/group policy. Keep local Jellyfin accounts
    enabled for TV and mobile clients.
-6. After Traefik forward-auth is working, scale Sonarr and Radarr to zero,
-   edit each persisted `/config/config.xml` to set
-   `<AuthenticationMethod>External</AuthenticationMethod>`, then scale back to
-   one. Do not use "Disabled for Local Addresses". Their Services are already
-   ClusterIP-only and the single `/` ingress path covers their UI and API.
+6. Sonarr and Radarr use Traefik forward-auth and set their native
+   authentication mode to `External`; do not use "Disabled for Local
+   Addresses". Their Services are ClusterIP-only and the single `/` ingress
+   path covers their UI and API.
 
 ## Apply Order
 
@@ -69,19 +68,9 @@ kubectl -n auth delete deployment,service oauth2-proxy
 kubectl -n auth delete sealedsecret oauth2-proxy-cookie oauth2-proxy-credentials
 ```
 
-Set Servarr External mode only after that verification succeeds. For each app,
-stop it before editing because it rewrites `config.xml` on clean shutdown:
-
-```sh
-kubectl -n media scale deployment/radarr --replicas=0
-ssh root@nandstorm "perl -0pi -e 's#<AuthenticationMethod>.*?</AuthenticationMethod>#<AuthenticationMethod>External</AuthenticationMethod>#' /persist/radarr/config.xml"
-kubectl -n media scale deployment/radarr --replicas=1
-```
-
-Repeat for `sonarr`. Confirm the element was changed before scaling each
-deployment up. Do not apply External mode to another Servarr app until every
-one of its ingress routes uses the same forward-auth middleware and its
-Service remains ClusterIP-only.
+The Sonarr deployment enforces `External` authentication before each start;
+verify that every Servarr ingress continues to use the same forward-auth
+middleware and its Service remains ClusterIP-only.
 
 OpenCode has no manifest in this repository. Add `auth-sso-auth@kubernetescrd`
 to every OpenCode ingress route once its deployment location is identified.
@@ -91,3 +80,11 @@ to every OpenCode ingress route once its deployment location is identified.
 See [Jellyfin browser SSO maintenance](jellyfin-sso-maintenance.md). Jellyfin
 is intentionally excluded from Traefik forward-auth so native clients retain
 local-account login.
+
+## Seerr
+
+Seerr does not support OIDC or trusted reverse-proxy identity headers. Its
+Jellyfin password login calls Jellyfin's native password endpoint, so an
+OIDC-only Jellyfin identity cannot use it. Use Jellyfin Quick Connect from the
+Seerr login screen instead. Traefik forward-auth protects access to Seerr; it
+does not create or select a Seerr user.

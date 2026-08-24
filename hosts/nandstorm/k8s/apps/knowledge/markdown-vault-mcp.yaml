@@ -19,8 +19,6 @@ spec:
       containers:
         - name: markdown-vault-mcp
           image: ghcr.io/blogle/markdown-vault-mcp:downstream-6f29b2e
-          # Temporary until the fork package grants Actions write access.
-          imagePullPolicy: Never
           ports:
             - name: http
               containerPort: 8000

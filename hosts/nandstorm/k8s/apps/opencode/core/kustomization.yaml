@@ -5,6 +5,7 @@ resources:
   - https://github.com/blogle/opencode-pod-plugin//deploy/base?ref=0c471ef27fe13f7ee6910fe4933b9f0bcb9e3b51
   - certificate.yaml
   - storage.yaml
+  - image-cache.yaml
   - adapter-internal-token-opencode-system.sealed.yaml
 
 configMapGenerator:
