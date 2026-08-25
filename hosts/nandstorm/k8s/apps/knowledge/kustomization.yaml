@@ -24,4 +24,4 @@ images:
   - name: ghcr.io/blogle/chadlands-static-collector
     digest: sha256:1c12867a15fb22a85f8465b26e905e5db40004abb1588bfcdd987d340c2634f2
   - name: ghcr.io/blogle/chadlands-validator
-    digest: sha256:8fcd3e486152cff1cf56f111c943ff0d85ba86d9a34443740c6667577ae0ff15
+    digest: sha256:9ff7c7648903788326ca2e849f32d7ae3b2bd1ed01c1a0ba59fc7aff9a33a658
