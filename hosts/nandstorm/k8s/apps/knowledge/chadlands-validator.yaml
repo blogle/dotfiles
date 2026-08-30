@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: validator
-          image: ghcr.io/blogle/chadlands-validator:sha-ab3a0dd58813
+          image: ghcr.io/blogle/chadlands-validator:sha-eef5a2742d2a
           args:
             - watch
             - --vault
