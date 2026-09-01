@@ -1,15 +1,18 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: opencode-central-state
+  name: openhands-state
 spec:
   capacity:
-    storage: 10Gi
+    storage: 20Gi
   accessModes:
     - ReadWriteOnce
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
+  claimRef:
+    namespace: openhands
+    name: openhands-state
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -19,29 +22,20 @@ spec:
               values:
                 - nandstorm
   hostPath:
-    path: /persist/opencode/central
+    path: /persist/openhands
     type: DirectoryOrCreate
 ---
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolumeClaim
 metadata:
-  name: opencode-gateway-state
+  name: openhands-state
+  namespace: openhands
 spec:
-  capacity:
-    storage: 10Gi
   accessModes:
     - ReadWriteOnce
   volumeMode: Filesystem
-  persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - nandstorm
-  hostPath:
-    path: /persist/opencode/gateway
-    type: DirectoryOrCreate
+  volumeName: openhands-state
+  resources:
+    requests:
+      storage: 20Gi

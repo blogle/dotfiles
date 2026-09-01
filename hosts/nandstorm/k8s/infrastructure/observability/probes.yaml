@@ -32,7 +32,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
-  name: opencode-public
+  name: openhands-public
   namespace: observability
   labels:
     app.kubernetes.io/part-of: observability
@@ -47,7 +47,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - https://opencode.thejeffer.net
+        - https://openhands.thejeffer.net
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe

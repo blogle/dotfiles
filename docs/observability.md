@@ -46,7 +46,7 @@ the chart rewrites the provisioning ConfigMap on every release upgrade.
 
 Grafana is exposed publicly through Traefik + the `letsencrypt` Cluster
 Issuer and is gated by the same tinyauth forward-auth middlewares used by
-sonarr/radarr/opencode (annotations on the Grafana `Ingress`). Anonymous
+sonarr/radarr/openhands (annotations on the Grafana `Ingress`). Anonymous
 access is disabled (`auth.anonymous.enabled: false` in `grafana.ini`).
 The chart-generated admin password is stored in the `grafana` Secret:
 

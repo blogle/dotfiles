@@ -168,7 +168,7 @@ spec:
 
         - alert: PodCrashLooping
           expr: |
-            increase(kube_pod_container_status_restarts_total{namespace=~"observability|media|opencode-system|knowledge|auth"}[1h]) > 5
+            increase(kube_pod_container_status_restarts_total{namespace=~"observability|media|openhands|knowledge|auth"}[1h]) > 5
           for: 10m
           labels:
             severity: warning

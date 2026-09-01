@@ -72,8 +72,8 @@ The Sonarr deployment enforces `External` authentication before each start;
 verify that every Servarr ingress continues to use the same forward-auth
 middleware and its Service remains ClusterIP-only.
 
-OpenCode has no manifest in this repository. Add `auth-sso-auth@kubernetescrd`
-to every OpenCode ingress route once its deployment location is identified.
+OpenHands is gated by the shared `auth-sso-errors@kubernetescrd` and
+`auth-sso-auth@kubernetescrd` middlewares on its public Ingress.
 
 ## Jellyfin
 
