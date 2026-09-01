@@ -99,7 +99,7 @@ spec:
                 name: chatgpt-collector-config
             - name: state
               persistentVolumeClaim:
-                claimName: chatgpt-collector-state
+                claimName: chatgpt-collector-state-zfs
             - name: vault
               hostPath:
                 path: /persist/knowledge/vaults/The Chadlands/70 Sources/Strategy Sessions/Raw Export

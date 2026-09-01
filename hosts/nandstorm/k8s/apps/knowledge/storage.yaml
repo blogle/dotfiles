@@ -14,10 +14,36 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: markdown-vault-mcp-state-zfs
+  namespace: knowledge
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: ignis-data
   namespace: knowledge
 spec:
   storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ignis-data-zfs
+  namespace: knowledge
+spec:
+  storageClassName: openebs-zfspv-retain
   accessModes:
     - ReadWriteOnce
   resources:
@@ -40,12 +66,40 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: ignis-obsidian-app-zfs
+  namespace: knowledge
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: chatgpt-collector-state
   namespace: knowledge
   labels:
     app: chatgpt-collector
 spec:
   storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chatgpt-collector-state-zfs
+  namespace: knowledge
+  labels:
+    app: chatgpt-collector
+spec:
+  storageClassName: openebs-zfspv-retain
   accessModes:
     - ReadWriteOnce
   resources:

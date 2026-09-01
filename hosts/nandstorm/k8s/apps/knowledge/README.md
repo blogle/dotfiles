@@ -143,7 +143,9 @@ Chadlands/70 Sources/Codex Snapshots`. These directories must exist in the live
 vault before rollout. They are paths within the same durable vault hostPath,
 not second vault copies or Git checkouts.
 
-Application-owned state uses dynamically provisioned `local-path` claims:
+Application-owned state now uses retained OpenEBS ZFS LocalPV claims. The old
+`local-path` claims remain as rollback sources; see
+`hosts/nandstorm/storage-migration.md` for the migration inventory.
 
 - `markdown-vault-mcp-state` at `/data/state` contains the rebuildable SQLite
   index, persistent Ollama-backed vector data, MCP/session state, and key-value

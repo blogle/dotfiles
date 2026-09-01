@@ -75,10 +75,10 @@ spec:
             type: DirectoryOrCreate
         - name: ignis-data
           persistentVolumeClaim:
-            claimName: ignis-data
+            claimName: ignis-data-zfs
         - name: ignis-obsidian-app
           persistentVolumeClaim:
-            claimName: ignis-obsidian-app
+            claimName: ignis-obsidian-app-zfs
 ---
 apiVersion: v1
 kind: Service

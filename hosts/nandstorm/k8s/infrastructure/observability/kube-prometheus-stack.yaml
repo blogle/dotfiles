@@ -68,8 +68,10 @@ spec:
         # 1Gi alertmanager state. Bounded under the observability ResourceQuota.
         storage:
           volumeClaimTemplate:
+            metadata:
+              name: alertmanager-zfs
             spec:
-              storageClassName: local-path
+              storageClassName: openebs-zfspv-retain
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
@@ -87,6 +89,7 @@ spec:
     # next to the apps it observes (e.g. apps/media/exportarr.yaml).
     prometheus:
       prometheusSpec:
+        replicas: 1
         scrapeInterval: 30s
         evaluationInterval: 30s
         retention: 10d
@@ -94,8 +97,10 @@ spec:
         # 16Gi PVC; 12GiB size-based retention leaves ~4Gi for WAL/compaction.
         storageSpec:
           volumeClaimTemplate:
+            metadata:
+              name: prometheus-zfs
             spec:
-              storageClassName: local-path
+              storageClassName: openebs-zfspv-retain
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:

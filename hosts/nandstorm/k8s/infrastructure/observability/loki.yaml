@@ -71,10 +71,18 @@ spec:
         limits:
           memory: 1Gi
       persistence:
-        enabled: true
-        storageClassName: local-path
+        enabled: false
+        whenDeleted: Retain
+        whenScaled: Retain
         size: 20Gi
         accessModes: ["ReadWriteOnce"]
+      extraVolumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: loki-zfs
+      extraVolumeMounts:
+        - name: storage
+          mountPath: /var/loki
 
     # Disable the distributed read/write/backend statefulsets; SingleBinary
     # mode runs everything in one pod.

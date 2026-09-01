@@ -11,8 +11,9 @@ metadata:
     pod-security.kubernetes.io/enforce: privileged
 ---
 # Bounded storage budget for the entire observability platform. The sum of
-# planned PVCs (prometheus 16Gi + loki 20Gi + tempo 10Gi + grafana 2Gi +
-# alertmanager 1Gi = 49Gi) sits under this 64Gi cap, leaving ~15Gi headroom
+# planned active and rollback PVCs (prometheus 32Gi + loki 40Gi + tempo
+# 20Gi + grafana 4Gi + alertmanager 2Gi = 98Gi) fits under this 128Gi cap.
+# The old claims remain for rollback, so the quota covers both.
 # for the WAL, compaction, index, and filesystem overhead quoted in the spec.
 apiVersion: v1
 kind: ResourceQuota
@@ -21,5 +22,5 @@ metadata:
   namespace: observability
 spec:
   hard:
-    requests.storage: 64Gi
-    persistentvolumeclaims: "8"
+    requests.storage: 128Gi
+    persistentvolumeclaims: "16"

@@ -66,11 +66,14 @@ spec:
     persistence:
       enabled: true
       type: pvc
-      storageClassName: local-path
+      existingClaim: grafana-zfs
       accessModes: ["ReadWriteOnce"]
       size: 2Gi
       finalizers:
         - kubernetes.io/pvc-protection
+
+    deploymentStrategy:
+      type: Recreate
 
     # The existing PVC may contain directories created by an older Grafana
     # process that the chart's root init container cannot chown. Grafana runs
@@ -86,7 +89,7 @@ spec:
         apiVersion: 1
         datasources:
           - name: Prometheus
-            uid: prometheus
+            uid: PBFA97CFB590B2093
             type: prometheus
             access: proxy
             url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
@@ -94,20 +97,20 @@ spec:
             jsonData:
               timeInterval: 30s
           - name: Loki
-            uid: loki
+            uid: P8E80F9AEF21F6940
             type: loki
             access: proxy
             url: http://loki-gateway.observability.svc.cluster.local
             jsonData:
               maxLines: 1000
           - name: Tempo
-            uid: tempo
+            uid: P214B5B846CF3925F
             type: tempo
             access: proxy
             url: http://tempo.observability.svc.cluster.local:3200
             jsonData:
               tracesToLogsV2:
-                datasourceUid: loki
+                datasourceUid: P8E80F9AEF21F6940
                 filterByTraceID: true
                 tags: ["namespace", "app", "container"]
 

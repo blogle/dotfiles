@@ -1,0 +1,52 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: zfs-localpv
+  namespace: kube-system
+spec:
+  repo: https://openebs.github.io/zfs-localpv
+  chart: zfs-localpv
+  version: 2.11.0
+  targetNamespace: openebs
+  createNamespace: true
+  valuesContent: |-
+    # NixOS exposes the host ZFS utility through the system profile. The
+    # chart's zfs wrapper chroots into the host before invoking this path.
+    zfs:
+      bin: /run/current-system/sw/bin/zfs
+
+    zfsPlugin:
+      image:
+        tag: 2.11.0
+
+    zfsNode:
+      kubeletDir: /var/lib/kubelet/
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+
+    zfsController:
+      replicas: 1
+      snapshotController:
+        enabled: true
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+
+    analytics:
+      enabled: false
+
+    crds:
+      zfsLocalPv:
+        enabled: true
+      csi:
+        volumeSnapshots:
+          enabled: true

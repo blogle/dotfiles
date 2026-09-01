@@ -68,12 +68,19 @@ spec:
         initialDelaySeconds: 120
         periodSeconds: 10
         failureThreshold: 6
+      extraVolumeMounts:
+        - name: storage
+          mountPath: /var/tempo
 
     persistence:
-      enabled: true
-      storageClassName: local-path
+      enabled: false
       accessModes: ["ReadWriteOnce"]
       size: 10Gi
+
+    extraVolumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: tempo-zfs
 
     service:
       type: ClusterIP

@@ -9,3 +9,6 @@ resources:
   - observability
   - traefik.yaml
   - keel.yaml
+  - zfs-localpv.yaml
+  - zfs-storageclass.yaml
+  - zfs-snapshotclass.yaml

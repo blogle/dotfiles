@@ -169,7 +169,7 @@ spec:
       volumes:
         - name: state
           persistentVolumeClaim:
-            claimName: markdown-vault-mcp-state
+            claimName: markdown-vault-mcp-state-zfs
         - name: vaults
           hostPath:
             path: /persist/knowledge/vaults

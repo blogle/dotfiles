@@ -82,7 +82,7 @@ spec:
             name: telegram-collector-config
         - name: state
           persistentVolumeClaim:
-            claimName: telegram-collector-state
+            claimName: telegram-collector-state-zfs
         - name: vault
           hostPath:
             path: /persist/knowledge/vaults/The Chadlands/70 Sources/Telegram

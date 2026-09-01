@@ -29,7 +29,7 @@
 
 
   environment.etc.machine-id.source = ./machine-id;
-  environment.systemPackages = [ pkgs.tunnel-client ];
+  environment.systemPackages = [ pkgs.tunnel-client pkgs.zfs ];
 
   systemd.tmpfiles.rules = [
     "d /persist/knowledge/vaults 0775 1000 1000 -"
