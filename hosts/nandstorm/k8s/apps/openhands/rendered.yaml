@@ -1,0 +1,201 @@
+---
+# Source: agent-canvas/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openhands
+  namespace: openhands
+  labels:
+    helm.sh/chart: agent-canvas-0.1.0
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: false
+---
+# Source: agent-canvas/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openhands
+  namespace: openhands
+  labels:
+    helm.sh/chart: agent-canvas-0.1.0
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+---
+# Source: agent-canvas/templates/service.yaml
+# Headless service required by the StatefulSet for stable network IDs.
+apiVersion: v1
+kind: Service
+metadata:
+  name: openhands-headless
+  namespace: openhands
+  labels:
+    helm.sh/chart: agent-canvas-0.1.0
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+---
+# Source: agent-canvas/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openhands
+  namespace: openhands
+  labels:
+    helm.sh/chart: agent-canvas-0.1.0
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  serviceName: openhands-headless
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openhands
+      app.kubernetes.io/instance: openhands
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openhands
+        app.kubernetes.io/instance: openhands
+    spec:
+      serviceAccountName: openhands
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: agent-canvas
+          image: ghcr.io/openhands/agent-canvas:1.16.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8000"
+            - name: AGENT_SERVER_PORT
+              value: "18000"
+            - name: AUTOMATION_PORT
+              value: "18001"
+            - name: LLM_MODEL
+              value: openai/qwen3.6:35b-a3b
+            - name: LLM_BASE_URL
+              value: http://ollama.ai.svc.cluster.local:11434/v1
+            - name: LLM_API_KEY
+              value: local-llm
+          startupProbe:
+            httpGet:
+              path: /alive
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: openhands-state-zfs
+              mountPath: /home/openhands/.openhands
+              subPath: openhands
+            - name: openhands-state-zfs
+              mountPath: /home/openhands/workspace
+              subPath: workspace
+      volumes:
+        - name: openhands-state-zfs
+          persistentVolumeClaim:
+            claimName: openhands-state-zfs
+---
+# Source: agent-canvas/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openhands
+  namespace: openhands
+  labels:
+    helm.sh/chart: agent-canvas-0.1.0
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/instance: openhands
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - "openhands.thejeffer.net"
+      secretName: openhands-tls
+  rules:
+    -
+      host: "openhands.thejeffer.net"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands
+                port:
+                  number: 8000

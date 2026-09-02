@@ -43,6 +43,8 @@ spec:
               value: "3"
             - name: OLLAMA_NUM_PARALLEL
               value: "1"
+            - name: OLLAMA_CONTEXT_LENGTH
+              value: "32768"
             - name: OLLAMA_DEBUG
               value: "false"
             - name: OLLAMA_NO_CLOUD
@@ -95,7 +97,7 @@ spec:
             - |
               endpoint=http://127.0.0.1:11434
               until curl -fsS "$endpoint/api/version" >/dev/null; do sleep 2; done
-              for model in qwen3.5:9b phi4-mini-reasoning:3.8b qwen3-embedding:0.6b; do
+              for model in qwen3.6:35b-a3b qwen3.5:9b phi4-mini-reasoning:3.8b qwen3-embedding:0.6b; do
                 echo "ensuring model ${model}"
                 curl -fsS --no-progress-meter -X POST "$endpoint/api/pull" \
                   -H 'Content-Type: application/json' \

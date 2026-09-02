@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - storage.yaml
-  - openhands.yaml
-  - ingress.yaml
+  - rendered.yaml

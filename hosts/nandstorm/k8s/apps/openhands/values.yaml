@@ -1,0 +1,120 @@
+replicaCount: 1
+
+nameOverride: openhands
+fullnameOverride: openhands
+
+image:
+  repository: ghcr.io/openhands/agent-canvas
+  tag: "1.16.0"
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: openhands
+  automountServiceAccountToken: false
+
+rbac:
+  enabled: false
+  namespaces: []
+  clusterAdmin: false
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+  hosts:
+    - host: openhands.thejeffer.net
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - openhands.thejeffer.net
+      secretName: openhands-tls
+
+persistence:
+  enabled: true
+  existingClaim: openhands-state-zfs
+  mounts:
+    - mountPath: /home/openhands/.openhands
+      subPath: openhands
+    - mountPath: /home/openhands/workspace
+      subPath: workspace
+  size: 20Gi
+  accessModes:
+    - ReadWriteOnce
+
+config:
+  port: 8000
+  agentServerPort: 18000
+  automationPort: 18001
+  automationDbUrl: ""
+  extraEnv:
+    - name: LLM_MODEL
+      value: "openai/qwen3.6:35b-a3b"
+    - name: LLM_BASE_URL
+      value: "http://ollama.ai.svc.cluster.local:11434/v1"
+    - name: LLM_API_KEY
+      value: "local-llm"
+
+secrets:
+  ohSecretKey:
+    existingSecret: ""
+    key: ohSecretKey
+  sessionApiKey:
+    existingSecret: ""
+    key: sessionApiKey
+
+podSecurityContext:
+  fsGroup: 10001
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /alive
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 5
+  readiness:
+    enabled: true
+    path: /alive
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  startup:
+    enabled: true
+    path: /alive
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 60
+
+statefulSet:
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
