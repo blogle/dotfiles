@@ -8,5 +8,5 @@ resources:
 - namespace.yaml
 
 images:
-- name: ghcr.io/blogle/dojo
+- name: ghcr.io/blogle/dojo2
   newTag: v0.1.0

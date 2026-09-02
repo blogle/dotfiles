@@ -11,8 +11,8 @@ resources:
 - ingress.yaml
 
 images:
-- name: ghcr.io/blogle/dojo
-  newName: ghcr.io/blogle/dojo
+- name: ghcr.io/blogle/dojo2
+  newName: ghcr.io/blogle/dojo2
   newTag: staging
 
 patches:
