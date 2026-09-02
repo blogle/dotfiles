@@ -21,12 +21,11 @@ patches:
     version: v1
     kind: PersistentVolumeClaim
     name: dojo-data
-    namespace: dojo-staging
   patch: |-
-    - op: replace
+    - op: add
       path: /spec/volumeName
       value: dojo-staging-pv
-    - op: replace
+    - op: add
       path: /spec/storageClassName
       value: ""
 - path: keel-annotations.patch.yaml
