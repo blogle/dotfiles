@@ -4,8 +4,8 @@ kind: Kustomization
 namespace: dojo-staging
 
 resources:
-# Uses the upstream Dojo base; assumes deploy/k8s/base exists in the Dojo repo.
-- github.com/blogle/dojo//deploy/k8s/base?ref=master
+# Uses the upstream Dojo base from the rebuilt repository.
+- github.com/blogle/dojo2//deploy/k8s/base?ref=master
 - namespace.yaml
 - volumes.yaml
 - ingress.yaml

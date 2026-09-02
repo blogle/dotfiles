@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: dojo-prod
 
 resources:
-- ../../base
+- github.com/blogle/dojo2//deploy/k8s/base?ref=master
 - namespace.yaml
 
 images:
