@@ -6,7 +6,24 @@ namespace: dojo-prod
 resources:
 - github.com/blogle/dojo2//deploy/k8s/base?ref=master
 - namespace.yaml
+- volumes.yaml
+- ingress.yaml
 
 images:
 - name: ghcr.io/blogle/dojo2
-  newTag: v0.1.0
+  newTag: v0.0.1
+
+patches:
+- patch: |-
+    - op: add
+      path: /spec/volumeName
+      value: dojo-prod-pv
+    - op: add
+      path: /spec/storageClassName
+      value: ""
+  target:
+    group: ""
+    version: v1
+    kind: PersistentVolumeClaim
+    name: dojo-data
+- path: pod-spec.patch.yaml
