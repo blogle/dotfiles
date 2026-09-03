@@ -13,6 +13,21 @@ spec:
               value: https://staging-dojo.thejeffer.net
             - name: CORS_ALLOWED_ORIGINS
               value: https://staging-dojo.thejeffer.net
+            - name: GOOGLE_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dojo-google-oauth
+                  key: GOOGLE_OAUTH_CLIENT_ID
+            - name: GOOGLE_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dojo-google-oauth
+                  key: GOOGLE_OAUTH_CLIENT_SECRET
+            - name: GOOGLE_OAUTH_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: dojo-google-oauth
+                  key: GOOGLE_OAUTH_REDIRECT_URI
       initContainers:
         - name: fix-permissions
           image: ghcr.io/blogle/dojo2:staging
