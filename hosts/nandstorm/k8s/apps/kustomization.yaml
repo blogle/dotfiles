@@ -1,10 +1,10 @@
 resources:
   - ai
   - auth
-  - media
   - bitmagnet
-  - penpot
   - dojo/overlays/staging
   - dojo/overlays/prod
   - knowledge
+  - lific
+  - media
   - openhands

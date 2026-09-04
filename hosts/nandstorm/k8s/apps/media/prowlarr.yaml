@@ -24,7 +24,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: prowlarr-config-pvc
+          claimName: prowlarr-config-zfs
 ---
 apiVersion: v1
 kind: Service

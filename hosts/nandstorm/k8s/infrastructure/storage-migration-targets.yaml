@@ -1,0 +1,215 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dojo-prod-data-zfs
+  namespace: dojo-prod
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dojo-staging-data-zfs
+  namespace: dojo-staging
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bitmagnet-config-zfs
+  namespace: bitmagnet
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bitmagnet-postgres-zfs
+  namespace: bitmagnet
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-zfs
+  namespace: ai
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 40Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tinyauth-data-zfs
+  namespace: auth
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pocket-id-data-zfs
+  namespace: auth
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: acestream-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dispatcharr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyseerr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: muxarr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prowlarr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: teamarr-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmission-config-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: m3u-playlists-zfs
+  namespace: media
+spec:
+  storageClassName: openebs-zfspv-retain
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi

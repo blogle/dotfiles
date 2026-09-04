@@ -36,9 +36,8 @@ spec:
           readOnly: true
       volumes:
       - name: data
-        hostPath:
-          path: /persist/pocket-id
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: pocket-id-data-zfs
       - name: secrets
         secret:
           secretName: pocket-id-secrets

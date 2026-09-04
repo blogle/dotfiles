@@ -38,3 +38,7 @@ spec:
           volumeMounts:
           - name: data
             mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: dojo-staging-data-zfs

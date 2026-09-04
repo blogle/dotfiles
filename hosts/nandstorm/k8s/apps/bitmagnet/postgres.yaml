@@ -39,7 +39,7 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: bitmagnet-postgres-pvc
+          claimName: bitmagnet-postgres-zfs
       - name: dshm
         emptyDir:
           medium: Memory

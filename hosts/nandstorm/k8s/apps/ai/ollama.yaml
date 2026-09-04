@@ -132,7 +132,7 @@ spec:
       volumes:
         - name: models
           persistentVolumeClaim:
-            claimName: ollama-models
+            claimName: ollama-models-zfs
         - name: bootstrap
           emptyDir: {}
 ---

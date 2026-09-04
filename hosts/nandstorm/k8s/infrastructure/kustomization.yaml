@@ -12,3 +12,4 @@ resources:
   - zfs-localpv.yaml
   - zfs-storageclass.yaml
   - zfs-snapshotclass.yaml
+  - storage-migration-targets.yaml

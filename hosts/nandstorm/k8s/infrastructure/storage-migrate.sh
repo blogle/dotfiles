@@ -22,7 +22,7 @@ if [[ ! $timeout_seconds =~ ^[0-9]+$ ]] || (( timeout_seconds < 120 )); then
   exit 2
 fi
 
-if [[ $source_path != /var/lib/rancher/k3s/storage/* ]]; then
+if [[ ! $source_path =~ ^/(var/lib/rancher/k3s/storage|persist)/[A-Za-z0-9._/-]+$ || $source_path == */../* || $source_path == */.. ]]; then
   echo "Refusing unexpected source path: $source_path" >&2
   exit 2
 fi

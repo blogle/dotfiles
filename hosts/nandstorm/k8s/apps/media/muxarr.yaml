@@ -43,7 +43,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: muxarr-config-pvc
+          claimName: muxarr-config-zfs
       - name: media
         persistentVolumeClaim:
           claimName: media-pvc

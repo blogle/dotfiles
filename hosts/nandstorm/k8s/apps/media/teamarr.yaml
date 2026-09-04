@@ -39,7 +39,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: teamarr-config-pvc
+          claimName: teamarr-config-zfs
 ---
 apiVersion: v1
 kind: Service

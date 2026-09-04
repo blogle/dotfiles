@@ -124,7 +124,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: acestream-proxy-config-pvc
+          claimName: acestream-config-zfs
 ---
 apiVersion: v1
 kind: Service

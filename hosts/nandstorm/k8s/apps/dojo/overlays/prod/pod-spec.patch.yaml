@@ -15,6 +15,10 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: dojo-prod-data-zfs
       containers:
       - name: dojo
         imagePullPolicy: Always

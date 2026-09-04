@@ -48,8 +48,9 @@ differs between local-path and compressed ZFS datasets.
 
 The following are explicitly retained host/ZFS datasets or static PVs, not
 local-path migration targets: knowledge vaults, `/media` and `/media/downloads`,
-Ollama model storage, media application configuration, Penpot state, Bitmagnet
-state, Dojo state, and other named `/persist/...` PVs. Reclassify only with an
+Ollama model storage, media application configuration, Bitmagnet state, Dojo
+state, and other named `/persist/...` PVs. Penpot, Moltbot, Obot, OpenCode, and
+SGLang have been retired and pruned. Reclassify remaining state only with an
 application-specific plan.
 
 ## Before production migration

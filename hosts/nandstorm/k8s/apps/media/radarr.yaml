@@ -33,7 +33,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: radarr-config-pvc
+          claimName: radarr-config-zfs
       - name: media
         persistentVolumeClaim:
           claimName: media-pvc

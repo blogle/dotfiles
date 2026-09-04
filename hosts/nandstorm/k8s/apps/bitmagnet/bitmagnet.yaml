@@ -47,7 +47,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: bitmagnet-config-pvc
+          claimName: bitmagnet-config-zfs
 ---
 apiVersion: v1
 kind: Service

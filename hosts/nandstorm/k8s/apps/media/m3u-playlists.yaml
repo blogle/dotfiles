@@ -65,7 +65,7 @@ spec:
       volumes:
       - name: playlists
         persistentVolumeClaim:
-          claimName: m3u-playlists-pvc
+          claimName: m3u-playlists-zfs
 ---
 apiVersion: v1
 kind: Service

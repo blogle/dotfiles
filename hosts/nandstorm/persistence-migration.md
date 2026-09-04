@@ -31,7 +31,7 @@ Create a ZFS snapshot and archive the currently active bind-mount sources:
 zfs snapshot rpool/safe/persist@before-bind-mount-migration-$timestamp
 tar -C /persist/persist -czf /persist/recovery/bind-sources-$timestamp.tgz \
   acestream-proxy bitmagnet dispatcharr dojo jellyfin jellyseerr muxarr tinyauth \
-  m3u-playlists penpot prowlarr radarr sonarr teamarr transmission
+  m3u-playlists prowlarr radarr sonarr teamarr transmission
 ```
 
 ## Migrate
@@ -42,7 +42,7 @@ directories at `/persist/<name>`:
 ```sh
 systemctl stop k3s
 
-names='acestream-proxy bitmagnet dispatcharr dojo jellyfin jellyseerr m3u-playlists muxarr penpot prowlarr radarr sonarr teamarr tinyauth transmission'
+names='acestream-proxy bitmagnet dispatcharr dojo jellyfin jellyseerr m3u-playlists muxarr prowlarr radarr sonarr teamarr tinyauth transmission'
 units=''
 for name in $names; do
   units="$units $(systemd-escape --path --suffix=mount /persist/$name)"

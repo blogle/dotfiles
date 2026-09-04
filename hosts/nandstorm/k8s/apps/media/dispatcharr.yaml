@@ -55,7 +55,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: dispatcharr-config-pvc
+          claimName: dispatcharr-config-zfs
       - name: media
         persistentVolumeClaim:
           claimName: media-pvc

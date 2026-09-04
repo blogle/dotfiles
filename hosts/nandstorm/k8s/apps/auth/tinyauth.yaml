@@ -107,9 +107,8 @@ spec:
           periodSeconds: 30
       volumes:
       - name: data
-        hostPath:
-          path: /persist/tinyauth
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: tinyauth-data-zfs
 ---
 apiVersion: v1
 kind: Service
