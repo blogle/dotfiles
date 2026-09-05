@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lific
+  namespace: lific
+  labels:
+    app.kubernetes.io/name: lific
+    app.kubernetes.io/instance: lific
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - lific.thejeffer.net
+      secretName: lific-tls
+  rules:
+    - host: lific.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lific
+                port:
+                  number: 3456

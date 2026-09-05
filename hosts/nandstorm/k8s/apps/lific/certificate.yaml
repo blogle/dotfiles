@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lific-tls
+  namespace: lific
+spec:
+  secretName: lific-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  commonName: lific.thejeffer.net
+  dnsNames:
+    - lific.thejeffer.net
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  renewBefore: 360h

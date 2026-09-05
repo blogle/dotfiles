@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: lific-ghcr-pull
+  namespace: lific
+spec:
+  encryptedData:
+    .dockerconfigjson: AgA1EUB0Kxw4xtMVW8yQEaWXIDMY9qiXokierADWhCRsvtJm3/DgrfDVBluNC8NTeGoSpoVZke+YyDAzTKIi3VH/myi5ugdrD2APdJ+KI7fZ820IrEVociXEmqqCRuBdhb21bcDfvL/QFRkSihhWzMZP4+6UkpY5FU+2SkK3kqdcdiR7IvJzNw5fF7R9WZQ/7+a2/A9INF887SfBHfWMQiG2d0ZHKZvfo0/ttjUXAmLJjpw+SWZ34o3FSOGKA+aavY1z62rrKdWq5tTiZJRK2fl5ivv7ixuRfr18tFUgbid0pjPi2syCNRm1CPOOw8LA/mmHToWeMKfcCM33g1BznUrRZu3WEFcXRX2ykfgtZljO69IFSHO9IUxgTG44QET9T9V1HFoR3DxmN1pRihciMzDfjqwtfiviep0AQfD4roSiZeXlR+CtaZXePK1pAR4MXFG3y9gBpR34DXHS0jwI4Twgp0w5eS6REdrn/EJ/+SyeGRYb8C8VsWVqAVk9Hk+5AituBrmDv6ovkv9VWYjSRqP19Rvb+GfUoO7yH+G5QL3jizqjTEEYZEa57+cHXpjDCXy9Kat8pm2EvBYQeyEobqpzIjHXVp439qGbrif13VK3K+1Ly7DHZDYJZDJcVq5Q36B2K9V0/jU5spFwv5AR+J4QORdfaGZfqTG1Ts98X3/sK7c5AjklV7e46iYXKbLMr2QO8Uvk9CfqtriLHM0w37EjOzCBnCcsEZKPIHALpUonjsQ76fKxut4e/DNo2WaC5gSc4EF6a7Sy8/50iai5ZiJHsYW7mCpQEkyqbMfhmebuGJxZEZTZ6bz5jvElFVGZGJTvjyMCm7Qyg21XcZYZH43OAK0Xhxa4f9yYhnCGq41ItjhAa+ypU+qno75pr7lPwoZFsS1JR/mwD/nWPPhk+jchoqxtmJLRQKpKY2E=
+  template:
+    metadata:
+      name: lific-ghcr-pull
+      namespace: lific
+    type: kubernetes.io/dockerconfigjson

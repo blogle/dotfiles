@@ -1,0 +1,9 @@
+resources:
+  - namespace.yaml
+  - lific-ghcr-pull.sealed.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - certificate.yaml

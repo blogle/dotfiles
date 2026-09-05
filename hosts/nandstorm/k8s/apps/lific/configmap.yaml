@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lific-config
+  namespace: lific
+data:
+  lific.toml: |
+    [server]
+    host = "0.0.0.0"
+    port = 3456
+    public_url = "https://lific.thejeffer.net"
+    cors_origins = ["https://lific.thejeffer.net"]
+
+    [database]
+    path = "/data/lific.db"
+
+    [backup]
+    enabled = true
+    dir = "/data/backups"
+    interval_minutes = 60
+    retain = 168
+
+    [log]
+    level = "info"
+
+    [auth]
+    allow_signup = true
+    required = true
