@@ -30,7 +30,7 @@ spec:
                       - nandstorm
       containers:
         - name: ollama
-          image: docker.io/ollama/ollama:0.32.6@sha256:6b1ea96f5e72f4fbeaa3ddce98dafec32682b17a94f3e635417aafdf2eaed43a
+          image: docker.io/ollama/ollama:0.33.3@sha256:57a73f11f75b32b97b59b003f351445c9c2a8af4b9d586ecdc928dee6150ef26
           imagePullPolicy: IfNotPresent
           env:
             - name: OLLAMA_HOST
@@ -97,7 +97,18 @@ spec:
             - |
               endpoint=http://127.0.0.1:11434
               until curl -fsS "$endpoint/api/version" >/dev/null; do sleep 2; done
-              for model in qwen3.6:35b-a3b qwen3.5:9b phi4-mini-reasoning:3.8b qwen3-embedding:0.6b; do
+              # Free space before pulling the replacement; both Qwen models do not fit.
+              old_model=qwen3.6:35b-a3b
+              models=$(curl -fsS "$endpoint/api/tags")
+              case "$models" in
+                *"\"name\":\"${old_model}\""*)
+                  echo "removing replaced model ${old_model}"
+                  curl -fsS --no-progress-meter -X DELETE "$endpoint/api/delete" \
+                    -H 'Content-Type: application/json' \
+                    -d "{\"model\":\"${old_model}\"}" >/dev/null
+                  ;;
+              esac
+              for model in qwen3.8:27b qwen3.5:9b phi4-mini-reasoning:3.8b qwen3-embedding:0.6b; do
                 echo "ensuring model ${model}"
                 curl -fsS --no-progress-meter -X POST "$endpoint/api/pull" \
                   -H 'Content-Type: application/json' \

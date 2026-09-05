@@ -12,7 +12,7 @@ https://openhands.thejeffer.net/canvas
 ## LLM
 
 - Ollama: `http://ollama.ai.svc.cluster.local:11434/v1`
-- Primary: `qwen3.6:35b-a3b`
+- Primary: `qwen3.8:27b`
 - Context: `32768`
 
 ## Persistent paths

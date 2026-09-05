@@ -15,8 +15,10 @@ ownership model rather than bypassing scheduler accounting.
 
 ## Versions and models
 
-- Ollama 0.32.6, linux/amd64 image digest
-  `sha256:6b1ea96f5e72f4fbeaa3ddce98dafec32682b17a94f3e635417aafdf2eaed43a`
+- Ollama 0.33.3, linux/amd64 image digest
+  `sha256:57a73f11f75b32b97b59b003f351445c9c2a8af4b9d586ecdc928dee6150ef26`
+- `qwen3.8:27b`: model digest
+  `22130167c4c20e20c7b71454612966ca8e8171e9b3cc8ab6ce8aa6cbfec79643`
 - `qwen3.5:9b`: model digest
   `6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7`
 - `phi4-mini-reasoning:3.8b`: model digest
@@ -24,9 +26,11 @@ ownership model rather than bypassing scheduler accounting.
 - `qwen3-embedding:0.6b`: model digest
   `ac6da0dfba84a81fdbfbaf330198c33cd77c4cdfc53e8bc50eb581914a15621d`
 
-The model sidecar idempotently pulls these tags and gates pod readiness until
-all are present. `/root/.ollama` is backed by the 40 GiB `ollama-models` claim,
-a retained hostPath PV at `/persist/llm/ollama`.
+The model sidecar removes the replaced `qwen3.6:35b-a3b` model before pulling
+these tags because both Qwen models would exceed the 40 GiB claim together. It
+then gates pod readiness until all required models are available.
+`/root/.ollama` is backed by the `ollama-models-zfs` claim at
+`/persist/llm/ollama`.
 
 The node actually has about 48 GiB RAM, rather than the approximately 128 GiB
 assumed by the initial specification, so the pod is limited to 32 GiB. The
@@ -35,7 +39,7 @@ operators must also watch physical free space on `rpool/safe/persist`.
 
 ## GPU and observability
 
-Titan V is compute capability 7.0. Ollama 0.32.6 rejects its CUDA 13 runner for
+Titan V is compute capability 7.0. Ollama rejects its CUDA 13 runner for
 that architecture and automatically selects its CUDA 12 runner; startup logs
 must show three `NVIDIA TITAN V` devices using CUDA, not CPU.
 

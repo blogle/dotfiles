@@ -118,7 +118,7 @@ spec:
             - name: AUTOMATION_PORT
               value: "18001"
             - name: LLM_MODEL
-              value: openai/qwen3.6:35b-a3b
+              value: openai/qwen3.8:27b
             - name: LLM_BASE_URL
               value: http://ollama.ai.svc.cluster.local:11434/v1
             - name: LLM_API_KEY
