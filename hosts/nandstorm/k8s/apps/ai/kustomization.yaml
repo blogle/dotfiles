@@ -1,6 +1,5 @@
 resources:
   - namespace.yaml
-  - storage.yaml
   - ollama.yaml
   - observability.yaml
   - dashboard.yaml

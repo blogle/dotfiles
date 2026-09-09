@@ -65,10 +65,10 @@ spec:
                   <OidClientId>${client_id}</OidClientId>
                   <OidSecret>${client_secret}</OidSecret>
                   <Enabled>true</Enabled>
-                  <EnableAuthorization>false</EnableAuthorization>
+                  <EnableAuthorization>true</EnableAuthorization>
                   <EnableAllFolders>false</EnableAllFolders>
                   <EnabledFolders />
-                  <AdminRoles />
+                  <AdminRoles><string>media-users</string></AdminRoles>
                   <Roles />
                   <EnableFolderRoles>false</EnableFolderRoles>
                   <EnableLiveTvRoles>false</EnableLiveTvRoles>

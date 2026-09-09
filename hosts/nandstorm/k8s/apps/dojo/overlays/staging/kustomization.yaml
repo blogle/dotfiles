@@ -7,7 +7,6 @@ resources:
 # Uses the upstream Dojo base from the rebuilt repository.
 - github.com/blogle/dojo2//deploy/k8s/base?ref=master
 - namespace.yaml
-- volumes.yaml
 - ingress.yaml
 
 images:
@@ -16,17 +15,5 @@ images:
   newTag: staging
 
 patches:
-- target:
-    group: ""
-    version: v1
-    kind: PersistentVolumeClaim
-    name: dojo-data
-  patch: |-
-    - op: add
-      path: /spec/volumeName
-      value: dojo-staging-pv
-    - op: add
-      path: /spec/storageClassName
-      value: ""
 - path: keel-annotations.patch.yaml
 - path: pod-spec.patch.yaml

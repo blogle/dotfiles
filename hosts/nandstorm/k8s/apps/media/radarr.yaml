@@ -13,6 +13,20 @@ spec:
       labels:
         app: radarr
     spec:
+      initContainers:
+      - name: configure-external-auth
+        image: busybox:1.36
+        command:
+        - sh
+        - -ec
+        - |
+          config=/config/config.xml
+          if [ -f "$config" ]; then
+            sed -i 's#<AuthenticationMethod>[^<]*</AuthenticationMethod>#<AuthenticationMethod>External</AuthenticationMethod>#' "$config"
+          fi
+        volumeMounts:
+        - name: config
+          mountPath: /config
       containers:
       - name: radarr
         image: lscr.io/linuxserver/radarr:6.2.1.10461-ls305

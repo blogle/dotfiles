@@ -61,10 +61,11 @@ curl --fail --silent --show-error \
   "https://jellyfin.thejeffer.net/sso/OID/Add/PocketID?api_key=$JELLYFIN_API_KEY"
 ```
 
-`enableAuthorization` is intentionally `false` for the initial rollout. An
-SSO-created account receives no library or administrative access until the
-local Jellyfin administrator grants it explicitly. Do not enable group-to-role
-mapping until that initial flow has been tested with a non-administrator.
+`enableAuthorization` is `true` and `AdminRoles` includes `media-users`. An
+SSO-created account in the `media-users` group receives administrative access
+automatically. To restrict admin to a smaller subset, create a separate
+`media-admins` Pocket ID group, add it to `AdminRoles`, and remove
+`media-users` from that list.
 
 ## Known Limitation
 
