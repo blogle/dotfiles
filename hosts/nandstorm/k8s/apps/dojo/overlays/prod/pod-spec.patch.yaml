@@ -42,3 +42,22 @@ spec:
             secretKeyRef:
               name: dojo-google-oauth
               key: GOOGLE_OAUTH_REDIRECT_URI
+        - name: BACKUP_SERVICE_ACCOUNT_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: dojo-backup-config
+              key: service-account-email
+              optional: true
+        - name: BACKUP_SERVICE_ACCOUNT_FILE
+          value: /google-backup/service-account.json
+        - name: BACKUP_STATUS_TOKEN_FILE
+          value: /backup-status/token
+      volumes:
+      - name: google-backup
+        secret:
+          secretName: dojo-backup-google
+          optional: false
+      - name: backup-status
+        secret:
+          secretName: dojo-backup-status
+          optional: false

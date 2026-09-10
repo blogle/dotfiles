@@ -8,6 +8,7 @@ resources:
 - github.com/blogle/dojo2//deploy/k8s/base?ref=master
 - namespace.yaml
 - ingress.yaml
+- dojo-google-oauth-sealed.yaml
 
 images:
 - name: ghcr.io/blogle/dojo2
