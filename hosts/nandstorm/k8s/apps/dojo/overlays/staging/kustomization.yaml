@@ -18,3 +18,7 @@ images:
 patches:
 - path: keel-annotations.patch.yaml
 - path: pod-spec.patch.yaml
+
+patchesStrategicMerge:
+- delete-base-pvc.patch.yaml
+- disable-backup.patch.yaml

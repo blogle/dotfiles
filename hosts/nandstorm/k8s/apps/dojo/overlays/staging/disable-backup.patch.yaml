@@ -1,0 +1,35 @@
+$patch: delete
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dojo-backup
+---
+$patch: delete
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dojo-backup
+---
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dojo-backup
+---
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dojo-backup
+---
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dojo-backup-snapshot-classes
+---
+$patch: delete
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dojo-backup-snapshot-classes

@@ -15,3 +15,6 @@ images:
 
 patches:
 - path: pod-spec.patch.yaml
+
+patchesStrategicMerge:
+- delete-base-pvc.patch.yaml
