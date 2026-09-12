@@ -13,12 +13,18 @@ resources:
 images:
 - name: ghcr.io/blogle/dojo2
   newName: ghcr.io/blogle/dojo2
-  newTag: staging
+  digest: sha256:ae92e2c726319a46af69c0a3ba949e36d4d8971da97786a028afc0a381a1f4dc
 
 patches:
-- path: keel-annotations.patch.yaml
 - path: pod-spec.patch.yaml
+- path: backup-cronjob.patch.yaml
+- target:
+    kind: ClusterRoleBinding
+    name: dojo-backup-snapshot-classes
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-snapshot-classes-staging
 
 patchesStrategicMerge:
 - delete-base-pvc.patch.yaml
-- disable-backup.patch.yaml
