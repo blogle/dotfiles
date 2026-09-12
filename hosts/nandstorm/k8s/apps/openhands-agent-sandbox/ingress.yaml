@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openhands-runtime-adapter
+  namespace: openhands-sandboxes
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: openhands-runtime.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands-runtime-adapter
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - openhands-runtime.thejeffer.net
+      secretName: openhands-runtime-adapter-tls

@@ -1,0 +1,12 @@
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: openhands-runtime-adapter-client
+  namespace: openhands
+spec:
+  encryptedData:
+    api-key: AgCNKP/a8hEGut5F2AzITfgkAGZY+taZDlhpd7a7aKCaIkAFdtodrVTG4t6XdNqoI+ESl60OPFrzUZt6t5D+2lB/H5THUcXaQCJWXrQSsds8fvJS1rUOALLplnHYSiwIz4ZLGQR3++AZQbbrp9kXE4ic1dq99FIFq8ufnq3oNeGnKHSSJBVyTrzd+OwEsaqldQ97CT+udgs+ANBOeTpNLM+t1u8+xzz7dqMaTDMvFQ54M/EnXhfAdz3UJaPALRpA7zGNj19vk+hzpa4k8CKnxHk5vGH3Iqy9yuLsyO7dSXGkgEp1NckLLIDHaiX/r1oowh9YKn6r3FBvb9mFjFJIrUPLkW1mEqXFdujV4WeYoPFzlu1b9hVzjn12/uVGlmQBo2y9qFUrJblm0htC0JXi8P3YOaf3Mpwkn4IaW39+AlMMWtTFCyUH7v4Wf9sK9Bcb1DZqWejl8GzN4c17u+y8RXjySdx0kn+dwNDwqUE+aQ4rDnEsoM/sDXPZXQUJJUlOpQt8XmKFlCPuGueiCy4PTP+URTUW37G+9V4b1l9g51o8ZCsk9NFkuESZQ4tav2+Lj8KNliI+3KTlQf6F4lZHiy31bQhtrUVKhLoBCV2G54NwIpCIVviryBd+/WAGaa/l+H5z7hLm/UBX8ZIlc02elAPWvPOLzoWvq1cQogGMLhnxqfvsL7SXSv3SrrR6QCHoYNibca3DuRYsG+aU6hlDOFJLe1KggEzONZ74A87nOMvj1GiXXo957iZ96bfo7dg79Z3KaOPnAieOuMgqtk7aiIfw
+  template:
+    metadata:
+      name: openhands-runtime-adapter-client
+      namespace: openhands
