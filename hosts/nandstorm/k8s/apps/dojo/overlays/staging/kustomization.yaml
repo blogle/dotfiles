@@ -13,7 +13,7 @@ resources:
 images:
 - name: ghcr.io/blogle/dojo2
   newName: ghcr.io/blogle/dojo2
-  digest: sha256:ae92e2c726319a46af69c0a3ba949e36d4d8971da97786a028afc0a381a1f4dc
+  digest: sha256:1bac7fda0026414f83697038ef53f0cf69a7240839770ceb5b0cdb55d5a52d3f
 
 patches:
 - path: pod-spec.patch.yaml
