@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-config
+  namespace: nexus
+data:
+  nexus.toml: |
+    [server]
+    listen_address = "0.0.0.0:8000"
+
+    [server.health]
+    enabled = true
+    path = "/health"
+
+    [mcp]
+    enabled = true
+    path = "/mcp"
+
+    [mcp.servers.chadlands]
+    protocol = "streamable-http"
+    url = "http://markdown-vault-mcp.knowledge.svc.cluster.local:8000/mcp"
+
+    [llm]
+    enabled = false
+
+    [telemetry]
+    service_name = "nexus"
+
+    [telemetry.resource_attributes]
+    environment = "homelab"
+    cluster = "nandstorm"
+    component = "mcp-gateway"
+
+    [telemetry.exporters.otlp]
+    enabled = true
+    endpoint = "http://alloy-otel.observability.svc.cluster.local:4317"
+    protocol = "grpc"
