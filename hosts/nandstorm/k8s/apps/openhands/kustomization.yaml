@@ -6,3 +6,4 @@ resources:
   - storage.yaml
   - runtime-adapter-client.sealed.yaml
   - rendered.yaml
+  - sandbox-server

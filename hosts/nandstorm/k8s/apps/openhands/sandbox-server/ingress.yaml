@@ -1,0 +1,42 @@
+# Traefik middleware to rewrite /api/settings → /api/v1/settings.
+# The Canvas SettingsClient uses /api/settings (no v1 prefix) but
+# sandbox-server only has /api/v1/settings.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sandbox-server-api-compat
+  namespace: openhands
+spec:
+  replacePathRegex:
+    regex: ^/api/settings(/.*)?$
+    replacement: /api/v1/settings${1}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sandbox-server
+  namespace: openhands
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # No SSO middleware — sandbox-server uses its own X-API-Key auth.
+    # Canvas connects from the browser; the SSO middleware would block
+    # unauthenticated API calls.
+    traefik.ingress.kubernetes.io/router.middlewares: openhands-sandbox-server-api-compat@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: openhands-control.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sandbox-server
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - openhands-control.thejeffer.net
+      secretName: sandbox-server-tls

@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: sandbox-server-api-key
+  namespace: openhands
+spec:
+  encryptedData:
+    api-key: AgAL/wJQqF1tQIMxJH2DmjXLhJ2LpLHUW1RBQmmzsTP15MUx0W4MwL0kSrseNkh7PgSX9jAD725q0aZEpNRz8tQXtMV7pSLmd+Dg8UK+RJCafaKIPJffU2EF2MEEwKzoit3MBGe3sWm40LQZTiVdmrxWnUFO/S3aslWRc+gy4r28ZAenCLA2MC5atxkSc6Hen830WcMzbBwZ3PCJ5rztNcu1HEhC2tc3zb5kh3mFNHbBHG+xdExLzvyKLSnoXZmI9czB17gUCdFaFF4IoxpmQhWMnMh7l1gs8wcrIfgXyU1kO8OuTZUB5/YsT1e/g5yd9ZsP+vlbwZmJKLrag+EH0QBYE9xEZlJ2Mv5KLmmc/MFO/xQ2YICXie/I2uKBeD91hwXxzSlEhZKajbtnFs6cl1swtTWuhIUVzh8jcZNUirbIooKpsihuBoTpn78FG/MTnPs04gE9e/Knrjqst5esVVeIhaxGnjTF1IiOYDPN+GFYEZeG61bUesnXgh8n2xWnlbOoVHGSIYekJrhWPfPbxtyCtTKak/jNZ+EMJXtsvGjDTERfCBjElR0HR7zXw4iqju5NtvMp6Q1no9NBZc9nh//qAnJVqkxl13blYWaEho4w7Qom/o8ABDJSTW+oqnAyJmmUX2rM9koYZ/hgDoyh5d2z2WQkoqQksY6tEj+vmGid8A6wqKF6+7nxR6sRuzB1HUE1cuOzz5dPODmR3t7QozSvIWL8smQQdWu4RO2vNRunUExEvEGhymoco6F6+6sIqOp0S6KhJZdf0jM8sazX50jO
+  template:
+    metadata:
+      name: sandbox-server-api-key
+      namespace: openhands
