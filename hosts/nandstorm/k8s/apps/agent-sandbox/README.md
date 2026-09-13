@@ -7,7 +7,7 @@ controller and CRDs into the `nandstorm` cluster.
 ## Vendored release
 
 - Upstream repository: `kubernetes-sigs/agent-sandbox`
-- Release version: `v1.0.2`
+- Release version: `v0.5.3`
 - Source asset: `sandbox-with-extensions.yaml`
 - Date vendored: 2026-09-12
 
