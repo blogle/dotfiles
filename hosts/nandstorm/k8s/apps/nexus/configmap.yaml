@@ -20,6 +20,11 @@ data:
     protocol = "streamable-http"
     url = "http://markdown-vault-mcp.knowledge.svc.cluster.local:8000/mcp"
 
+    [mcp.servers.github]
+    protocol = "streamable-http"
+    url = "https://api.githubcopilot.com/mcp/x/all"
+    auth.token = "{{ env.GITHUB_PAT }}"
+
     [llm]
     enabled = false
 

@@ -3,7 +3,8 @@
 Nexus is the aggregation boundary for MCP services used by external AI
 clients. This initial deployment federates the existing Chadlands
 `markdown-vault-mcp` service without changing that workload or its direct
-OpenAI tunnel.
+OpenAI tunnel. GitHub is connected through GitHub's official remotely hosted
+MCP server using its broad `all` toolset.
 
 ## Architecture
 
@@ -14,7 +15,7 @@ OpenAI Secure MCP Tunnel
    |
 Nexus
    +-- Chadlands markdown-vault-mcp
-   +-- GitHub MCP (planned)
+   +-- GitHub MCP
    +-- future services
 ```
 
@@ -65,8 +66,10 @@ or Nexus Service/Ingress.
 
 ## Secrets
 
-The planned GitHub PAT will be stored as `GITHUB_PAT` in the
-`github-mcp-credentials` Secret. The planned second OpenAI tunnel will use
+The GitHub PAT is stored as `GITHUB_PAT` in the
+`github-mcp-credentials` Secret. Nexus sends it to the official remote
+endpoint `https://api.githubcopilot.com/mcp/x/all` through its supported
+environment substitution. The planned second OpenAI tunnel will use
 `nexus-tunnel-credentials`. Both must be generated with
 `scripts/seal-secret.sh --scope strict`; plaintext credentials must not be
 stored in this repository.

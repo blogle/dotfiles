@@ -25,6 +25,12 @@ spec:
           ports:
             - name: http
               containerPort: 8000
+          env:
+            - name: GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: github-mcp-credentials
+                  key: GITHUB_PAT
           resources:
             requests:
               cpu: 50m

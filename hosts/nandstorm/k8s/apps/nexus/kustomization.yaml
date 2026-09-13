@@ -3,3 +3,4 @@ resources:
   - configmap.yaml
   - nexus.yaml
   - ingress.yaml
+  - github-mcp-credentials-nexus.sealed.yaml
