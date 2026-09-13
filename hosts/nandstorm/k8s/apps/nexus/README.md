@@ -11,7 +11,7 @@ MCP server using its broad `all` toolset.
 ```text
 ChatGPT
    |
-OpenAI Secure MCP Tunnel
+OpenAI Secure MCP Tunnel (`nexus-tunnel`)
    |
 Nexus
    +-- Chadlands markdown-vault-mcp
@@ -69,8 +69,9 @@ or Nexus Service/Ingress.
 The GitHub PAT is stored as `GITHUB_PAT` in the
 `github-mcp-credentials` Secret. Nexus sends it to the official remote
 endpoint `https://api.githubcopilot.com/mcp/x/all` through its supported
-environment substitution. The planned second OpenAI tunnel will use
-`nexus-tunnel-credentials`. Both must be generated with
+environment substitution. The independent OpenAI tunnel uses
+`nexus-tunnel-credentials`, containing its own tunnel ID and runtime API key.
+Both must be generated with
 `scripts/seal-secret.sh --scope strict`; plaintext credentials must not be
 stored in this repository.
 

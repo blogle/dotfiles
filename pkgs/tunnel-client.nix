@@ -2,16 +2,21 @@
 
 buildGoModule rec {
   pname = "tunnel-client";
-  version = "0.0.10";
+  version = "0.0.14";
 
   src = fetchFromGitHub {
     owner = "openai";
     repo = "tunnel-client";
     rev = "v${version}";
-    hash = "sha256-MYu+ERBGfpZZnrKUFd643K4GyRMoqGpnaKv0TqQxRcQ=";
+    hash = "sha256-RU5g+bx1Hjqxz0fYeznJpA0V+xun97PizHjT0Y843G0=";
   };
 
-  vendorHash = "sha256-6T12SRmoXe28XLBPgh3/rppjvi4Xeqi89znXcByHfWY=";
+  postPatch = ''
+    substituteInPlace go.mod --replace-fail 'go 1.27.0' 'go 1.26.0'
+    rm -rf vendor
+  '';
+
+  vendorHash = "sha256-UxNE6pfnUx5oSxGMNNRVKgyTECQvDlmutq4yWV5bRQI=";
   subPackages = [ "cmd/client" ];
 
   env.CGO_ENABLED = 0;

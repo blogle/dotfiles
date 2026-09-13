@@ -4,3 +4,5 @@ resources:
   - nexus.yaml
   - ingress.yaml
   - github-mcp-credentials-nexus.sealed.yaml
+  - nexus-tunnel-credentials-nexus.sealed.yaml
+  - tunnel.yaml
