@@ -61,7 +61,7 @@ After sandbox-server is healthy, configure Agent Canvas:
 2. Go to **Manage Backends** → **Add Backend** → **Manual connection**
 3. Fill in:
    - **Name**: `OpenHands Kubernetes`
-    - **Host**: `https://openhands.thejeffer.net`
+   - **Host**: `https://openhands.thejeffer.net`
    - **Type**: `Cloud`
     - **API Key**: `local-legacy`
 4. Select the `OpenHands Kubernetes` backend
@@ -74,6 +74,17 @@ sent to sandbox-server while ordinary Canvas routes remain local. The
 compatibility endpoint `/api/keys/current` intentionally returns HTTP 400,
 which Canvas interprets as a valid legacy API key. It can be removed if OSS
 sandbox-server implements the Canvas Cloud-account contract directly.
+
+## Routing
+
+- `/canvas`, `/api/settings`, `/api/cloud-proxy`: local Canvas backend
+- `/api/v1`: sandbox-server
+- `/api/keys/current`: sandbox-server compatibility endpoint
+- `/api/organizations`: sandbox-server compatibility endpoint
+- `/sandbox/<runtime-id>`: runtime adapter ingress and remote Agent Server
+
+The deployment has one remote sandbox profile and zero warm replicas. It does
+not provide per-conversation image selection or OIDC application integration.
 
 ## Pins
 
