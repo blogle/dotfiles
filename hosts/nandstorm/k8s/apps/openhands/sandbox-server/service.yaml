@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: sandbox-server
+  name: openhands-sandbox-server
   namespace: openhands
   labels:
     app.kubernetes.io/name: sandbox-server

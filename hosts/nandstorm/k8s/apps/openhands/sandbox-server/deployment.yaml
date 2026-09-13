@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sandbox-server
+  name: openhands-sandbox-server
   namespace: openhands
   labels:
     app.kubernetes.io/name: sandbox-server
@@ -16,87 +16,80 @@ spec:
       labels:
         app.kubernetes.io/name: sandbox-server
     spec:
-      # The upstream entrypoint requires root (it creates an "enduser" account).
-      # With NO_SETUP=true the entrypoint is a passthrough; root is still
-      # required by the entrypoint's id-check.  See UPSTREAM.md.
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 42420
         runAsGroup: 42420
-        fsGroup: 10001
+        fsGroup: 42420
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: sandbox-server
-          # blogle/openhands-sandbox-server
-          # Built from OpenHands/sandbox-server@f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3
-          # containers/app/Dockerfile, unmodified.
-          image: ghcr.io/blogle/openhands-sandbox-server:f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3
+          image: ghcr.io/blogle/openhands-sandbox-server@sha256:9d6de002f42b098a5249ab1db7cb0d0856e4c9a5085d1cf943d05b428f2c3085
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000
               protocol: TCP
           env:
-            # Bypass the entrypoint's user-setup / Docker-socket checks.
-            - name: NO_SETUP
-              value: "true"
-            # Remote runtime mode — sandbox-server delegates sandbox lifecycle
-            # to the blogle/openhands-agent-sandbox adapter via HTTP.
             - name: RUNTIME
-              value: "remote"
+              value: remote
             - name: SANDBOX_REMOTE_RUNTIME_API_URL
-              value: "http://openhands-runtime-adapter.openhands-sandboxes.svc.cluster.local"
+              value: http://openhands-runtime-adapter.openhands-sandboxes.svc.cluster.local
             - name: SANDBOX_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: sandbox-server-api-key
+                  name: openhands-runtime-adapter-client
                   key: api-key
-            # File-store persistence (conversations, events, settings).
             - name: OH_PERSISTENCE_DIR
-              value: "/.openhands"
-            - name: FILE_STORE
-              value: "local"
-            - name: FILE_STORE_PATH
-              value: "/.openhands"
-            # LLM — reuse the cluster-local Ollama instance.
-            - name: OLLAMA_BASE_URL
-              value: "http://ollama.ai.svc.cluster.local:11434"
-            # Public URL for CORS and webhook callbacks.
-            - name: WEB_HOST
-              value: "openhands-control.thejeffer.net"
-            # Disable frontend serving (Canvas is a separate deployment).
-            - name: SERVE_FRONTEND
-              value: "false"
+              value: /data
+            - name: AGENT_SERVER_IMAGE_REPOSITORY
+              value: ghcr.io/openhands/agent-server
+            - name: AGENT_SERVER_IMAGE_TAG
+              value: 1.37.1-python
+            - name: LLM_MODEL
+              value: openai/qwen3.8:27b
+            - name: LLM_BASE_URL
+              value: http://ollama.ai.svc.cluster.local:11434/v1
+            - name: LLM_API_KEY
+              value: local-llm
+            - name: OH_AGENT_SERVER_ENV
+              value: '{"OH_ALLOW_CORS_ORIGINS_0":"https://openhands.thejeffer.net"}'
+          command:
+            - /app/.venv/bin/python
+            - -m
+            - uvicorn
+            - compatibility:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "3000"
           volumeMounts:
             - name: state
-              mountPath: /.openhands
-              subPath: openhands
-          startupProbe:
+              mountPath: /data
+            - name: compatibility
+              mountPath: /app/compatibility.py
+              subPath: compatibility.py
+          readinessProbe:
             httpGet:
-              path: /alive
+              path: /health
               port: http
-            periodSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 60
+            failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /alive
+              path: /health
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 20
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 5
-          readinessProbe:
-            httpGet:
-              path: /alive
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
           resources:
             requests:
-              cpu: 500m
+              cpu: 250m
               memory: 512Mi
             limits:
               cpu: "2"
@@ -109,4 +102,7 @@ spec:
       volumes:
         - name: state
           persistentVolumeClaim:
-            claimName: sandbox-server-state-zfs
+            claimName: openhands-sandbox-server-state
+        - name: compatibility
+          configMap:
+            name: openhands-sandbox-server-compatibility

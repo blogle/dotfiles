@@ -63,20 +63,6 @@ config:
       value: "http://ollama.ai.svc.cluster.local:11434/v1"
     - name: LLM_API_KEY
       value: "local-llm"
-    # Remote sandbox dispatch via sandbox-server (Cloud backend).
-    # Canvas talks to sandbox-server; sandbox-server talks to the runtime
-    # adapter.  Do NOT point Canvas directly at the runtime adapter.
-    - name: SANDBOX_TYPE
-      value: "remote"
-    - name: SANDBOX_REMOTE_RUNTIME_API_URL
-      value: "https://openhands-control.thejeffer.net"
-    - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
-      value: "ghcr.io/openhands/agent-canvas@sha256:862d1842f7935ff19a252c22260fdeeb47ba0a6fd5b18438a7aa46e1de271d22"
-    - name: SANDBOX_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: openhands-runtime-adapter-client
-          key: api-key
 
 secrets:
   ohSecretKey:

@@ -10,7 +10,7 @@ adapter. Canvas talks to sandbox-server; sandbox-server talks to the
 
 | Component | Namespace | Service |
 |-----------|-----------|---------|
-| sandbox-server | `openhands` | `sandbox-server:3000` |
+| sandbox-server | `openhands` | `openhands-sandbox-server:3000` |
 | runtime adapter | `openhands-sandboxes` | `openhands-runtime-adapter:80` |
 | agent-sandbox controller | `agent-sandbox-system` | (internal) |
 
@@ -25,11 +25,11 @@ Browser → Agent Canvas (openhands.thejeffer.net)
 
 ## URL
 
-https://openhands-control.thejeffer.net
+Cluster-internal service only: `openhands-sandbox-server.openhands.svc.cluster.local:3000`.
 
 ## Image
 
-`ghcr.io/blogle/openhands-sandbox-server:f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3`
+`ghcr.io/blogle/openhands-sandbox-server@sha256:9d6de002f42b098a5249ab1db7cb0d0856e4c9a5085d1cf943d05b428f2c3085`
 
 Built from `OpenHands/sandbox-server@f19f9e0d` (`containers/app/Dockerfile`,
 unmodified). See the packaging repository at
@@ -37,20 +37,13 @@ unmodified). See the packaging repository at
 
 ## Persistence
 
-`/.openhands` is backed by `sandbox-server-state-zfs` using StorageClass
+`/data` is backed by `openhands-sandbox-server-state` using StorageClass
 `openebs-zfspv-retain`. This stores conversations, events, and settings.
 
 ## Secrets
 
-`sandbox-server-api-key` (SealedSecret) contains the Remote Runtime API key.
-This value MUST match the `api-key` in `openhands-runtime-secrets` in the
-`openhands-sandboxes` namespace.
-
-Regenerate:
-
-```bash
-./seal-secrets.sh
-```
+The Remote Runtime API key comes from the existing
+`openhands-runtime-adapter-client` Secret.
 
 ## LLM
 
@@ -65,7 +58,7 @@ In the Agent Canvas UI:
 1. Go to **Manage Backends** → **Add Backend** → **Manual**
 2. Configure:
    - **Name**: `OpenHands Kubernetes`
-   - **Host**: `https://openhands-control.thejeffer.net`
+    - **Host**: `https://openhands.thejeffer.net`
    - **Type**: `Cloud`
    - **API Key**: any non-empty string (P0 single-tenant; the actual
      runtime API key is in `sandbox-server-api-key`)

@@ -35,9 +35,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/blogle/openhands-sandbox-server:f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3
-          outputs: type=image,push=true
           provenance: false
-          metadata: true
 
       - name: Print immutable image digest
         run: |

@@ -3,7 +3,7 @@
 This is the `nandstorm` overlay for
 [`blogle/openhands-agent-sandbox`](https://github.com/blogle/openhands-agent-sandbox).
 
-It pins the adapter and Agent Canvas images, configures the public runtime URL,
+It pins the adapter and Agent Server images, configures the public runtime URL,
 holds the encrypted runtime credentials, and exposes the adapter through the
 cluster's Traefik ingress.
 
@@ -26,7 +26,10 @@ KUBECONFIG=/workspace/kube_config/config \
 RUNTIME_API_URL=http://127.0.0.1:18080 \
 RUNTIME_PROXY_URL=http://127.0.0.1:18080 \
 RUNTIME_API_KEY="$(kubectl -n openhands-sandboxes get secret openhands-runtime-secrets -o jsonpath='{.data.api-key}' | base64 -d)" \
-OPENHANDS_SERVER_IMAGE=ghcr.io/openhands/agent-canvas@sha256:862d1842f7935ff19a252c22260fdeeb47ba0a6fd5b18438a7aa46e1de271d22 \
+OPENHANDS_SERVER_IMAGE=ghcr.io/openhands/agent-server:1.37.1-python \
 LIVE_TEST_NAMESPACE=openhands-sandboxes \
 nix develop /workspace/openhands-agent-sandbox --command make test-live
 ```
+
+The default profile is intentionally coupled to the pinned
+sandbox-server Agent Server dependency: `ghcr.io/openhands/agent-server:1.37.1-python`.

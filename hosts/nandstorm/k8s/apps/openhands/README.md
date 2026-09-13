@@ -1,16 +1,17 @@
 # OpenHands
 
-Complete OpenHands deployment with isolated per-conversation sandboxes.
+OpenHands Agent Canvas deployment with optional isolated per-conversation
+sandboxes.
 
 ## Architecture
 
 ```text
-Browser
-  → Agent Canvas (openhands.thejeffer.net)
-    → sandbox-server (openhands-control.thejeffer.net)
-      → runtime adapter (ClusterIP)
-        → SandboxClaim → agent-sandbox controller
-          → Sandbox + PVC + Agent Server
+Local backend
+  Canvas → bundled local Agent Server
+
+OpenHands Kubernetes backend
+  Canvas → sandbox-server → runtime adapter → Agent Sandbox
+    → SandboxClaim → Sandbox + PVC + Agent Server
 ```
 
 ## Components
@@ -18,7 +19,7 @@ Browser
 | Component | Directory | Namespace | URL |
 |-----------|-----------|-----------|-----|
 | Agent Canvas | `.` (root) | `openhands` | https://openhands.thejeffer.net |
-| sandbox-server | `sandbox-server/` | `openhands` | https://openhands-control.thejeffer.net |
+| sandbox-server | `sandbox-server/` | `openhands` | internal service on port 3000 |
 | runtime adapter | `../openhands-agent-sandbox/` | `openhands-sandboxes` | https://openhands-runtime.thejeffer.net |
 | agent-sandbox controller | `../agent-sandbox/` | `agent-sandbox-system` | (internal) |
 
@@ -57,14 +58,30 @@ See [sandbox-server/README.md](sandbox-server/README.md).
 After sandbox-server is healthy, configure Agent Canvas:
 
 1. Open https://openhands.thejeffer.net
-2. Go to **Manage Backends** → **Add Backend** → **Manual**
+2. Go to **Manage Backends** → **Add Backend** → **Manual connection**
 3. Fill in:
    - **Name**: `OpenHands Kubernetes`
-   - **Host**: `https://openhands-control.thejeffer.net`
+    - **Host**: `https://openhands.thejeffer.net`
    - **Type**: `Cloud`
-   - **API Key**: any non-empty string (P0 single-tenant)
+    - **API Key**: `local-legacy`
 4. Select the `OpenHands Kubernetes` backend
-5. Start a conversation with repository `blogle/dojo2`
+5. Start a conversation without choosing a repository.
+
+The Canvas and sandbox-server are intentionally single-user. OIDC and
+multi-user application semantics remain deferred. The selected Cloud routes
+are intentional: `/api/v1`, `/api/keys/current`, and `/api/organizations` are
+sent to sandbox-server while ordinary Canvas routes remain local. The
+compatibility endpoint `/api/keys/current` intentionally returns HTTP 400,
+which Canvas interprets as a valid legacy API key. It can be removed if OSS
+sandbox-server implements the Canvas Cloud-account contract directly.
+
+## Pins
+
+- Agent Canvas: `1.16.0`
+- sandbox-server: `f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3`
+- Agent Server: `1.37.1-python`
+- openhands-agent-sandbox: `v0.1.3`
+- agent-sandbox: `v0.5.3`
 
 ## Per-conversation isolation
 
