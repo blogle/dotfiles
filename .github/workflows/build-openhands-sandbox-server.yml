@@ -1,0 +1,47 @@
+name: Build OpenHands sandbox-server
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pinned sandbox-server
+        uses: actions/checkout@v4
+        with:
+          repository: OpenHands/sandbox-server
+          ref: f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push sandbox-server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/app/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/blogle/openhands-sandbox-server:f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3
+          outputs: type=image,push=true
+          provenance: false
+          metadata: true
+
+      - name: Print immutable image digest
+        run: |
+          docker buildx imagetools inspect \
+            ghcr.io/blogle/openhands-sandbox-server:f19f9e0d88272bb393e39e8cbcb78e3e8aa633a3 \
+            --format '{{json .Manifest.Digest}}' | tee digest.txt
+          echo "IMAGE_DIGEST=$(tr -d '"' < digest.txt)" >> "$GITHUB_STEP_SUMMARY"
