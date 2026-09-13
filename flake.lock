@@ -30,11 +30,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786321928,
-        "narHash": "sha256-nFtSWVIl8k0CVnUk/AdRxChOvOyJPe1kC0aajz/oK+w=",
+        "lastModified": 1789262662,
+        "narHash": "sha256-hz2S4t766wEec70iHEueb3lrOqrmT+NoFPTl1E40Kf0=",
         "owner": "blogle",
         "repo": "bubblebox",
-        "rev": "645b2f5a77d9fb1287a2392a5e3c38680beb2281",
+        "rev": "74fd440684c98b190b737f0c9711baf06e4a782b",
         "type": "github"
       },
       "original": {
