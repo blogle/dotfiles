@@ -118,6 +118,7 @@ in
     pkgs.vlc
     pkgs.wget
     pkgs.wireshark
+    pkgs.xclip
     pkgs.xdg-utils
     pkgs.zip
     pkgs.unzip
