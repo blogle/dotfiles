@@ -25,7 +25,7 @@ Browser → Agent Canvas (openhands.thejeffer.net)
 
 ## URL
 
-Cluster-internal service only: `openhands-sandbox-server.openhands.svc.cluster.local:3000`.
+Cluster-internal service only: `http://openhands-sandbox-server.openhands.svc.cluster.local:3000`.
 
 ## Image
 
@@ -58,10 +58,9 @@ In the Agent Canvas UI:
 1. Go to **Manage Backends** → **Add Backend** → **Manual**
 2. Configure:
    - **Name**: `OpenHands Kubernetes`
-    - **Host**: `https://openhands.thejeffer.net`
+   - **Host**: `http://openhands-sandbox-server.openhands.svc.cluster.local:3000`
    - **Type**: `Cloud`
-   - **API Key**: any non-empty string (P0 single-tenant; the actual
-     runtime API key is in `sandbox-server-api-key`)
+   - **API Key**: `local-legacy`
 3. Select the new backend and start a conversation.
 
 ## Validation
@@ -72,8 +71,9 @@ kubectl apply -k hosts/nandstorm/k8s
 
 # Check sandbox-server health
 kubectl -n openhands get pods -l app.kubernetes.io/name=sandbox-server
-kubectl -n openhands logs deploy/sandbox-server
+kubectl -n openhands logs deploy/openhands-sandbox-server
 
 # Check end-to-end
-curl -s https://openhands-control.thejeffer.net/health
+kubectl -n openhands port-forward svc/openhands-sandbox-server 13000:3000
+curl -s http://127.0.0.1:13000/health
 ```
