@@ -24,6 +24,27 @@ spec:
         fsGroup: 42420
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: database-migrations
+          image: ghcr.io/blogle/openhands-sandbox-server@sha256:9d6de002f42b098a5249ab1db7cb0d0856e4c9a5085d1cf943d05b428f2c3085
+          command:
+            - /app/.venv/bin/python
+            - -c
+            - >-
+              from openhands.app_server.app_lifespan.oss_app_lifespan_service
+              import OssAppLifespanService;
+              OssAppLifespanService().run_alembic()
+          env:
+            - name: OH_PERSISTENCE_DIR
+              value: /data
+          volumeMounts:
+            - name: state
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: sandbox-server
           image: ghcr.io/blogle/openhands-sandbox-server@sha256:9d6de002f42b098a5249ab1db7cb0d0856e4c9a5085d1cf943d05b428f2c3085
