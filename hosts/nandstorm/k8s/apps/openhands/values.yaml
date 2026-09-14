@@ -4,8 +4,8 @@ nameOverride: openhands
 fullnameOverride: openhands
 
 image:
-  repository: ghcr.io/blogle/agent-canvas
-  tag: "1.16.0-selfhosted-cloud.1@sha256:9b58a555844eb894162cc74eb0ab06168018db3606c0093462d115d6f07a9092"
+  repository: ghcr.io/blogle/agent-canvas-selfhosted
+  tag: "sha-1e2107f@sha256:c022cec9627dad93a8a01a8004bff43655179b98c3baf91f0a8737c7c0d64ab0"
   pullPolicy: IfNotPresent
 
 serviceAccount:
@@ -69,8 +69,8 @@ secrets:
     existingSecret: ""
     key: ohSecretKey
   sessionApiKey:
-    existingSecret: ""
-    key: sessionApiKey
+    existingSecret: sandbox-server-api-key
+    key: api-key
 
 podSecurityContext:
   fsGroup: 10001

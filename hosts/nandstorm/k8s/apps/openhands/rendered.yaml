@@ -99,7 +99,7 @@ spec:
         runAsUser: 10001
       containers:
         - name: agent-canvas
-          image: ghcr.io/blogle/agent-canvas:1.16.0-selfhosted-cloud.1@sha256:9b58a555844eb894162cc74eb0ab06168018db3606c0093462d115d6f07a9092
+          image: ghcr.io/blogle/agent-canvas-selfhosted:sha-1e2107f@sha256:c022cec9627dad93a8a01a8004bff43655179b98c3baf91f0a8737c7c0d64ab0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -117,6 +117,11 @@ spec:
               value: "18000"
             - name: AUTOMATION_PORT
               value: "18001"
+            - name: OH_SESSION_API_KEYS_0
+              valueFrom:
+                secretKeyRef:
+                  name: sandbox-server-api-key
+                  key: api-key
             - name: LLM_MODEL
               value: openai/qwen3.8:27b
             - name: LLM_BASE_URL
