@@ -25,7 +25,8 @@ Browser → Agent Canvas (openhands.thejeffer.net)
 
 ## URL
 
-Cluster-internal service only: `http://openhands-sandbox-server.openhands.svc.cluster.local:3000`.
+The service is also routed through the authenticated Canvas origin for the
+Cloud API paths.
 
 ## Image
 
@@ -58,7 +59,7 @@ In the Agent Canvas UI:
 1. Go to **Manage Backends** → **Add Backend** → **Manual**
 2. Configure:
    - **Name**: `OpenHands Kubernetes`
-   - **Host**: `http://openhands-sandbox-server.openhands.svc.cluster.local:3000`
+   - **Host**: `https://openhands.thejeffer.net`
    - **Type**: `Cloud`
    - **API Key**: `local-legacy`
 3. Select the new backend and start a conversation.

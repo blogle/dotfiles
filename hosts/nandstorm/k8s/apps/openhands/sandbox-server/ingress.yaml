@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openhands-sandbox-server
+  namespace: openhands
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: openhands.thejeffer.net
+      http:
+        paths:
+          - path: /api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands-sandbox-server
+                port:
+                  number: 3000
+          - path: /api/keys/current
+            pathType: Exact
+            backend:
+              service:
+                name: openhands-sandbox-server
+                port:
+                  number: 3000
+          - path: /api/organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands-sandbox-server
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - openhands.thejeffer.net
+      secretName: openhands-tls

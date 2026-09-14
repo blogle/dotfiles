@@ -61,7 +61,7 @@ After sandbox-server is healthy, configure Agent Canvas:
 2. Go to **Manage Backends** → **Add Backend** → **Manual connection**
 3. Fill in:
    - **Name**: `OpenHands Kubernetes`
-   - **Host**: `http://openhands-sandbox-server.openhands.svc.cluster.local:3000`
+   - **Host**: `https://openhands.thejeffer.net`
    - **Type**: `Cloud`
    - **API Key**: `local-legacy`
 4. Select the `OpenHands Kubernetes` backend
@@ -78,15 +78,13 @@ sandbox-server implements the Canvas Cloud-account contract directly.
 ## Routing
 
 - `/canvas`, `/api/settings`, `/api/cloud-proxy`: local Canvas backend
-- `/api/v1`, `/api/keys/current`, `/api/organizations`: Canvas Cloud proxy to
-  the internal sandbox-server service
+- `/api/v1`, `/api/keys/current`, `/api/organizations`: sandbox-server ingress
 - `/sandbox/<runtime-id>`: runtime adapter ingress and remote Agent Server
 
-The Cloud backend host is intentionally an in-cluster DNS name: Canvas's
-server-side Cloud proxy resolves it, avoiding the browser-facing Tinyauth
-middleware. The deployment has one remote sandbox profile and zero warm
-replicas. It does not provide per-conversation image selection or OIDC
-application integration.
+The Cloud backend uses the public Canvas origin so the browser sends its
+existing Tinyauth session cookie. The deployment has one remote sandbox
+profile and zero warm replicas. It does not provide per-conversation image
+selection or OIDC application integration.
 
 ## Pins
 
