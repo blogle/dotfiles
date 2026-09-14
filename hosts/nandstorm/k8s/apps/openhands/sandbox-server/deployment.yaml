@@ -79,6 +79,8 @@ spec:
               value: '{"OH_ALLOW_CORS_ORIGINS_0":"https://openhands.thejeffer.net"}'
             - name: OH_PERMITTED_CORS_ORIGINS_0
               value: https://openhands.thejeffer.net
+            - name: OH_HTTPX_TIMEOUT
+              value: "180"
           command:
             - /app/.venv/bin/python
             - -m
