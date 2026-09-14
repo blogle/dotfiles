@@ -56,6 +56,8 @@ spec:
               value: local-llm
             - name: OH_AGENT_SERVER_ENV
               value: '{"OH_ALLOW_CORS_ORIGINS_0":"https://openhands.thejeffer.net"}'
+            - name: OH_PERMITTED_CORS_ORIGINS_0
+              value: https://openhands.thejeffer.net
           command:
             - /app/.venv/bin/python
             - -m
