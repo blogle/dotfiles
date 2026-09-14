@@ -25,8 +25,9 @@ Browser → Agent Canvas (openhands.thejeffer.net)
 
 ## URL
 
-The service is also routed through the authenticated Canvas origin for the
-Cloud API paths.
+The service is routed through `https://openhands-control.thejeffer.net` for
+the Cloud API paths. This hostname is intentionally unauthenticated in this
+pass; hardening is deferred to a second pass.
 
 ## Image
 
@@ -59,7 +60,7 @@ In the Agent Canvas UI:
 1. Go to **Manage Backends** → **Add Backend** → **Manual**
 2. Configure:
    - **Name**: `OpenHands Kubernetes`
-   - **Host**: `https://openhands.thejeffer.net`
+   - **Host**: `https://openhands-control.thejeffer.net`
    - **Type**: `Cloud`
    - **API Key**: `local-legacy`
 3. Select the new backend and start a conversation.
