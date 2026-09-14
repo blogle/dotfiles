@@ -31,6 +31,11 @@ spec:
                 secretKeyRef:
                   name: github-mcp-credentials
                   key: GITHUB_PAT
+            - name: LIFIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-lific-credentials
+                  key: LIFIC_API_KEY
           resources:
             requests:
               cpu: 50m
