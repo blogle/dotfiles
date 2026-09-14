@@ -2,6 +2,7 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - nexus.yaml
+  - nexus-mcp-compat.yaml
   - ingress.yaml
   - github-mcp-credentials-nexus.sealed.yaml
   - nexus-tunnel-credentials-nexus.sealed.yaml

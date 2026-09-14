@@ -39,7 +39,7 @@ spec:
                   name: nexus-tunnel-credentials
                   key: CONTROL_PLANE_API_KEY
             - name: MCP_SERVER_URL
-              value: http://nexus.nexus.svc.cluster.local:8000/mcp
+              value: http://nexus-mcp-compat.nexus.svc.cluster.local:8000/mcp
             - name: MCP_STARTUP_WAIT_TIMEOUT
               value: 60s
             - name: HEALTH_LISTEN_ADDR

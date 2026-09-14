@@ -20,7 +20,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: nexus
+                name: nexus-mcp-compat
                 port:
                   name: http
           - path: /health
