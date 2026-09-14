@@ -24,6 +24,13 @@
     xkb.options = "caps:escape";
   };
 
+  # Provide the D-Bus portal used by Flameshot for screen capture.
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-xapp ];
+    config.common.default = "xapp";
+  };
+
   services.displayManager = {
     defaultSession = "xsession";
     autoLogin = {

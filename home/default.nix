@@ -133,6 +133,13 @@ in
     '';
   };
 
+  # Provide the user-session portal used by Flameshot for screen capture.
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-xapp ];
+    config.common.default = "xapp";
+  };
+
   programs.tmux =
   let tmux-pain-control = pkgs.writeScript "tmux-pain-control"
     (builtins.readFile ./config/tmux-pain-control.tmux);
