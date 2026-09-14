@@ -99,7 +99,7 @@ spec:
         runAsUser: 10001
       containers:
         - name: agent-canvas
-          image: ghcr.io/openhands/agent-canvas:1.16.0
+          image: ghcr.io/blogle/agent-canvas:1.16.0-selfhosted-cloud.1@sha256:9b58a555844eb894162cc74eb0ab06168018db3606c0093462d115d6f07a9092
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
