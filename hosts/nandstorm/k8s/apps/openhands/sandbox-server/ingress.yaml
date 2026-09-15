@@ -17,6 +17,8 @@ spec:
     accessControlAllowHeaders:
       - Authorization
       - Content-Type
+      - X-OpenHands-Client
+      - X-OpenHands-Client-Version
     accessControlAllowCredentials: true
     accessControlMaxAge: 600
 ---
