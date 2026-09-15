@@ -35,6 +35,13 @@ spec:
     - host: openhands-control.thejeffer.net
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands-sandbox-server
+                port:
+                  number: 3000
           - path: /api/v1
             pathType: Prefix
             backend:
