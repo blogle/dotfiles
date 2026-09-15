@@ -128,6 +128,12 @@ in
     '';
   };
 
+  # Flameshot is running under X11; keep screen capture on its native path.
+  xdg.configFile."flameshot/flameshot.ini".text = ''
+    [General]
+    useX11LegacyScreenshot=true
+  '';
+
   programs.tmux =
   let tmux-pain-control = pkgs.writeScript "tmux-pain-control"
     (builtins.readFile ./config/tmux-pain-control.tmux);

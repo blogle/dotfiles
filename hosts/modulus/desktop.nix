@@ -24,6 +24,13 @@
     xkb.options = "caps:escape";
   };
 
+  # GTK provides the file chooser portal for X11 applications.
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    config.common.default = "gtk";
+  };
+
   services.displayManager = {
     defaultSession = "xsession";
     autoLogin = {
