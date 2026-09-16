@@ -72,9 +72,6 @@ The Sonarr deployment enforces `External` authentication before each start;
 verify that every Servarr ingress continues to use the same forward-auth
 middleware and its Service remains ClusterIP-only.
 
-OpenHands is gated by the shared `auth-sso-errors@kubernetescrd` and
-`auth-sso-auth@kubernetescrd` middlewares on its public Ingress.
-
 ## Jellyfin
 
 See [Jellyfin browser SSO maintenance](jellyfin-sso-maintenance.md). Jellyfin

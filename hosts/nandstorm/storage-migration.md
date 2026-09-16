@@ -44,12 +44,11 @@ differs between local-path and compressed ZFS datasets.
 | observability | Loki | local-path, 20Gi | Log chunks/index | 8,901,228 logical bytes / 127 files | `loki-zfs` | Stopped StatefulSet and Alloy; source protected; read-only source; metadata-preserving rsync | Historical query, startup/WAL recovery, new query, pod recreation | Restore old claim reference |
 | observability | Tempo | local-path, 10Gi | Trace blocks/WAL | 215 logical bytes / 1 file | `tempo-zfs` | Stopped StatefulSet and Alloy; read-only source; metadata-preserving rsync | Ready endpoint, startup recovery, pod recreation | Restore old claim reference |
 | observability | Alertmanager | local-path, 1Gi | Alert state/silences | 0 logical bytes / 2 files | `alertmanager-zfs-alertmanager-kube-prometheus-stack-alertmanager-0` | Stopped operator replica; read-only source; metadata-preserving rsync | Ready endpoint, startup, pod recreation | Restore old claim reference |
-| openhands | OpenHands | hostPath, 20Gi | Settings, conversations, workspace | 20Gi request | Explicit host dataset for now | Do not convert during this migration | Existing hostPath validation | Existing hostPath remains |
 
 The following are explicitly retained host/ZFS datasets or static PVs, not
 local-path migration targets: knowledge vaults, `/media` and `/media/downloads`,
 Ollama model storage, media application configuration, Bitmagnet state, Dojo
-state, and other named `/persist/...` PVs. Penpot, Moltbot, Obot, OpenCode, and
+state, and other named `/persist/...` PVs. OpenHands, Penpot, Moltbot, Obot, OpenCode, and
 SGLang have been retired and pruned. Reclassify remaining state only with an
 application-specific plan.
 

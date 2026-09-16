@@ -1,5 +1,4 @@
 resources:
-  - agent-sandbox
   - ai
   - auth
   - bitmagnet
@@ -8,5 +7,3 @@ resources:
   - knowledge
   - lific
   - media
-  - openhands
-  - openhands-agent-sandbox
