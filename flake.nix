@@ -2,7 +2,7 @@
   description = "NixOS system configurations";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
