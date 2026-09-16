@@ -123,9 +123,6 @@ in
 
   home.sessionVariables = {
     EDITOR = "vim";
-    SSH_ASKPASS = pkgs.writeShellScript "ask-pass" ''
-      rofi -dmenu -password -i -no-fixed-num-lines -p "Password:" -theme ${rofi-theme}
-    '';
   };
 
   # Flameshot is running under X11; keep screen capture on its native path.
@@ -184,9 +181,13 @@ in
         # Configure desired keybindings
         ${applyKeyboard}/bin/apply-keyboard
 
-        # Hotplug automation (dock/undock)
-        pgrep -xu "$USER" xplugd >/dev/null || ${pkgs.xplugd}/bin/xplugd ${xplugRc} &
-    '';
+         # Hotplug automation (dock/undock)
+         pgrep -xu "$USER" xplugd >/dev/null || ${pkgs.xplugd}/bin/xplugd ${xplugRc} &
+
+         # Give the socket-activated gpg-agent the graphical session context
+         # before keychain asks it to load the SSH key.
+         ${pkgs.gnupg}/bin/gpg-connect-agent --quiet updatestartuptty /bye >/dev/null
+     '';
   };
 
   xresources = {
@@ -206,7 +207,7 @@ in
     enable = true;
     defaultCacheTtl = 1800;
     enableSshSupport = true;
-    pinentry.package = pkgs.pinentry-gtk2;
+    pinentry.package = pkgs.pinentry-rofi;
   };
 
   services.dunst.enable = true;
@@ -274,6 +275,8 @@ in
     enableFishIntegration = false;
     enableZshIntegration = false;
     enableNushellIntegration = false;
+    # Use the gpg-agent SSH socket instead of starting a second ssh-agent.
+    extraFlags = [ "--quiet" "--ssh-spawn-gpg" ];
   };
 
   home.file.firefox-vim = {
@@ -284,6 +287,7 @@ in
     profiles.default.id = 0;
 
     enable = true;
+    configPath = ".mozilla/firefox";
 
     package = pkgs.firefox.override {
       nativeMessagingHosts = [
@@ -292,6 +296,8 @@ in
     };
 
     profiles.default = {
+      # Keep using the existing profile that contains the current session and extensions.
+      path = "default";
       extensions.packages = with pkgs.nur.repos.rycee; [
         firefox-addons.onepassword-password-manager
         firefox-addons.tridactyl
