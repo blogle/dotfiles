@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: anvil
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-auth@kubernetescrd,auth-sso-errors@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - '*.preview.thejeffer.net'
+      secretName: preview-thejeffer-net-tls
+  rules:
+    - host: '*.preview.thejeffer.net'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: anvil-router
+                port:
+                  name: http

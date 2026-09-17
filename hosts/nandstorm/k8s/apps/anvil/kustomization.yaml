@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: anvil
+
+resources:
+  - github.com/blogle/anvil//k8s/base?ref=520f485a6e40698d4e45fe727b468fb3b610711f
+  - certificate.yaml
+  - ingress.yaml
+
+images:
+  - name: ghcr.io/blogle/anvil
+    newTag: sha-520f485a6e40698d4e45fe727b468fb3b610711f
+  - name: ghcr.io/blogle/anvil-sandbox
+    newTag: sha-520f485a6e40698d4e45fe727b468fb3b610711f
+
+patches:
+  - path: runtime-config.patch.yaml
+  - path: profile-pvc.patch.yaml
+  - path: profile-deployment.patch.yaml

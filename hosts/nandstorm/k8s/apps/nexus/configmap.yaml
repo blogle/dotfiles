@@ -34,6 +34,10 @@ data:
     protocol = "streamable-http"
     url = "http://browser-mcp.browser-mcp.svc.cluster.local:8080/mcp"
 
+    [mcp.servers.anvil]
+    protocol = "streamable-http"
+    url = "http://anvil-mcp.anvil.svc.cluster.local:8081/mcp"
+
     [llm]
     enabled = false
 
