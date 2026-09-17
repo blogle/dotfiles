@@ -2,28 +2,31 @@
   description = "NixOS system configurations";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    nixpkgs-home.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    nixpkgs-modulus.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    nixpkgs-nandstorm.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    nixpkgs-tools.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
     agenix = {
       url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-tools";
     };
 
     bubblebox = {
       url = "github:blogle/bubblebox";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-home";
     };
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-tools";
     };
 
     hm = {
       url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-home";
     };
 
     impermanence = {
@@ -32,39 +35,52 @@
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-home";
     };
     
   };
 
-  outputs = { self, nixpkgs, agenix, hm, impermanence, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs-home, nixpkgs-modulus, nixpkgs-nandstorm, agenix, hm, impermanence, nixos-hardware, ... }@inputs:
     let
       system = "x86_64-linux";
 
-      pkgConfig = {
-        inherit system;
-        config = {
-          allowUnfree = true;
-          allowBroken = true;
-        };
-
-        overlays = [
-          inputs.bubblebox.overlays.default
-          inputs.nur.overlays.default
-          inputs.rust-overlay.overlays.default
-          (import ./pkgs)
-          (final: prev: {
-            agenix = agenix.packages.${final.system}.default;
-            home-manager = inputs.hm.packages.${final.system}.home-manager;
-          })
-        ];
+      commonConfig = {
+        allowUnfree = true;
+        allowBroken = true;
       };
 
-      pkgs = import nixpkgs pkgConfig;
-      nixpkgModule = {pkgs, ...}: {
+      commonOverlays = [
+        inputs.nur.overlays.default
+        (import ./pkgs)
+      ];
+
+      homeOverlays = commonOverlays ++ [
+        inputs.bubblebox.overlays.default
+        inputs.rust-overlay.overlays.default
+        (final: prev: {
+          agenix = agenix.packages.${final.system}.default;
+          home-manager = inputs.hm.packages.${final.system}.home-manager;
+        })
+      ];
+
+      hostOverlays = commonOverlays ++ [
+        (final: prev: {
+          agenix = agenix.packages.${final.system}.default;
+        })
+      ];
+
+      homePkgs = import nixpkgs-home {
+        inherit system;
+        config = {
+          inherit (commonConfig) allowUnfree allowBroken;
+        };
+        overlays = homeOverlays;
+      };
+
+      nixpkgModule = { ... }: {
         # Use our overlayed package set
-        nixpkgs.config = pkgConfig.config;
-        nixpkgs.overlays = pkgConfig.overlays;
+        nixpkgs.config = commonConfig;
+        nixpkgs.overlays = hostOverlays;
         # Enable nix 2.0 api and flakes
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
       };
@@ -79,11 +95,11 @@
     in
   {
 
-    legacyPackages."${system}" = pkgs;
+    legacyPackages."${system}" = homePkgs;
 
     homeConfigurations = {
       home = hm.lib.homeManagerConfiguration {
-        inherit pkgs;
+        pkgs = homePkgs;
         modules = [
           ./home
           {
@@ -99,7 +115,7 @@
 
     nixosConfigurations = {
 
-      modulus = nixpkgs.lib.nixosSystem {
+      modulus = nixpkgs-modulus.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -109,7 +125,7 @@
         ];
       };
 
-      nandstorm = nixpkgs.lib.nixosSystem {
+      nandstorm = nixpkgs-nandstorm.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -133,7 +149,11 @@
     };
 
     # Validate system configs before shipping them off with deploy-rs
-    checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) inputs.deploy-rs.lib;
+    # The configurations and deployment target in this flake are Linux-only.
+    # Avoid evaluating deploy-rs checks for unsupported Darwin package sets.
+    checks = {
+      "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
+    };
 
   };
 

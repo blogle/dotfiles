@@ -5,7 +5,7 @@
         "darwin": "darwin",
         "home-manager": "home-manager",
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-tools"
         ],
         "systems": "systems"
       },
@@ -26,7 +26,7 @@
     "bubblebox": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-home"
         ]
       },
       "locked": {
@@ -69,7 +69,7 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-tools"
         ],
         "utils": "utils"
       },
@@ -127,7 +127,7 @@
     "hm": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-home"
         ]
       },
       "locked": {
@@ -240,20 +240,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1767892417,
-        "narHash": "sha256-8bW3q88CEg2u4hSP66Vf4lpbLonHz7hqDNBMcCY7E9U=",
-        "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
-        "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre924538.3497aa5c9457/nixexprs.tar.xz"
-      },
-      "original": {
-        "type": "tarball",
-        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
-      }
-    },
-    "nixpkgs_3": {
+    "nixpkgs-home": {
       "locked": {
         "lastModified": 1787980879,
         "narHash": "sha256-WLEwe0U4l+5rDA7tiZms4L0cOmouTblSePoBbKAJ1cg=",
@@ -269,7 +256,68 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
+    "nixpkgs-modulus": {
+      "locked": {
+        "lastModified": 1787980879,
+        "narHash": "sha256-WLEwe0U4l+5rDA7tiZms4L0cOmouTblSePoBbKAJ1cg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      }
+    },
+    "nixpkgs-nandstorm": {
+      "locked": {
+        "lastModified": 1787980879,
+        "narHash": "sha256-WLEwe0U4l+5rDA7tiZms4L0cOmouTblSePoBbKAJ1cg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      }
+    },
+    "nixpkgs-tools": {
+      "locked": {
+        "lastModified": 1787980879,
+        "narHash": "sha256-WLEwe0U4l+5rDA7tiZms4L0cOmouTblSePoBbKAJ1cg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1767892417,
+        "narHash": "sha256-8bW3q88CEg2u4hSP66Vf4lpbLonHz7hqDNBMcCY7E9U=",
+        "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre924538.3497aa5c9457/nixexprs.tar.xz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
+      }
+    },
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1780749050,
         "narHash": "sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY=",
@@ -288,7 +336,7 @@
     "nur": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs_4"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1781121423,
@@ -312,7 +360,10 @@
         "hm": "hm",
         "impermanence": "impermanence",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs-home": "nixpkgs-home",
+        "nixpkgs-modulus": "nixpkgs-modulus",
+        "nixpkgs-nandstorm": "nixpkgs-nandstorm",
+        "nixpkgs-tools": "nixpkgs-tools",
         "nur": "nur",
         "rust-overlay": "rust-overlay"
       }
@@ -320,7 +371,7 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-home"
         ]
       },
       "locked": {
