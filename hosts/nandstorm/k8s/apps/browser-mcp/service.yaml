@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: browser-mcp
+  namespace: browser-mcp
+  labels:
+    app: browser-mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: browser-mcp
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

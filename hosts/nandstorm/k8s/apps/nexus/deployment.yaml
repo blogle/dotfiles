@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus
+  namespace: nexus
+  labels:
+    app: nexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus
+  template:
+    metadata:
+      labels:
+        app: nexus
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: nexus
+          image: ghcr.io/grafbase/nexus@sha256:306ee6c0ae08036aea4a6cec424b27e6506b944f9e3d5c945ef34c1335988076
+          args:
+            - --config
+            - /etc/nexus/nexus.toml
+          env:
+            - name: GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: github-mcp-credentials
+                  key: GITHUB_PAT
+            - name: LIFIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-lific-credentials
+                  key: LIFIC_API_KEY
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nexus
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: nexus-config

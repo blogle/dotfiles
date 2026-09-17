@@ -1,0 +1,10 @@
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - sealed-secrets.yaml
+  - deployment.yaml
+  - mcp-compat-deployment.yaml
+  - tunnel-deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - certificate.yaml

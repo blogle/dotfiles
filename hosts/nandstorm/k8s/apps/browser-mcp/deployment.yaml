@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: browser-mcp
+  namespace: browser-mcp
+  labels:
+    app: browser-mcp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: browser-mcp
+  template:
+    metadata:
+      labels:
+        app: browser-mcp
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: mcp
+          image: node:24-slim
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - >-
+              exec npx -y mcp-proxy@6.7.18
+              --server stream
+              --host 0.0.0.0
+              --port 8080
+              -- npx -y agent-browser@0.37.1
+              mcp
+              --tools core,network,debug
+          env:
+            - name: AGENT_BROWSER_CONFIG
+              value: /etc/agent-browser/config.json
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: http
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: agent-browser-config
+              mountPath: /etc/agent-browser
+              readOnly: true
+            - name: mcp-npm-cache
+              mountPath: /home/node/.npm
+            - name: mcp-tmp
+              mountPath: /tmp
+        - name: chrome
+          image: chromedp/headless-shell:151.0.7922.109
+          ports:
+            - name: cdp
+              containerPort: 9222
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          startupProbe:
+            httpGet:
+              path: /json/version
+              port: cdp
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /json/version
+              port: cdp
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /json/version
+              port: cdp
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: chrome-shm
+              mountPath: /dev/shm
+      volumes:
+        - name: agent-browser-config
+          configMap:
+            name: agent-browser-config
+        - name: chrome-shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi
+        - name: mcp-npm-cache
+          emptyDir: {}
+        - name: mcp-tmp
+          emptyDir: {}

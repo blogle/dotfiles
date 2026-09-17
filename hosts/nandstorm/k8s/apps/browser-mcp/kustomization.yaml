@@ -1,0 +1,14 @@
+namespace: browser-mcp
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+
+configMapGenerator:
+  - name: agent-browser-config
+    literals:
+      - config.json={"cdp":"http://127.0.0.1:9222","pinTab":true}
+
+generatorOptions:
+  disableNameSuffixHash: true

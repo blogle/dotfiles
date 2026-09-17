@@ -2,8 +2,10 @@ resources:
   - ai
   - auth
   - bitmagnet
+  - browser-mcp
   - dojo/overlays/staging
   - dojo/overlays/prod
   - knowledge
   - lific
   - media
+  - nexus

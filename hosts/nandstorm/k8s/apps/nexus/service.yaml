@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus
+  namespace: nexus
+  labels:
+    app: nexus
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-mcp-compat
+  namespace: nexus
+  labels:
+    app: nexus-mcp-compat
+spec:
+  type: ClusterIP
+  selector:
+    app: nexus-mcp-compat
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

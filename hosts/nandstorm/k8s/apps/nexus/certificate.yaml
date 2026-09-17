@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nexus-tls
+  namespace: nexus
+spec:
+  secretName: nexus-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+    - nexus.thejeffer.net

@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-mcp-compat
+  namespace: nexus
+  labels:
+    app: nexus-mcp-compat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-mcp-compat
+  template:
+    metadata:
+      labels:
+        app: nexus-mcp-compat
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: nexus-mcp-compat
+          image: ghcr.io/blogle/nexus-mcp-compat@sha256:89add1ebabae7b90f7856506384b0c4ea0133b83f904d906d34fb98b7f91fdfb
+          env:
+            - name: NEXUS_MCP_URL
+              value: http://nexus.nexus.svc.cluster.local:8000/mcp
+            - name: MCP_ALLOWED_HOSTS
+              value: localhost,127.0.0.1,nexus-mcp-compat,nexus-mcp-compat.nexus.svc,nexus-mcp-compat.nexus.svc.cluster.local,nexus.thejeffer.net
+            - name: RUST_LOG
+              value: info
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 2
