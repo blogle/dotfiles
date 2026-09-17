@@ -15,6 +15,36 @@ images:
 
 patches:
 - path: pod-spec.patch.yaml
+- target:
+    kind: ServiceAccount
+    name: dojo-backup
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-prod
+- target:
+    kind: ClusterRole
+    name: dojo-backup-snapshot-classes
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-snapshot-classes-prod
+- target:
+    kind: ClusterRoleBinding
+    name: dojo-backup-snapshot-classes
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-snapshot-classes-prod
+    - op: replace
+      path: /roleRef/name
+      value: dojo-backup-snapshot-classes-prod
+    - op: replace
+      path: /subjects/0/name
+      value: dojo-backup-prod
+    - op: replace
+      path: /subjects/0/namespace
+      value: dojo-prod
 
 patchesStrategicMerge:
 - delete-base-pvc.patch.yaml

@@ -19,12 +19,35 @@ patches:
 - path: pod-spec.patch.yaml
 - path: backup-cronjob.patch.yaml
 - target:
+    kind: ServiceAccount
+    name: dojo-backup
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-staging
+- target:
+    kind: ClusterRole
+    name: dojo-backup-snapshot-classes
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: dojo-backup-snapshot-classes-staging
+- target:
     kind: ClusterRoleBinding
     name: dojo-backup-snapshot-classes
   patch: |-
     - op: replace
       path: /metadata/name
       value: dojo-backup-snapshot-classes-staging
+    - op: replace
+      path: /roleRef/name
+      value: dojo-backup-snapshot-classes-staging
+    - op: replace
+      path: /subjects/0/name
+      value: dojo-backup-staging
+    - op: replace
+      path: /subjects/0/namespace
+      value: dojo-staging
 
 patchesStrategicMerge:
 - delete-base-pvc.patch.yaml
