@@ -1,0 +1,46 @@
+name: Nix
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  flake-check:
+    name: Flake check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Check flake
+        run: nix flake check --print-build-logs
+
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: home
+            target: .#homeConfigurations.home.activationPackage
+
+          - name: modulus
+            target: .#nixosConfigurations.modulus.config.system.build.toplevel
+
+          - name: nandstorm
+            target: .#nixosConfigurations.nandstorm.config.system.build.toplevel
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Build ${{ matrix.name }}
+        run: nix build --no-link --print-build-logs "${{ matrix.target }}"
