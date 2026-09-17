@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: anvil
 
 resources:
-  - github.com/blogle/anvil//k8s/base?ref=4370ecddee2135e4b6921467d07e3251aec55639
+  - github.com/blogle/anvil//k8s/base?ref=9f1a9809a12ccf0088c2b62415e2440ba0cbe264
   - certificate.yaml
   - ingress.yaml
 
