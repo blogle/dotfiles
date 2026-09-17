@@ -2,7 +2,7 @@
   description = "NixOS system configurations";
 
   inputs = {
-    nixpkgs-home.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    nixpkgs-home.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-modulus.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
     nixpkgs-nandstorm.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
     nixpkgs-tools.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";

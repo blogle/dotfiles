@@ -8,10 +8,17 @@ let
     sha256 = "1qgck68sf4s47dckvl9akjikjfqhvrv70bip0l3cy2mb1wdlln6d";
   };
 
-  st = pkgs.st.override {
+  st = (pkgs.st.override {
     conf = builtins.readFile ./config/st-config.h;
     patches = [ pkgs.st-clipboard ];
-  };
+  }).overrideAttrs (old: {
+    # The unstable st recipe concatenates its config copy and substitution
+    # commands; restore the missing newline before running the build.
+    postPatch = builtins.replaceStrings
+      [ "config.def.hsubstituteInPlace" ]
+      [ "config.def.h\nsubstituteInPlace" ]
+      old.postPatch;
+  });
 
   vim-build = pkgs.vim-full.override {
     python3 = python;
