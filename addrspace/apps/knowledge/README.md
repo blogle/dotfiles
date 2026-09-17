@@ -108,7 +108,7 @@ ciphertext may be committed. Create it from local plaintext files using the
 repository helper, for example:
 
 ```sh
-./scripts/seal-secret.sh --name telegram-credentials -n knowledge \
+./addrspace/scripts/seal-secret.sh --name telegram-credentials -n knowledge \
   --file TELEGRAM_API_ID=/secure/telegram-api-id \
   --file TELEGRAM_API_HASH=/secure/telegram-api-hash \
   --file TELEGRAM_PHONE=/secure/telegram-phone \
@@ -145,7 +145,7 @@ not second vault copies or Git checkouts.
 
 Application-owned state now uses retained OpenEBS ZFS LocalPV claims. The old
 `local-path` claims remain as rollback sources; see
-`hosts/nandstorm/storage-migration.md` for the migration inventory.
+`addrspace/docs/storage-migration.md` for the migration inventory.
 
 - `markdown-vault-mcp-state` at `/data/state` contains the rebuildable SQLite
   index, persistent Ollama-backed vector data, MCP/session state, and key-value
@@ -170,8 +170,8 @@ production lock file.
 This repository validates only integration concerns:
 
 ```sh
-bash scripts/check-knowledge-boundaries.sh
-bash scripts/test-knowledge-isolated.sh
+bash addrspace/tests/check-knowledge-boundaries.sh
+bash addrspace/tests/test-knowledge-isolated.sh
 kubectl kustomize addrspace >/dev/null
 kubectl apply --dry-run=client -k addrspace
 nix flake check --no-build
@@ -204,7 +204,7 @@ the new directory.
 `tunnel-credentials.sealed.yaml` is a namespace-scoped SealedSecret generated
 from the proven POC's `CONTROL_PLANE_TUNNEL_ID` and
 `CONTROL_PLANE_API_KEY`. Never commit an unsealed Secret. To rotate the values,
-use `scripts/seal-secret.sh` with `--scope strict`, replace the sealed manifest,
+use `addrspace/scripts/seal-secret.sh` with `--scope strict`, replace the sealed manifest,
 and restart `deployment/markdown-vault-mcp`.
 
 The sidecar runs tunnel-client 0.0.10 from the host's

@@ -9,7 +9,7 @@
 # Notification receiver: Alertmanager is deployed with no notification channel
 # wired yet. Alerts are queryable via the Alertmanager UI and Grafana; until a
 # receiver (Discord/Slack/SMTP) is added in alertmanagerSpec the only output
-# is the Alertmanager + Grafana alert panels. See docs/observability.md.
+# is the Alertmanager + Grafana alert panels. See addrspace/docs/observability.md.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

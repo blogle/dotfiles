@@ -2,7 +2,7 @@
 set -euo pipefail
 
 namespace=storage-smoke
-manifest="$(dirname "$0")/storage-smoke.yaml"
+manifest="$(dirname "$0")/../infrastructure/storage-smoke.yaml"
 
 if [[ ${OPENEBS_STORAGE_SMOKE_CONFIRM:-} != 1 ]]; then
   echo "Refusing to run. Set OPENEBS_STORAGE_SMOKE_CONFIRM=1 explicitly." >&2

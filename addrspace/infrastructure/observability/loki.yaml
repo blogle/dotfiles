@@ -44,7 +44,7 @@ spec:
         per_stream_rate_limit_burst: 5MB
         max_global_streams_per_user: 5000
         # Protect against unbounded stream cardinality. Appropriate Loki
-        # labels are listed in docs/observability.md; high-cardinality values
+        # labels are listed in addrspace/docs/observability.md; high-cardinality values
         # (trace_id, request_id, user_id, ip, ...) MUST stay in structured
         # log fields, never as labels.
         reject_old_samples: true

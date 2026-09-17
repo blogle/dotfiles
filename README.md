@@ -31,7 +31,7 @@ required.
 This installs MetalLB, ExternalDNS, Traefik, the NVIDIA device plugin and
 exposes Jellyfin, Transmission and friends via Traefik with TLS.  Traefik and
 ExternalDNS require a Cloudflare API key which is now managed via Sealed Secrets.
-Use the helper script in `scripts/seal-secret.sh` to create encrypted manifests.
+Use the helper script in `addrspace/scripts/seal-secret.sh` to create encrypted manifests.
 
 ### Secrets with Sealed Secrets
 
@@ -42,7 +42,7 @@ Add or rotate a secret:
 
 1. Generate the sealed manifest(s) locally (no plaintext committed):
 
-   ./scripts/seal-secret.sh \
+   ./addrspace/scripts/seal-secret.sh \
      --name cloudflare \
      -n cert-manager -n external-dns \
      --literal api-key=YOUR_CLOUDFLARE_API_KEY \

@@ -78,7 +78,7 @@ Local-path backing directories were under
 ## Disposable CSI validation
 
 After applying the infrastructure overlay and confirming the OpenEBS pods,
-run `OPENEBS_STORAGE_SMOKE_CONFIRM=1 ./addrspace/infrastructure/storage-smoke.sh`. The explicit confirmation is required because the
+run `OPENEBS_STORAGE_SMOKE_CONFIRM=1 ./addrspace/scripts/storage-smoke.sh`. The explicit confirmation is required because the
 test creates and deletes Kubernetes resources. It provisions a
 disposable volume, writes a sentinel, recreates its pod, expands the volume,
 creates a CSI snapshot, restores it into a second volume, and verifies the
@@ -116,7 +116,7 @@ The guarded smoke test passed on 2026-09-01 with the following command:
 
 ```sh
 OPENEBS_STORAGE_SMOKE_CONFIRM=1 OPENEBS_STORAGE_SMOKE_TIMEOUT_SECONDS=600 \
-  ./addrspace/infrastructure/storage-smoke.sh
+  ./addrspace/scripts/storage-smoke.sh
 ```
 
 ## Workload migration procedure
