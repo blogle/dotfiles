@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dojo-backup
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: orchestrator
+            env:
+            - name: DOJO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DOJO_DATA_CLAIM
+              value: dojo-staging-data-zfs
+            - name: DOJO_VOLUME_SNAPSHOT_CLASS
+              value: zfs-snapshotclass

@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: nexus
+      annotations:
+        checksum/config: dcea21d09640b86e64ceeb49465a0d9c6685bd54aab1812e86cd377304c7fa81
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false

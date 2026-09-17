@@ -38,6 +38,10 @@ data:
     protocol = "streamable-http"
     url = "http://anvil-mcp.anvil.svc.cluster.local:8081/mcp"
 
+    [mcp.servers.kubernetes]
+    protocol = "streamable-http"
+    url = "http://kubernetes-mcp.kubernetes-mcp.svc.cluster.local:8080/mcp"
+
     [llm]
     enabled = false
 

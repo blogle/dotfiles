@@ -7,6 +7,7 @@ resources:
   - dojo/overlays/staging
   - dojo/overlays/prod
   - knowledge
+  - kubernetes-mcp
   - lific
   - media
   - nexus

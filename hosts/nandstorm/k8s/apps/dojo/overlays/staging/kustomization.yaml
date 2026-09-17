@@ -18,6 +18,7 @@ images:
 patches:
 - path: pod-spec.patch.yaml
 - path: backup-cronjob.patch.yaml
+- path: keel-annotations.patch.yaml
 - target:
     kind: ServiceAccount
     name: dojo-backup

@@ -11,10 +11,11 @@ resources:
 
 images:
 - name: ghcr.io/blogle/dojo2
-  newTag: v0.0.1
+  digest: sha256:3a76307488874e4663264a77c89f71d0bda79fdb21913975d0d9a6705a2d2416
 
 patches:
 - path: pod-spec.patch.yaml
+- path: backup-cronjob.patch.yaml
 - target:
     kind: ServiceAccount
     name: dojo-backup
