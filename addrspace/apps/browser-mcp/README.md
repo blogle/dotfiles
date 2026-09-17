@@ -57,7 +57,7 @@ sidecar and does not install Chrome into Nexus.
 Apply the app with:
 
 ```bash
-kubectl apply -k hosts/nandstorm/k8s/apps/browser-mcp
+kubectl apply -k addrspace/apps/browser-mcp
 kubectl -n browser-mcp rollout status deployment/browser-mcp
 ```
 

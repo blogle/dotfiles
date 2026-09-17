@@ -4,7 +4,7 @@ The observability stack ships Prometheus (metrics), Loki (logs), Tempo
 (traces), Grafana (single-pane UI), Grafana Alloy (collector), and
 blackbox-exporter (synthetic probes) into the `observability` namespace
 of the nandstorm k3s cluster. Manifests live in
-`hosts/nandstorm/k8s/infrastructure/observability/` and follow the repo's
+`addrspace/infrastructure/observability/` and follow the repo's
 existing conventions: Rancher `HelmChart` CRDs declared in the
 `kube-system` namespace with `targetNamespace: observability` (same pattern
 as `cert-manager.yaml`, `external-dns.yaml`, `keel.yaml`), Traefik +

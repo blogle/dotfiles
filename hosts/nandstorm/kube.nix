@@ -83,6 +83,6 @@
   };
 
   # Kubernetes secrets are now managed via Sealed Secrets manifests
-  # in hosts/nandstorm/k8s. The previous kube-secrets module has been removed.
+  # in addrspace. The previous kube-secrets module has been removed.
 
 }

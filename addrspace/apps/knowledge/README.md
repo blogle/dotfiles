@@ -112,7 +112,7 @@ repository helper, for example:
   --file TELEGRAM_API_ID=/secure/telegram-api-id \
   --file TELEGRAM_API_HASH=/secure/telegram-api-hash \
   --file TELEGRAM_PHONE=/secure/telegram-phone \
-  --output-dir hosts/nandstorm/k8s/apps/knowledge --scope strict
+  --output-dir addrspace/apps/knowledge --scope strict
 ```
 
 Keep generated Telegram sealed manifests in this directory and add them to the
@@ -172,8 +172,8 @@ This repository validates only integration concerns:
 ```sh
 bash scripts/check-knowledge-boundaries.sh
 bash scripts/test-knowledge-isolated.sh
-kubectl kustomize hosts/nandstorm/k8s >/dev/null
-kubectl apply --dry-run=client -k hosts/nandstorm/k8s
+kubectl kustomize addrspace >/dev/null
+kubectl apply --dry-run=client -k addrspace
 nix flake check --no-build
 ```
 
@@ -184,7 +184,7 @@ rollout; rendering itself does not pull images.
 For an upgrade, publish collector images from tested source revisions, resolve
 their registry digests, replace the image references with those immutable
 digests, inspect
-`kubectl diff -k hosts/nandstorm/k8s`, then apply. Roll back by restoring the
+`kubectl diff -k addrspace`, then apply. Roll back by restoring the
 previous known-good tags and applying again. Collector state PVCs and published
 Markdown are retained across either operation.
 

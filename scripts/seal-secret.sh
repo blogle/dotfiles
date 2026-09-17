@@ -10,18 +10,18 @@ set -euo pipefail
 #   # One secret in one namespace from a literal
 #   ./scripts/seal-secret.sh --name cloudflare -n cert-manager \
 #     --literal api-key=YOUR_KEY \
-#     --output-dir hosts/nandstorm/k8s/infrastructure
+#     --output-dir addrspace/infrastructure
 #
 #   # Same secret for two namespaces (cert-manager, external-dns)
 #   ./scripts/seal-secret.sh --name cloudflare -n cert-manager -n external-dns \
 #     --literal api-key=YOUR_KEY \
-#     --output-dir hosts/nandstorm/k8s/infrastructure --scope cluster-wide
+#     --output-dir addrspace/infrastructure --scope cluster-wide
 #
 #   # Mix literals and files
 #   ./scripts/seal-secret.sh --name app-creds -n myns \
 #     --literal username=alice \
 #     --file password=./secrets/password.txt \
-#     --output-dir hosts/nandstorm/k8s/apps/myns
+#     --output-dir addrspace/apps/myns
 
 NAME=""
 NAMESPACES=()
@@ -125,4 +125,3 @@ for ns in "${NAMESPACES[@]}"; do
 done
 
 echo "Done. Remember to add the generated files to your kustomization 'resources' and apply."
-

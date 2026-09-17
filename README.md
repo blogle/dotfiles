@@ -17,12 +17,12 @@ After this `kubectl` will talk to the cluster running on `nandstorm`.
 
 ## Kustomize manifests
 
-The `hosts/nandstorm/k8s` directory contains manifests for cluster
+The top-level `addrspace` directory contains manifests for the `addrspace` cluster
 infrastructure and all former docker-compose services.  It is organized as a
 [Kustomize](https://kustomize.io/) configuration.  Apply everything with:
 
 ```sh
-kubectl apply -k hosts/nandstorm/k8s
+kubectl apply -k addrspace
 ```
 
 `kubectl` includes built-in support for Kustomize, so no separate installation is
@@ -36,7 +36,7 @@ Use the helper script in `scripts/seal-secret.sh` to create encrypted manifests.
 ### Secrets with Sealed Secrets
 
 We keep Kubernetes secrets encrypted in Git as SealedSecrets. The controller is
-installed by `hosts/nandstorm/k8s/infrastructure/kustomization.yaml`.
+installed by `addrspace/infrastructure/kustomization.yaml`.
 
 Add or rotate a secret:
 
@@ -46,7 +46,7 @@ Add or rotate a secret:
      --name cloudflare \
      -n cert-manager -n external-dns \
      --literal api-key=YOUR_CLOUDFLARE_API_KEY \
-     --output-dir hosts/nandstorm/k8s/infrastructure \
+      --output-dir addrspace/infrastructure \
      --scope cluster-wide
 
    This writes `cloudflare-cert-manager.sealed.yaml` and
@@ -55,7 +55,7 @@ Add or rotate a secret:
 2. Reference the generated files in the appropriate `kustomization.yaml` under
    `resources` and apply:
 
-   kubectl apply -k hosts/nandstorm/k8s/infrastructure
+    kubectl apply -k addrspace/infrastructure
 
 3. Verify the controller created managed Secrets:
 

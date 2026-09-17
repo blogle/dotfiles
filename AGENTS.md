@@ -7,14 +7,14 @@
 - `modules/`: Reusable NixOS/Home Manager modules.
 - `pkgs/`: Local overlays and custom packages.
 - `secrets/`: Age-encrypted secrets and `secrets.nix` key mapping.
-- `hosts/nandstorm/k8s/`: Kustomize manifests for the single-node k3s cluster.
+- `addrspace/`: Kustomize manifests for the `addrspace` k3s cluster.
 
 ## Build, Test, and Development Commands
 - `nix flake check`: Run flake and deploy checks.
 - `home-manager switch --flake .#home`: Apply Home Manager config.
 - `deploy .#<host>` or `nix run github:serokell/deploy-rs -- .#<host>`: Deploy NixOS config to a remote host via deploy-rs (primary method for remote hosts like nandstorm).
 - `sudo nixos-rebuild switch --flake .#<host>`: Local rebuild only (use when physically on the machine, e.g., on modulus).
-- `kubectl diff -k hosts/nandstorm/k8s && kubectl apply -k hosts/nandstorm/k8s`: Review and apply k8s changes.
+- `kubectl diff -k addrspace && kubectl apply -k addrspace`: Review and apply k8s changes.
 
 ## Coding Style & Naming Conventions
 - Nix: 2-space indent, trailing commas allowed, attributes kebab-case.
@@ -25,7 +25,7 @@
 ## Testing Guidelines
 - Run `nix flake check` before opening a PR.
 - Build hosts locally with `nixos-rebuild build --flake .#<host>`; verify switch on a test machine.
-- For Kubernetes, `kubectl diff -k hosts/nandstorm/k8s` and verify pods/services before `apply`.
+- For Kubernetes, `kubectl diff -k addrspace` and verify pods/services before `apply`.
 
 ## Commit & Pull Request Guidelines
 - Commits: short, imperative subjects (e.g., "Fix k8s media volumes"). Optional scope prefixes like `hosts/nandstorm:` or `k8s:` help.

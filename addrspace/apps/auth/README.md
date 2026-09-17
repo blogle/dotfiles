@@ -26,7 +26,7 @@ identity provider.
      | kubeseal --format yaml \
          --controller-name sealed-secrets-controller \
          --controller-namespace kube-system \
-     > hosts/nandstorm/k8s/apps/auth/tinyauth-credentials.sealed.yaml
+      > addrspace/apps/auth/tinyauth-credentials.sealed.yaml
    ```
 
 4. Add `tinyauth-credentials.sealed.yaml` to `kustomization.yaml`. Tinyauth
@@ -56,7 +56,7 @@ during a maintenance window:
 
 ```sh
 kubectl -n auth delete ingress oauth2-proxy
-kubectl apply -k hosts/nandstorm/k8s/apps
+kubectl apply -k addrspace/apps
 ```
 
 Verify a private browser session can access each protected hostname and that

@@ -8,11 +8,11 @@ FastEmbed, and the OpenAI Secure MCP Tunnel are operational.
 - `pkgs/tunnel-client.nix`
 - `pkgs/default.nix`
 - `hosts/nandstorm/default.nix`
-- `hosts/nandstorm/k8s/apps/kustomization.yaml`
-- `hosts/nandstorm/k8s/apps/knowledge/{namespace,storage,markdown-vault-mcp,ignis}.yaml`
-- `hosts/nandstorm/k8s/apps/knowledge/kustomization.yaml`
-- `hosts/nandstorm/k8s/apps/knowledge/tunnel-credentials.sealed.yaml`
-- `hosts/nandstorm/k8s/apps/knowledge/README.md`
+- `addrspace/apps/kustomization.yaml`
+- `addrspace/apps/knowledge/{namespace,storage,markdown-vault-mcp,ignis}.yaml`
+- `addrspace/apps/knowledge/kustomization.yaml`
+- `addrspace/apps/knowledge/tunnel-credentials.sealed.yaml`
+- `addrspace/apps/knowledge/README.md`
 
 No NVIDIA configuration was changed.
 
@@ -146,8 +146,8 @@ Passed:
 ```text
 nix flake check path:.
 nix build path:.#nixosConfigurations.nandstorm.config.system.build.toplevel
-kubectl kustomize hosts/nandstorm/k8s
-kubectl diff -k hosts/nandstorm/k8s
+kubectl kustomize addrspace
+kubectl diff -k addrspace
 ```
 
 The built NixOS configuration was copied to and activated on `nandstorm`. Final Kubernetes diff is clean.

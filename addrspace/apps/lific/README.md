@@ -26,7 +26,7 @@ Lific uses a single PersistentVolumeClaim for all data:
 
 The Lific image is built from the exact upstream v2.8.0 tag:
 
-- **Build Script**: `hosts/nandstorm/k8s/apps/lific/build-image.sh`
+- **Build Script**: `addrspace/apps/lific/build-image.sh`
 - **Source**: https://github.com/VoidNullable/lific/tree/v2.8.0
 - **Builder**: Docker Buildx (linux/amd64)
 - **Registry**: GHCR (GitHub Container Registry)
@@ -78,7 +78,7 @@ Managed via the repository's standard deployment mechanism:
 
 ```bash
 # Apply via kustomize (from repository root)
-kubectl apply -k hosts/nandstorm/k8s/apps/
+kubectl apply -k addrspace/apps/
 ```
 
 Or if using Flux/Argo CD, commit and push changes.
@@ -123,7 +123,7 @@ The PVC is not deleted when removing the Deployment to prevent accidental data l
 To remove Lific while preserving data:
 ```bash
 # Remove workloads but keep PVC
-kubectl delete -k hosts/nandstorm/k8s/apps/lific/
+kubectl delete -k addrspace/apps/lific/
 
 # PVC remains intact and can be re-attached by redeploying
 # To delete PVC explicitly (DANGEROUS - data loss):

@@ -88,7 +88,7 @@ The end state is that users can schedule Kubernetes Pods requesting `nvidia.com/
 - 2025-12-20 baseline: `kube-system/nvidia-device-plugin` cannot load NVML (`libnvidia-ml.so.1` missing in container), so it exports `nvidia.com/gpu=0` and waits indefinitely.
 - 2025-12-20 baseline: GPU0 is actively used by desktop processes (non-zero VRAM); GPU1/2 mostly idle.
 - 2025-12-20 repo review: `hosts/nandstorm/virtualization.nix` enables `hardware.nvidia-container-toolkit.enable = true` and Docker CDI (`virtualisation.docker.daemon.settings.features.cdi = true`).
-- 2025-12-20 repo update: repo deploys `nvcr.io/nvidia/k8s-device-plugin:v0.15.0` plus a suspended `kube-system/gpu-smoke-test` CronJob under `hosts/nandstorm/k8s/infrastructure/nvidia/` (no RuntimeClass).
+- 2025-12-20 repo update: repo deploys `nvcr.io/nvidia/k8s-device-plugin:v0.15.0` plus a suspended `kube-system/gpu-smoke-test` CronJob under `addrspace/infrastructure/nvidia/` (no RuntimeClass).
 - 2025-12-20 validation: `gpu-smoke-test` runs `nvidia-smi` inside a pod, but requires hostPath mounts for `/nix/store` + host `nvidia-smi` because NixOS binaries use a Nix store dynamic linker.
 - 2025-12-20 validation: NVENC works on TITAN V, but `h264_nvenc` can fail with `OpenEncodeSessionEx failed: unsupported device (2)` when a container only has access to a non-primary GPU. Practical fix for Jellyfin: ensure it gets host GPU0 (device node `/dev/nvidia2`).
 - (Keep a running log here as we test versions, containerd behavior, plugin output, and Jellyfin/FFmpeg logs.)
@@ -101,7 +101,7 @@ The end state is that users can schedule Kubernetes Pods requesting `nvidia.com/
 - **Cluster:** single-node K3s cluster on `nandstorm`
 - **GPU:** TITAN V ×3
 - **Existing repo touchpoints:**
-  - Kubernetes manifests: `hosts/nandstorm/k8s/infrastructure/nvidia/`
+  - Kubernetes manifests: `addrspace/infrastructure/nvidia/`
   - Likely NixOS config entry points: `hosts/nandstorm/default.nix`, `hosts/nandstorm/kube.nix`, plus any dedicated NVIDIA module we create/adjust.
 - **Runtime files to validate on-host:**
   - Host CDI spec: `/etc/cdi/nvidia.yaml` (or JSON if we choose that)
@@ -172,7 +172,7 @@ Decision output:
 ### Milestone 4: Deploy device plugin for scheduling
 Goal: node advertises `nvidia.com/gpu`, pods schedule, and nothing destabilizes K3s.
 
-- Deploy/update manifests in `hosts/nandstorm/k8s/infrastructure/nvidia/`.
+- Deploy/update manifests in `addrspace/infrastructure/nvidia/`.
 - Validate:
   - Device plugin registers cleanly.
   - Node capacity shows correct GPU count.
@@ -181,7 +181,7 @@ Goal: node advertises `nvidia.com/gpu`, pods schedule, and nothing destabilizes 
 ### Milestone 5: End-to-end GPU pod validation
 Goal: a minimal GPU workload succeeds repeatedly.
 
-- Apply `hosts/nandstorm/k8s/infrastructure/nvidia/gpu-smoke-test.yaml` (a suspended `CronJob`).
+- Apply `addrspace/infrastructure/nvidia/gpu-smoke-test.yaml` (a suspended `CronJob`).
 - Run on demand:
   - `kubectl -n kube-system create job --from=cronjob/gpu-smoke-test gpu-smoke-test-$(date +%s)`
   - `kubectl -n kube-system logs -f job/<job-name>`
@@ -191,7 +191,7 @@ Goal: a minimal GPU workload succeeds repeatedly.
 ### Milestone 6: Jellyfin validation
 Goal: Jellyfin hardware transcode works reliably.
 
-- Enable Jellyfin GPU request in `hosts/nandstorm/k8s/apps/media/jellyfin.yaml`.
+- Enable Jellyfin GPU request in `addrspace/apps/media/jellyfin.yaml`.
 - Validate inside Jellyfin container:
   - `/dev/nvidia*` present (and `/dev/nvidia-caps` if we rely on NVENC/NVDEC).
   - FFmpeg lists `*_nvenc` / `*_cuvid`.
@@ -219,12 +219,12 @@ Goal: no manual steps after reboot; everything comes back.
   - Import it from `hosts/nandstorm/default.nix`.
   - Ensure K3s containerd CDI config is templated declaratively.
 - Kubernetes:
-  - Update `hosts/nandstorm/k8s/infrastructure/nvidia/nvidia-device-plugin.yaml`.
-  - Use `hosts/nandstorm/k8s/infrastructure/nvidia/gpu-smoke-test.yaml` for repeatable validation (suspended `CronJob`).
+  - Update `addrspace/infrastructure/nvidia/nvidia-device-plugin.yaml`.
+  - Use `addrspace/infrastructure/nvidia/gpu-smoke-test.yaml` for repeatable validation (suspended `CronJob`).
 
 ## Idempotence and Recovery
 - NixOS: `nixos-rebuild switch --flake .#nandstorm` is idempotent.
-- K8s: `kubectl apply -k hosts/nandstorm/k8s` is idempotent.
+- K8s: `kubectl apply -k addrspace` is idempotent.
 - Recovery:
   - If K3s becomes unstable, first remove/disable the device plugin DaemonSet and revert containerd config changes.
   - Keep host GPU working in isolation as the baseline.
