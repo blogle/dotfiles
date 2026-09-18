@@ -11,15 +11,16 @@ allowVolumeExpansion: true
 parameters:
   # This dataset is created declaratively by NixOS and is not under k3s's
   # /var/lib/rancher tree. The driver creates one child dataset per PVC.
-  poolname: rpool/safe/kubernetes
-  fstype: zfs
-  recordsize: 128k
-  compression: lz4
-  dedup: off
-  atime: off
-  logbias: throughput
+  poolname: "rpool/safe/kubernetes"
+  fstype: "zfs"
+  recordsize: "128k"
+  compression: "lz4"
+  dedup: "off"
+  atime: "off"
+  logbias: "throughput"
   thinprovision: "yes"
-  quotatype: refquota
+  quotatype: "refquota"
+  shared: "yes"
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -30,12 +31,12 @@ reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 parameters:
-  poolname: rpool/safe/kubernetes
-  fstype: zfs
-  recordsize: 128k
-  compression: lz4
-  dedup: off
-  atime: off
-  logbias: throughput
+  poolname: "rpool/safe/kubernetes"
+  fstype: "zfs"
+  recordsize: "128k"
+  compression: "lz4"
+  dedup: "off"
+  atime: "off"
+  logbias: "throughput"
   thinprovision: "yes"
-  quotatype: refquota
+  quotatype: "refquota"
