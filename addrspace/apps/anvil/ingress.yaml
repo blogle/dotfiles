@@ -8,9 +8,20 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
+        - anvil.thejeffer.net
         - '*.preview.thejeffer.net'
       secretName: preview-thejeffer-net-tls
   rules:
+    - host: anvil.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: anvild
+                port:
+                  name: http
     - host: '*.preview.thejeffer.net'
       http:
         paths:
