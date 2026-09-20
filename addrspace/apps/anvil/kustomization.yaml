@@ -4,16 +4,16 @@ kind: Kustomization
 namespace: anvil
 
 resources:
-  - github.com/blogle/anvil//k8s/base?ref=e5d053f368026ce5c612bcff52d43b326e1e1ebf
+  - github.com/blogle/anvil//k8s/base?ref=43dd0530d7b70a2f7660c66704da461178cc9164
   - certificate.yaml
   - ingress.yaml
   - github-app-credentials-anvil.sealed.yaml
 
 images:
   - name: ghcr.io/blogle/anvil
-    newTag: sha-e5d053f368026ce5c612bcff52d43b326e1e1ebf
+    newTag: sha-43dd0530d7b70a2f7660c66704da461178cc9164
   - name: ghcr.io/blogle/anvil-sandbox
-    newTag: sha-e5d053f368026ce5c612bcff52d43b326e1e1ebf
+    newTag: sha-43dd0530d7b70a2f7660c66704da461178cc9164
 
 patches:
   - path: runtime-config.patch.yaml
