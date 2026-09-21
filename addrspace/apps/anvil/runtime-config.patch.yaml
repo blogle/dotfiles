@@ -5,6 +5,6 @@ metadata:
 data:
   ANVIL_PREVIEW_DOMAIN: preview.thejeffer.net
   ANVIL_ANNOTATION_PREFIX: anvil.thejeffer.net
-  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-43dd0530d7b70a2f7660c66704da461178cc9164
+  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-28e3ef1a9563018306b641e55e869663d5d80895
   BASE_DOMAIN: preview.thejeffer.net
   AGENT_SANDBOX_ROUTER_URL: http://sandbox-router-svc.agent-sandbox-system.svc.cluster.local:8080
