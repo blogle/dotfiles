@@ -15,7 +15,7 @@ spec:
       labels:
         app: nexus
       annotations:
-        checksum/config: dcea21d09640b86e64ceeb49465a0d9c6685bd54aab1812e86cd377304c7fa81
+        checksum/config: edc095c1ece66ccb79e665697be0cc4407beb0cf631b250fe97e19a52f76cae7
         anvil.example.invalid/mcp-contract-revision: 8d84110f3ae431d92e004d7dbd2cb9befb7fe6e1
     spec:
       automountServiceAccountToken: false

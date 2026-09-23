@@ -27,8 +27,13 @@ data:
 
     [mcp.servers.lific]
     protocol = "streamable-http"
-    url = "https://lific.thejeffer.net/mcp"
+    url = "http://lific.lific.svc.cluster.local:3456/mcp"
     auth.token = "{{ env.LIFIC_API_KEY }}"
+
+    [[mcp.servers.lific.headers]]
+    rule = "insert"
+    name = "Host"
+    value = "lific.thejeffer.net"
 
     [mcp.servers.browser]
     protocol = "streamable-http"
