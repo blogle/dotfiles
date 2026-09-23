@@ -33,6 +33,8 @@
       url = "github:nix-community/impermanence";
     };
 
+    opencode.url = "github:anomalyco/opencode/v1.18.30";
+
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs-home";
@@ -60,6 +62,7 @@
         (final: prev: {
           agenix = agenix.packages.${final.system}.default;
           home-manager = inputs.hm.packages.${final.system}.home-manager;
+          opencode = inputs.opencode.packages.${system}.default;
         })
       ];
 
