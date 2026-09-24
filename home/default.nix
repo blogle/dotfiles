@@ -83,6 +83,7 @@ in
   [
     pkgs.autorandr
     pkgs.box
+    pkgs.chatgpt
     pkgs.xplugd
     pkgs.util-linux
     applyKeyboard

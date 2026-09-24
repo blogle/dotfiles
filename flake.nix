@@ -33,6 +33,7 @@
       url = "github:nix-community/impermanence";
     };
 
+    llm-agents.url = "github:numtide/llm-agents.nix";
     opencode.url = "github:anomalyco/opencode/v1.18.30";
 
     rust-overlay = {
@@ -61,6 +62,7 @@
         inputs.rust-overlay.overlays.default
         (final: prev: {
           agenix = agenix.packages.${final.system}.default;
+          chatgpt = inputs.llm-agents.packages.${final.system}.chatgpt;
           home-manager = inputs.hm.packages.${final.system}.home-manager;
           opencode = inputs.opencode.packages.${system}.default;
         })
