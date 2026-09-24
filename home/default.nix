@@ -109,7 +109,6 @@ in
     pkgs.jq
     pkgs.kubectl
     pkgs.kubeseal
-    pkgs.m3u-gen-acestream
     pkgs.nmap
     pkgs.opencode
     pkgs.pavucontrol

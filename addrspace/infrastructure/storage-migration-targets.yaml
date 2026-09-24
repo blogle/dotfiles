@@ -85,30 +85,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: acestream-config-zfs
-  namespace: media
-spec:
-  storageClassName: openebs-zfspv-retain
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: dispatcharr-config-zfs
-  namespace: media
-spec:
-  storageClassName: openebs-zfspv-retain
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 2Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: jellyfin-config-zfs
   namespace: media
 spec:
@@ -181,18 +157,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: teamarr-config-zfs
-  namespace: media
-spec:
-  storageClassName: openebs-zfspv-retain
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: transmission-config-zfs
   namespace: media
 spec:
@@ -202,14 +166,3 @@ spec:
     requests:
       storage: 1Gi
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: m3u-playlists-zfs
-  namespace: media
-spec:
-  storageClassName: openebs-zfspv-retain
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi

@@ -11,8 +11,4 @@ resources:
   - sonarr.yaml
   - muxarr.yaml
   - transmission.yaml
-  - dispatcharr.yaml
-  - teamarr.yaml
-  - acestream.yaml
-  - m3u-playlists.yaml
   - exportarr.yaml
