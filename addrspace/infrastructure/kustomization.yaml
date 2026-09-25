@@ -2,6 +2,7 @@ resources:
   - https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.37.0/controller.yaml
   - cloudflare-cert-manager.sealed.yaml
   - cloudflare-external-dns.sealed.yaml
+  - agent-sandbox
   - cert-manager.yaml
   - external-dns.yaml
   - metallb
