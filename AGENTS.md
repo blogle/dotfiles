@@ -8,6 +8,8 @@
 - `pkgs/`: Local overlays and custom packages.
 - `secrets/`: Age-encrypted secrets and `secrets.nix` key mapping.
 - `addrspace/`: Kustomize manifests for the `addrspace` k3s cluster.
+- Kubernetes desired-state work belongs under `addrspace/`; `hosts/nandstorm/`
+  contains node OS configuration only.
 
 ## Build, Test, and Development Commands
 - `nix flake check`: Run flake and deploy checks.
@@ -34,8 +36,8 @@
 ## Declarative State & Impermanence
 - `nandstorm` uses impermanence: all non-persisted state is wiped on reboot.
 - Everything must be declarative in this repo (services, users, packages, sysctl, k8s setup).
-- Persist required dirs via `environment.persistence."/persist".directories` in `hosts/nandstorm/default.nix` (e.g., `/var/lib/{rancher,kubelet,containerd}`, `/var/log`).
-- Kubernetes volumes must use hostPath under `/persist/...` and those paths must be listed in persistence; avoid `emptyDir` or ephemeral storage.
+- Persist required node directories via `environment.persistence."/persist".directories` in `hosts/nandstorm/default.nix` (e.g., `/var/lib/{rancher,kubelet,containerd}`, `/var/log`).
+- Kubernetes mutable application state should use OpenEBS ZFS PVCs. Intentional direct hostPath data (such as `/media` and `/persist/knowledge`) must use persisted paths; avoid ephemeral storage for durable state.
 
 ## Security & Configuration Tips
 - Secrets are never stored in plaintext. Use agenix: `agenix -e secrets/<name>.age` (recipients in `secrets/secrets.nix`).

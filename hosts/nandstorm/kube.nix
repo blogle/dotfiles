@@ -16,7 +16,8 @@
       # ~15MiB (5MiB max file * 3 files) so a chatty pod cannot fill the
       # node filesystem before Loki collects them. These knob names mirror
       # the kubelet flags `--container-log-max-size` / `--container-log-max-files`.
-      # See addrspace/docs/observability.md "Disk safety and retention".
+      # See addrspace/README.md for the cluster's storage and observability
+      # ownership model.
       # Follow-up: k3s `--kubelet-arg` forwards these to the kubelet; a k3s
       # restart is required to pick them up (`systemctl restart k3s`).
       "--kubelet-arg=container-log-max-size=5Mi"

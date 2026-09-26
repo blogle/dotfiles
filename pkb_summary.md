@@ -28,13 +28,15 @@ No NVIDIA configuration was changed.
 
 ## Storage
 
-Dynamic `local-path` PVCs are bound:
+Mutable application state now uses retained OpenEBS ZFS claims:
 
-- `markdown-vault-mcp-state`: 10Gi
-- `ignis-data`: 5Gi
-- `ignis-obsidian-app`: 5Gi
+- `markdown-vault-mcp-state-zfs`: 10Gi
+- `ignis-data-zfs`: 5Gi
+- `ignis-obsidian-app-zfs`: 5Gi
 
-They were provisioned by `rancher.io/local-path` under `/var/lib/rancher/k3s/storage/...`; no static PVs were added.
+The completed `local-path` migration-source PVCs and PV objects have been
+retired. Human Markdown remains at `/persist/knowledge/vaults`, intentionally
+mounted directly as hostPath data rather than a PVC.
 
 Human Markdown remains exclusively at:
 
