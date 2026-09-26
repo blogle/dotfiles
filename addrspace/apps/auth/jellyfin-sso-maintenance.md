@@ -57,15 +57,14 @@ export JELLYFIN_OIDC_CLIENT_SECRET='<Pocket ID client secret>'
 curl --fail --silent --show-error \
   -X POST \
   -H 'Content-Type: application/json' \
-  -d "{\"oidEndpoint\":\"https://id.thejeffer.net/.well-known/openid-configuration\",\"oidClientId\":\"$JELLYFIN_OIDC_CLIENT_ID\",\"oidSecret\":\"$JELLYFIN_OIDC_CLIENT_SECRET\",\"enabled\":true,\"enableAuthorization\":false,\"enableAllFolders\":false,\"enabledFolders\":[],\"adminRoles\":[],\"roles\":[],\"enableFolderRoles\":false,\"folderRoleMapping\":[],\"roleClaim\":\"groups\",\"oidScopes\":[\"groups\"],\"defaultUsernameClaim\":\"email\",\"schemeOverride\":\"https\"}" \
+  -d "{\"oidEndpoint\":\"https://id.thejeffer.net/.well-known/openid-configuration\",\"oidClientId\":\"$JELLYFIN_OIDC_CLIENT_ID\",\"oidSecret\":\"$JELLYFIN_OIDC_CLIENT_SECRET\",\"enabled\":true,\"enableAuthorization\":true,\"enableAllFolders\":false,\"enabledFolders\":[],\"adminRoles\":[\"admin\"],\"roles\":[\"media-users\"],\"enableFolderRoles\":false,\"folderRoleMapping\":[],\"roleClaim\":\"groups\",\"oidScopes\":[\"groups\"],\"defaultUsernameClaim\":\"email\",\"schemeOverride\":\"https\"}" \
   "https://jellyfin.thejeffer.net/sso/OID/Add/PocketID?api_key=$JELLYFIN_API_KEY"
 ```
 
-`enableAuthorization` is `true` and `AdminRoles` includes `media-users`. An
-SSO-created account in the `media-users` group receives administrative access
-automatically. To restrict admin to a smaller subset, create a separate
-`media-admins` Pocket ID group, add it to `AdminRoles`, and remove
-`media-users` from that list.
+Authorization is enabled. The `media-users` Pocket ID group receives regular
+Jellyfin access through `Roles`; only members of the `admin` group receive
+Jellyfin administrator privileges through `AdminRoles`. Keep a tested local
+administrator account as a recovery path for native clients.
 
 ## Known Limitation
 

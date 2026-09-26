@@ -68,8 +68,8 @@ spec:
                   <EnableAuthorization>true</EnableAuthorization>
                   <EnableAllFolders>false</EnableAllFolders>
                   <EnabledFolders />
-                  <AdminRoles><string>media-users</string></AdminRoles>
-                  <Roles />
+                  <AdminRoles><string>admin</string></AdminRoles>
+                  <Roles><string>media-users</string></Roles>
                   <EnableFolderRoles>false</EnableFolderRoles>
                   <EnableLiveTvRoles>false</EnableLiveTvRoles>
                   <EnableLiveTv>false</EnableLiveTv>
