@@ -6,4 +6,5 @@ in
   {
     "nextdns.age".publicKeys = [ogle modulus nandstorm];
     "tailscale.age".publicKeys = [ogle nandstorm];
+    "addrspace-sealed-secrets-keyring.age".publicKeys = [ogle modulus nandstorm];
   }
