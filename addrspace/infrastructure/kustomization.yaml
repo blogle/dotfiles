@@ -1,16 +1,9 @@
 resources:
-  - https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.37.0/controller.yaml
   - cloudflare-cert-manager.sealed.yaml
   - cloudflare-external-dns.sealed.yaml
-  - agent-sandbox
-  - cert-manager.yaml
-  - external-dns.yaml
+  - cluster-issuer.yaml
   - metallb
-  - nvidia
-  - observability
   - traefik.yaml
-  - keel.yaml
-  - zfs-localpv.yaml
   - zfs-storageclass.yaml
   - zfs-snapshotclass.yaml
   - storage-claims.yaml

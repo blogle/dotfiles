@@ -12,7 +12,6 @@ resources:
   - namespace.yaml
   - storage-claims.yaml
   - grafana-oidc-v3.sealed.yaml
-  - kube-prometheus-stack.yaml
   - alert-rules.yaml
   - grafana.yaml
   - loki.yaml

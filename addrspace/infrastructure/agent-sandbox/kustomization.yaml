@@ -1,9 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-# Anvil vendors this upstream Agent Sandbox v1.0.2 release at its pinned commit.
-resources:
-  - https://raw.githubusercontent.com/blogle/anvil/13334d5709a6a9f1f1c8894da33b8ef09565a3df/k8s/vendor/agent-sandbox/v1.0.2/sandbox.yaml
-
-patchesStrategicMerge:
-  - controller-config.patch.yaml
