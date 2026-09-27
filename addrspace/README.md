@@ -14,7 +14,6 @@ addrspace/
 ├── infrastructure/  # cluster configuration requiring those providers
 ├── platform/        # shared services and observability
 ├── apps/            # application workloads and their secrets
-├── clusters/        # intended future Flux cluster entrypoint
 ├── scripts/
 └── README.md
 ```
@@ -153,5 +152,5 @@ Flux-ready structure: yes
 Flux bootstrapped: no
 ```
 
-`addrspace/clusters/addrspace` is the intended future Flux entrypoint. No Flux
-controllers or reconciliation resources are currently present.
+No Flux controllers, sources, cluster entrypoint, or reconciliation resources
+are currently present; bootstrapping Flux is a separate follow-up.
