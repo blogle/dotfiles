@@ -9,7 +9,7 @@
 # Notification receiver: Alertmanager is deployed with no notification channel
 # wired yet. Alerts are queryable via the Alertmanager UI and Grafana; until a
 # receiver (Discord/Slack/SMTP) is added in alertmanagerSpec the only output
-# is the Alertmanager + Grafana alert panels. See addrspace/README.md.
+# is the Alertmanager UI and Grafana alert panels.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -168,7 +168,7 @@ spec:
 
         - alert: PodCrashLooping
           expr: |
-            increase(kube_pod_container_status_restarts_total{namespace=~"observability|media|openhands|knowledge|auth"}[1h]) > 5
+            increase(kube_pod_container_status_restarts_total{namespace=~"observability|media|knowledge|auth"}[1h]) > 5
           for: 10m
           labels:
             severity: warning

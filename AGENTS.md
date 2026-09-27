@@ -27,7 +27,7 @@
 ## Testing Guidelines
 - Run `nix flake check` before opening a PR.
 - Build hosts locally with `nixos-rebuild build --flake .#<host>`; verify switch on a test machine.
-- For Kubernetes, `kubectl diff -k addrspace` and verify pods/services before `apply`.
+- For Kubernetes, follow `addrspace/README.md` for the established-cluster and fresh-bootstrap workflows; review `kubectl diff -k addrspace` before applying.
 
 ## Commit & Pull Request Guidelines
 - Commits: short, imperative subjects (e.g., "Fix k8s media volumes"). Optional scope prefixes like `hosts/nandstorm:` or `k8s:` help.

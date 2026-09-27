@@ -145,8 +145,7 @@ not second vault copies or Git checkouts.
 
 Application-owned mutable state uses retained OpenEBS ZFS LocalPV claims. The
 human-authored vault remains mounted directly from `/persist/knowledge/vaults`;
-that hostPath is intentional and separate from application state. The completed
-`local-path` migration-source PVCs have been retired.
+that hostPath is intentional and separate from application state.
 
 - `markdown-vault-mcp-state-zfs` at `/data/state` contains the rebuildable SQLite
   index, persistent Ollama-backed vector data, MCP/session state, and key-value
