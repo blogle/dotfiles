@@ -186,8 +186,47 @@ def assert_renovate_proposes_one_staging_release(current_release):
             raise AssertionError(
                 f"Renovate did not advance the staging fixture to {current_release}:\n{output[-5000:]}"
             )
+        if not re.search(r'"newDigest":\s*"sha256:[a-f0-9]{64}"', output):
+            raise AssertionError("Renovate did not resolve an immutable digest for the target Dojo release")
         if output.count('"packageFile": "addrspace/apps/dojo/overlays/staging/kustomization.yaml"') < 2:
             raise AssertionError("Expected one extracted dependency and one update record for staging")
+        print(f"Renovate dry-run proposes one coherent staging update: {fixture_tag} -> {current_release}")
+
+
+def assert_renovate_does_not_propose_prod_update():
+    with tempfile.TemporaryDirectory(prefix="renovate-dojo-prod-test-") as temporary:
+        checkout = Path(temporary) / "checkout"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(ROOT), str(checkout)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        env = os.environ.copy()
+        env["LOG_LEVEL"] = "debug"
+        env["RENOVATE_BASE_DIR"] = str(Path(temporary) / "renovate-cache")
+        result = subprocess.run(
+            [
+                "npx",
+                "--yes",
+                "--package",
+                "renovate",
+                "renovate",
+                "--platform=local",
+                "--dry-run=full",
+                "--include-paths=addrspace/apps/dojo/overlays/prod/kustomization.yaml,addrspace/apps/dojo/overlays/prod/pod-spec.patch.yaml",
+            ],
+            cwd=checkout,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+        if "DRY-RUN: Would create branch" in result.stdout or "DRY-RUN: Would create PR" in result.stdout:
+            raise AssertionError(f"Renovate proposed an automatic Dojo prod update:\n{result.stdout[-5000:]}")
+        print("Renovate full dry-run proposes no automatic Dojo production update.")
 
 
 def main():
@@ -318,6 +357,7 @@ def main():
         assert disabled_by_rule(rules, manager, package_file, package_name), (
             f"Dojo production update is not explicitly disabled: {manager} {package_name} in {package_file}"
         )
+    assert_renovate_does_not_propose_prod_update()
 
     normal_images = [
         dep
