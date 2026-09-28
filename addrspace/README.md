@@ -107,17 +107,37 @@ persisted hostPath exceptions. The retired `local-path` PVC migration sources
 must not be reintroduced.
 
 Anvil consumes Agent Sandbox; it does not own the provider. The controller layer
-installs the exact upstream Agent Sandbox v1.0.2 manifest vendored at Anvil
-commit `13334d5709a6a9f1f1c8894da33b8ef09565a3df`. Renovate advances the Anvil
-base and both application image tags as one revision; the separately vendored
-Agent Sandbox manifest remains its own update.
+installs the exact upstream Agent Sandbox v1.0.2 manifest vendored at Anvil's
+currently pinned commit. That vendor pin is maintained separately from Anvil's
+deployable main revision.
 
-Dojo production pins its Kustomize base and release-image digest independently:
-the upstream release workflow publishes production images only for changelog
-releases, while Kustomize base commits can include unreleased changes. Dojo
-staging pins both its base and the matching `git-<commit>` image tag together.
-The upstream release workflow publishes that immutable image for each master
-commit; staging no longer follows a mutable `staging` tag or uses Keel polling.
+## Application delivery policy
+
+### Anvil: automatic delivery from passing main builds
+
+Every successful Anvil `main` build publishes immutable `sha-<commit>` images
+for both Anvil and its sandbox. One Renovate dependency advances the Kustomize
+base and both image tags to that same commit. Kubernetes CI verifies both exact
+GHCR artifacts exist; a passing, current Renovate PR can then automerge and
+Flux deploys it. The vendor-provided Agent Sandbox controller pin remains a
+separate dependency.
+
+### Dojo staging: automatic delivery of semantic releases
+
+Staging tracks Dojo semantic releases, not `master` HEAD. Commits which do not
+produce a semantic release do not change staging. Each release produces a
+`vX.Y.Z` Git tag and matching GHCR image; Renovate advances the staging base,
+image version, and image digest together. CI verifies the release image matches
+the pinned digest, then a passing, current Renovate PR can automerge and Flux
+deploys staging. The mutable `staging` image tag and Keel polling are not used.
+
+### Dojo production: operator-selected stable release
+
+Production remains pinned to the operator-selected `v0.0.4` image and its
+immutable digest, with the existing Kustomize base commit retained. Renovate
+does not advance the Dojo production base or application image. A production
+upgrade is an explicit human change through a normal PR, followed by CI, merge,
+and Flux reconciliation.
 
 ## Nix deployment boundary
 
