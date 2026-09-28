@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: dojo-prod
 
 resources:
-- github.com/blogle/dojo2//deploy/k8s/base?ref=master
+- github.com/blogle/dojo2//deploy/k8s/base?ref=e522168b898108d8ddcce35e9c266bc7b956b12b
 - namespace.yaml
 - ingress.yaml
 - dojo-google-oauth-sealed.yaml

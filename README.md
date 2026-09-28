@@ -17,55 +17,17 @@ After this `kubectl` will talk to the cluster running on `nandstorm`.
 
 ## Kustomize manifests
 
-The top-level `addrspace` directory contains manifests for the `addrspace` cluster
-infrastructure and all former docker-compose services.  It is organized as a
-[Kustomize](https://kustomize.io/) configuration.  Apply everything with:
+The `addrspace/` directory contains the Kubernetes desired state for the
+`addrspace` cluster and is organized as a [Kustomize](https://kustomize.io/)
+configuration. Flux has not been bootstrapped; the current manual workflow is:
 
 ```sh
+kubectl diff -k addrspace
 kubectl apply -k addrspace
 ```
 
-`kubectl` includes built-in support for Kustomize, so no separate installation is
-required.
-
-This installs MetalLB, ExternalDNS, Traefik, the NVIDIA device plugin and
-exposes Jellyfin, Transmission and friends via Traefik with TLS.  Traefik and
-ExternalDNS require a Cloudflare API key which is now managed via Sealed Secrets.
-Use the helper script in `addrspace/scripts/seal-secret.sh` to create encrypted manifests.
-
-### Secrets with Sealed Secrets
-
-We keep Kubernetes secrets encrypted in Git as SealedSecrets. The controller is
-installed by `addrspace/infrastructure/kustomization.yaml`.
-
-Add or rotate a secret:
-
-1. Generate the sealed manifest(s) locally (no plaintext committed):
-
-   ./addrspace/scripts/seal-secret.sh \
-     --name cloudflare \
-     -n cert-manager -n external-dns \
-     --literal api-key=YOUR_CLOUDFLARE_API_KEY \
-      --output-dir addrspace/infrastructure \
-     --scope cluster-wide
-
-   This writes `cloudflare-cert-manager.sealed.yaml` and
-   `cloudflare-external-dns.sealed.yaml` under the chosen `--output-dir`.
-
-2. Reference the generated files in the appropriate `kustomization.yaml` under
-   `resources` and apply:
-
-    kubectl apply -k addrspace/infrastructure
-
-3. Verify the controller created managed Secrets:
-
-   kubectl -n cert-manager get secret cloudflare -o json | jq -r '.metadata.annotations["sealedsecrets.bitnami.com/managed"]'
-   kubectl -n external-dns get secret cloudflare -o json | jq -r '.metadata.annotations["sealedsecrets.bitnami.com/managed"]'
-
-Tips:
-- Use `--scope strict` to bind a secret to a specific namespace/name.
-- For the same secret in multiple namespaces, prefer `--scope cluster-wide` and
-  run the script with multiple `-n` flags; it will produce one file per namespace.
+See [`addrspace/README.md`](addrspace/README.md) for cluster ownership, storage,
+secret handling, dependency layers, and recovery guidance.
 
 ### Networking requirements
 

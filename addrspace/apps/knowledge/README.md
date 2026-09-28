@@ -143,18 +143,18 @@ Chadlands/70 Sources/Codex Snapshots`. These directories must exist in the live
 vault before rollout. They are paths within the same durable vault hostPath,
 not second vault copies or Git checkouts.
 
-Application-owned state now uses retained OpenEBS ZFS LocalPV claims. The old
-`local-path` claims remain as rollback sources; see
-`addrspace/docs/storage-migration.md` for the migration inventory.
+Application-owned mutable state uses retained OpenEBS ZFS LocalPV claims. The
+human-authored vault remains mounted directly from `/persist/knowledge/vaults`;
+that hostPath is intentional and separate from application state.
 
-- `markdown-vault-mcp-state` at `/data/state` contains the rebuildable SQLite
+- `markdown-vault-mcp-state-zfs` at `/data/state` contains the rebuildable SQLite
   index, persistent Ollama-backed vector data, MCP/session state, and key-value
   data. Embedding inference itself runs on the shared Ollama service.
-- `ignis-data` at `/app/data` contains Ignis application data.
-- `ignis-obsidian-app` at `/app/obsidian-app` caches Obsidian 1.12.7 assets.
-- `telegram-collector-state` at `/state` contains the SQLite cursor database,
+- `ignis-data-zfs` at `/app/data` contains Ignis application data.
+- `ignis-obsidian-app-zfs` at `/app/obsidian-app` caches Obsidian 1.12.7 assets.
+- `telegram-collector-state-zfs` at `/state` contains the SQLite cursor database,
   Telegram session, archive, and work files.
-- `chatgpt-collector-state` at `/state` contains incremental exporter data and
+- `chatgpt-collector-state-zfs` at `/state` contains incremental exporter data and
   run manifests.
 
 The claims contain no human-authored Markdown. MCP state is disposable and can

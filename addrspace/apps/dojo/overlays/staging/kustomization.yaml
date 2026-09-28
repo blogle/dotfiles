@@ -5,7 +5,7 @@ namespace: dojo-staging
 
 resources:
 # Uses the upstream Dojo base from the rebuilt repository.
-- github.com/blogle/dojo2//deploy/k8s/base?ref=master
+- github.com/blogle/dojo2//deploy/k8s/base?ref=24329406863cb25416b71a04a6b5ceac0dd1dae2
 - namespace.yaml
 - ingress.yaml
 - dojo-google-oauth-sealed.yaml

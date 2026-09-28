@@ -3,7 +3,7 @@
 # Exportarr sidecar that scrapes its arr's API and exposes Prometheus
 # metrics at :9704; the matching ServiceMonitor lets Prometheus (which is
 # configured with an empty match-all ruleSelector, see
-# infrastructure/observability/kube-prometheus-stack.yaml) pick it up.
+# controllers/kube-prometheus-stack.yaml) pick it up.
 #
 # These exporters + ServiceMonitors live in the `media` namespace next to
 # the apps they observe (per spec): app-specific telemetry intent stays

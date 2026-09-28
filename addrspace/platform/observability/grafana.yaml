@@ -2,7 +2,7 @@
 # Single-pane Grafana UI. Deployed separately from kube-prometheus-stack so
 # datasources, ingress, and tinyauth forward-auth can be managed in one place
 # (the spec requires that bundle-Grafana be disabled when Grafana is installed
-# outside the kube-prometheus-stack chart; see kube-prometheus-stack.yaml).
+# outside the kube-prometheus-stack chart; see controllers/kube-prometheus-stack.yaml).
 #
 # Chart: grafana/grafana
 # Pinned version: 10.5.15 (https://grafana.github.io/helm-charts)

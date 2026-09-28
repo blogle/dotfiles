@@ -10,9 +10,8 @@
 # existing repo convention used by cert-manager, external-dns, and keel.
 resources:
   - namespace.yaml
-  - storage-migration-targets.yaml
+  - storage-claims.yaml
   - grafana-oidc-v3.sealed.yaml
-  - kube-prometheus-stack.yaml
   - alert-rules.yaml
   - grafana.yaml
   - loki.yaml

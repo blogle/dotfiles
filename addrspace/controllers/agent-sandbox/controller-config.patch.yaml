@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-sandbox-controller
+  namespace: agent-sandbox-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: agent-sandbox-controller
+          args:
+            - --leader-elect=true
+            - --extensions
+          volumeMounts:
+            - mountPath: /etc/sandbox-config
+              name: config-volume
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: agent-sandbox-config
+            optional: true

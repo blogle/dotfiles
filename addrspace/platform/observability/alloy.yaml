@@ -167,7 +167,9 @@ spec:
     service:
       enabled: true
       type: ClusterIP
-      ports:
+
+    alloy:
+      extraPorts:
         - name: otlp-grpc
           port: 4317
           targetPort: 4317
@@ -176,12 +178,6 @@ spec:
           port: 4318
           targetPort: 4318
           protocol: TCP
-        - name: alloy-metrics
-          port: 12345
-          targetPort: 12345
-          protocol: TCP
-
-    alloy:
       extraEnv:
         - name: HOSTNAME
           valueFrom:
