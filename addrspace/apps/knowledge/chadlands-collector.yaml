@@ -36,7 +36,7 @@ spec:
             runAsNonRoot: true
           containers:
             - name: chadlands-collector
-              image: ghcr.io/blogle/chadlands-static-collector:latest
+              image: ghcr.io/blogle/chadlands-static-collector@sha256:1c12867a15fb22a85f8465b26e905e5db40004abb1588bfcdd987d340c2634f2
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:

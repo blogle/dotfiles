@@ -1,0 +1,93 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended'],
+  enabledManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
+  dependencyDashboard: true,
+  labels: ['dependencies', 'kubernetes'],
+  packageRules: [
+    {
+      matchManagers: ['kustomize'],
+      matchPackageNames: ['blogle/dojo2', 'blogle/anvil'],
+      enabled: false,
+    },
+    {
+      matchManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
+      automerge: true,
+      automergeType: 'pr',
+      ignoreTests: false,
+    },
+  ],
+  kubernetes: {
+    managerFilePatterns: ['/^addrspace\\/.+\\.ya?ml$/'],
+  },
+  kustomize: {
+    managerFilePatterns: [
+      '/^addrspace\\/kustomization\\.ya?ml$/',
+      '/^addrspace\\/.+\\/kustomization\\.ya?ml$/',
+    ],
+  },
+  flux: {
+    managerFilePatterns: ['/^addrspace\\/clusters\\/addrspace\\/flux-system\\/gotk-components\\.ya?ml$/'],
+  },
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Rancher HelmChart CR versions',
+      managerFilePatterns: ['/^addrspace\\/.+\\.ya?ml$/'],
+      matchStrings: [
+        'repo:\\s*(?<registryUrl>https://[^\\s]+)\\s*\\n\\s*chart:\\s*(?<depName>[^\\s]+)\\s*\\n\\s*version:\\s*(?<currentValue>[^\\s]+)',
+      ],
+      datasourceTemplate: 'helm',
+      registryUrlTemplate: '{{{registryUrl}}}',
+    },
+    {
+      customType: 'regex',
+      description: 'Sealed Secrets versioned controller manifest',
+      managerFilePatterns: ['/^addrspace\\/controllers\\/kustomization\\.yaml$/'],
+      matchStrings: [
+        'https://github\\.com/bitnami-labs/sealed-secrets/releases/download/v(?<currentValue>[^/]+)/controller\\.yaml',
+      ],
+      depNameTemplate: 'bitnami-labs/sealed-secrets',
+      datasourceTemplate: 'github-releases',
+    },
+    {
+      customType: 'regex',
+      description: 'Dojo base at immutable master commit',
+      managerFilePatterns: ['/^addrspace\\/apps\\/dojo\\/overlays\\/(prod|staging)\\/kustomization\\.yaml$/'],
+      matchStrings: [
+        '(?<prefix>github\\.com/blogle/dojo2//deploy/k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})',
+      ],
+      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}',
+      depNameTemplate: 'blogle/dojo2',
+      packageNameTemplate: 'https://github.com/blogle/dojo2',
+      currentValueTemplate: 'master',
+      datasourceTemplate: 'git-refs',
+    },
+    {
+      customType: 'regex',
+      description: 'Anvil application base at immutable main commit',
+      managerFilePatterns: ['/^addrspace\\/apps\\/anvil\\/kustomization\\.yaml$/'],
+      matchStrings: [
+        '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})',
+      ],
+      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}',
+      depNameTemplate: 'blogle/anvil',
+      packageNameTemplate: 'https://github.com/blogle/anvil',
+      currentValueTemplate: 'main',
+      datasourceTemplate: 'git-refs',
+    },
+    {
+      customType: 'regex',
+      description: 'Anvil-vendored Agent Sandbox release manifest at immutable main commit',
+      managerFilePatterns: ['/^addrspace\\/controllers\\/agent-sandbox\\/kustomization\\.yaml$/'],
+      matchStrings: [
+        '(?<prefix>raw\\.githubusercontent\\.com/blogle/anvil/)(?<currentDigest>[a-f0-9]{40})(?<suffix>\\/k8s/vendor/agent-sandbox/)',
+      ],
+      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{suffix}}}',
+      depNameTemplate: 'blogle/anvil',
+      packageNameTemplate: 'https://github.com/blogle/anvil',
+      currentValueTemplate: 'main',
+      datasourceTemplate: 'git-refs',
+    },
+  ],
+}
