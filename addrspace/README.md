@@ -108,8 +108,16 @@ must not be reintroduced.
 
 Anvil consumes Agent Sandbox; it does not own the provider. The controller layer
 installs the exact upstream Agent Sandbox v1.0.2 manifest vendored at Anvil
-commit `13334d5709a6a9f1f1c8894da33b8ef09565a3df`. Dojo prod and staging consume
-immutable pinned Kustomize bases; Renovate advances those Git refs through PRs.
+commit `13334d5709a6a9f1f1c8894da33b8ef09565a3df`. Renovate advances the Anvil
+base and both application image tags as one revision; the separately vendored
+Agent Sandbox manifest remains its own update.
+
+Dojo production pins its Kustomize base and release-image digest independently:
+the upstream release workflow publishes production images only for changelog
+releases, while Kustomize base commits can include unreleased changes. Dojo
+staging pins both its base and the matching `git-<commit>` image tag together.
+The upstream release workflow publishes that immutable image for each master
+commit; staging no longer follows a mutable `staging` tag or uses Keel polling.
 
 ## Nix deployment boundary
 

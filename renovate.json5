@@ -11,6 +11,26 @@
       enabled: false,
     },
     {
+      matchManagers: ['kubernetes', 'kustomize'],
+      matchPackageNames: ['ghcr.io/blogle/anvil', 'ghcr.io/blogle/anvil-sandbox'],
+      enabled: false,
+    },
+    {
+      matchManagers: ['kustomize'],
+      matchPackageNames: ['ghcr.io/blogle/dojo2'],
+      matchFileNames: ['addrspace/apps/dojo/overlays/staging/kustomization.yaml'],
+      enabled: false,
+    },
+    {
+      matchManagers: ['kubernetes'],
+      matchPackageNames: ['ghcr.io/blogle/dojo2'],
+      matchFileNames: [
+        'addrspace/apps/dojo/overlays/prod/pod-spec.patch.yaml',
+        'addrspace/apps/dojo/overlays/staging/pod-spec.patch.yaml',
+      ],
+      enabled: false,
+    },
+    {
       matchManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
       automerge: true,
       automergeType: 'pr',
@@ -52,8 +72,8 @@
     },
     {
       customType: 'regex',
-      description: 'Dojo base at immutable master commit',
-      managerFilePatterns: ['/^addrspace\\/apps\\/dojo\\/overlays\\/(prod|staging)\\/kustomization\\.yaml$/'],
+      description: 'Dojo production base at immutable master commit',
+      managerFilePatterns: ['/^addrspace\\/apps\\/dojo\\/overlays\\/prod\\/kustomization\\.yaml$/'],
       matchStrings: [
         '(?<prefix>github\\.com/blogle/dojo2//deploy/k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})',
       ],
@@ -65,15 +85,28 @@
     },
     {
       customType: 'regex',
-      description: 'Anvil application base at immutable main commit',
+      description: 'Anvil base and both images at one immutable application commit',
       managerFilePatterns: ['/^addrspace\\/apps\\/anvil\\/kustomization\\.yaml$/'],
       matchStrings: [
-        '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})',
+        '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<middle>\\s*\\n\\s*-\\s*certificate\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*github-app-credentials-anvil\\.sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<between>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-sandbox\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}',
       ],
-      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}',
+      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{middle}}}{{{newDigest}}}{{{between}}}{{{newDigest}}}',
       depNameTemplate: 'blogle/anvil',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
+      datasourceTemplate: 'git-refs',
+    },
+    {
+      customType: 'regex',
+      description: 'Dojo staging base and exact matching master image commit',
+      managerFilePatterns: ['/^addrspace\\/apps\\/dojo\\/overlays\\/staging\\/kustomization\\.yaml$/'],
+      matchStrings: [
+        '(?<prefix>github\\.com/blogle/dojo2//deploy/k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<middle>\\s*\\n\\s*-\\s*namespace\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*dojo-google-oauth-sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/dojo2\\s*\\n\\s*newName:\\s*ghcr\\.io/blogle/dojo2\\s*\\n\\s*newTag:\\s*git-)[a-f0-9]{40}',
+      ],
+      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{middle}}}{{{newDigest}}}',
+      depNameTemplate: 'blogle/dojo2',
+      packageNameTemplate: 'https://github.com/blogle/dojo2',
+      currentValueTemplate: 'master',
       datasourceTemplate: 'git-refs',
     },
     {

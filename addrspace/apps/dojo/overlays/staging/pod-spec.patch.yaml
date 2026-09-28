@@ -30,7 +30,7 @@ spec:
                   key: GOOGLE_OAUTH_REDIRECT_URI
       initContainers:
         - name: fix-permissions
-          image: ghcr.io/blogle/dojo2:staging
+          image: ghcr.io/blogle/dojo2
           imagePullPolicy: Always
           command: ["/bin/sh", "-c", "chown -R 1000:1000 /data"]
           securityContext:

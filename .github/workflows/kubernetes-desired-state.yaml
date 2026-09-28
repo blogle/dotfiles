@@ -48,7 +48,7 @@ jobs:
       - name: Validate all addrspace YAML and Flux object schemas
         if: steps.changes.outputs.relevant == 'true'
         run: |
-          python -m pip install --quiet PyYAML
+          python -m pip install --quiet PyYAML json5
           python - <<'PY'
           from pathlib import Path
           import yaml
@@ -74,7 +74,21 @@ jobs:
           for layer, dependency in (("infrastructure", "addrspace-controllers"), ("platform", "addrspace-infrastructure"), ("apps", "addrspace-platform")):
               assert yaml.safe_load((root / f"{layer}.yaml").read_text())["spec"]["dependsOn"] == [{"name": dependency}]
           assert len(yaml.safe_load((root / "controllers.yaml").read_text())["spec"]["healthChecks"]) >= 20
-          assert yaml.safe_load((root / "infrastructure.yaml").read_text())["spec"]["healthCheckExprs"]
+          infrastructure = yaml.safe_load((root / "infrastructure.yaml").read_text())["spec"]
+          expected_infrastructure_health = [
+              {"apiVersion": "cert-manager.io/v1", "kind": "ClusterIssuer", "name": "letsencrypt"},
+              {"apiVersion": "bitnami.com/v1alpha1", "kind": "SealedSecret", "name": "cloudflare", "namespace": "cert-manager"},
+              {"apiVersion": "bitnami.com/v1alpha1", "kind": "SealedSecret", "name": "cloudflare", "namespace": "external-dns"},
+          ]
+          assert infrastructure["healthChecks"] == expected_infrastructure_health
+          assert infrastructure.get("wait", False) is not True
+          expected_exprs = {("cert-manager.io/v1", "ClusterIssuer"), ("bitnami.com/v1alpha1", "SealedSecret")}
+          actual_exprs = {
+              (expr["apiVersion"], expr["kind"])
+              for expr in infrastructure["healthCheckExprs"]
+              if expr.get("current") and expr.get("failed")
+          }
+          assert actual_exprs == expected_exprs
           PY
       - name: Validate Kustomize layers
         if: steps.changes.outputs.relevant == 'true'
@@ -101,6 +115,9 @@ jobs:
       - name: Validate Renovate configuration
         if: steps.changes.outputs.relevant == 'true'
         run: npx --yes --package renovate renovate-config-validator --strict renovate.json5
+      - name: Validate Renovate dependency extraction
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-renovate-extraction.py
       - name: Enforce static safety invariants
         if: steps.changes.outputs.relevant == 'true'
         run: |
