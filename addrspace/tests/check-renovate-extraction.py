@@ -115,6 +115,82 @@ def registry_release_fixture():
     return fixture_tag, fixture_digest
 
 
+def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
+    fixture_sha = "a" * 40 if current_sha != "a" * 40 else "b" * 40
+    with tempfile.TemporaryDirectory(prefix="renovate-anvil-sha-test-") as temporary:
+        checkout = Path(temporary) / "checkout"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(ROOT), str(checkout)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        manifest = checkout / "addrspace/apps/anvil/kustomization.yaml"
+        content, count = re.subn(
+            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}",
+            fixture_sha,
+            manifest.read_text(),
+        )
+        if count != 3:
+            raise AssertionError(f"Expected three Anvil SHA fields in fixture, found {count}")
+        manifest.write_text(content)
+        subprocess.run(["git", "add", str(manifest.relative_to(checkout))], cwd=checkout, check=True)
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Renovate extraction test",
+                "-c",
+                "user.email=renovate-test@example.invalid",
+                "commit",
+                "--quiet",
+                "-m",
+                "test fixture: arbitrary Anvil SHA",
+            ],
+            cwd=checkout,
+            check=True,
+        )
+        env = os.environ.copy()
+        env["LOG_LEVEL"] = "debug"
+        env["RENOVATE_BASE_DIR"] = str(Path(temporary) / "renovate-cache")
+        result = subprocess.run(
+            [
+                "npx",
+                "--yes",
+                "--package",
+                "renovate",
+                "renovate",
+                "--platform=local",
+                "--dry-run=extract",
+                "--include-paths=addrspace/apps/anvil/kustomization.yaml",
+            ],
+            cwd=checkout,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+        fixture_files = extracted_files(result.stdout)
+        fixture_dep = require_dep(
+            fixture_files,
+            "regex",
+            "addrspace/apps/anvil/kustomization.yaml",
+            "blogle/anvil",
+            "git-refs",
+        )
+        if len(fixture_dep) != 1 or fixture_dep[0].get("currentDigest") != fixture_sha:
+            raise AssertionError("Anvil extractor rejected an arbitrary valid SHA fixture")
+        fixture_revisions = re.findall(
+            r"(?:ref=|newTag: sha-)([a-f0-9]{40})",
+            fixture_dep[0].get("replaceString", ""),
+        )
+        if fixture_revisions != [fixture_sha] * 3:
+            raise AssertionError("Anvil fixture did not preserve the base/image SHA coupling")
+    print("Anvil extraction accepts an arbitrary 40-character SHA and keeps all three values coupled.")
+
+
 def assert_renovate_proposes_one_staging_release(current_release):
     """Run Renovate's update pipeline on a throwaway old-release fixture."""
     fixture_tag, fixture_digest = registry_release_fixture()
@@ -282,6 +358,7 @@ def main():
     assert len(revisions) == 3 and revisions == [anvil_sha] * 3
     assert anvil_record[0].get("autoReplaceStringTemplate", "").count("{{{newDigest}}}") == 3
     assert anvil[0].get("currentValue") == "main"
+    assert_anvil_accepts_arbitrary_sha_fixture(anvil_sha)
     require_dep(
         files,
         "regex",
