@@ -13,6 +13,18 @@ spec:
   dependsOn:
     - name: addrspace-controllers
   timeout: 10m
+  healthChecks:
+    - apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      name: letsencrypt
+    - apiVersion: bitnami.com/v1alpha1
+      kind: SealedSecret
+      name: cloudflare
+      namespace: cert-manager
+    - apiVersion: bitnami.com/v1alpha1
+      kind: SealedSecret
+      name: cloudflare
+      namespace: external-dns
   healthCheckExprs:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer
