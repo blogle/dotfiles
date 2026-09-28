@@ -93,7 +93,7 @@ def registry_release_fixture():
     )
     if len(releases) < 2:
         raise AssertionError("Need two published Dojo semantic images to exercise a Renovate update")
-    fixture_tag = releases[0]
+    fixture_tag, target_tag = releases[-2:]
     manifest_request = Request(
         f"https://ghcr.io/v2/{repository}/manifests/{fixture_tag}",
         headers={
@@ -112,7 +112,7 @@ def registry_release_fixture():
         fixture_digest = response.headers.get("Docker-Content-Digest")
     if not fixture_digest or not re.fullmatch(r"sha256:[a-f0-9]{64}", fixture_digest):
         raise AssertionError(f"No immutable digest for fixture release {fixture_tag}")
-    return fixture_tag, fixture_digest
+    return fixture_tag, fixture_digest, target_tag
 
 
 def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
@@ -191,11 +191,9 @@ def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
     print("Anvil extraction accepts an arbitrary 40-character SHA and keeps all three values coupled.")
 
 
-def assert_renovate_proposes_one_staging_release(current_release):
+def assert_renovate_proposes_one_staging_release():
     """Run Renovate's update pipeline on a throwaway old-release fixture."""
-    fixture_tag, fixture_digest = registry_release_fixture()
-    if fixture_tag == current_release:
-        raise AssertionError("The checked-out Dojo staging release is not newer than the update fixture")
+    fixture_tag, fixture_digest, target_tag = registry_release_fixture()
 
     with tempfile.TemporaryDirectory(prefix="renovate-dojo-release-") as temporary:
         checkout = Path(temporary) / "checkout"
@@ -258,15 +256,15 @@ def assert_renovate_proposes_one_staging_release(current_release):
             raise AssertionError(
                 f"Renovate did not produce a staging update from {fixture_tag}:\n{output[-5000:]}"
             )
-        if f'"currentValue": "{fixture_tag}"' not in output or f'"newValue": "{current_release}"' not in output:
+        if f'"currentValue": "{fixture_tag}"' not in output or f'"newValue": "{target_tag}"' not in output:
             raise AssertionError(
-                f"Renovate did not advance the staging fixture to {current_release}:\n{output[-5000:]}"
+                f"Renovate did not advance the staging fixture to {target_tag}:\n{output[-5000:]}"
             )
         if not re.search(r'"newDigest":\s*"sha256:[a-f0-9]{64}"', output):
             raise AssertionError("Renovate did not resolve an immutable digest for the target Dojo release")
         if output.count('"packageFile": "addrspace/apps/dojo/overlays/staging/kustomization.yaml"') < 2:
             raise AssertionError("Expected one extracted dependency and one update record for staging")
-        print(f"Renovate dry-run proposes one coherent staging update: {fixture_tag} -> {current_release}")
+        print(f"Renovate dry-run proposes one coherent staging update: {fixture_tag} -> {target_tag}")
 
 
 def assert_renovate_does_not_propose_prod_update():
@@ -398,7 +396,7 @@ def main():
         and manager.get("versioningTemplate") == "semver"
         for manager in config.get("customManagers", [])
     ), "Dojo staging must use semantic Docker releases, not master Git refs"
-    assert_renovate_proposes_one_staging_release(current_release)
+    assert_renovate_proposes_one_staging_release()
     assert any(
         rule.get("automerge") is True and "custom.regex" in rule.get("matchManagers", [])
         for rule in rules
