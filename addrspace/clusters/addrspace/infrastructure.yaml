@@ -1,0 +1,24 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: addrspace-infrastructure
+  namespace: flux-system
+spec:
+  interval: 1m
+  path: ./addrspace/infrastructure
+  prune: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: addrspace-controllers
+  timeout: 10m
+  healthCheckExprs:
+    - apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      failed: status.conditions.exists(c, c.type == 'Ready' && c.status == 'False')
+      current: status.conditions.exists(c, c.type == 'Ready' && c.status == 'True')
+    - apiVersion: bitnami.com/v1alpha1
+      kind: SealedSecret
+      failed: status.conditions.exists(c, c.type == 'Synced' && c.status == 'False')
+      current: status.conditions.exists(c, c.type == 'Synced' && c.status == 'True')
