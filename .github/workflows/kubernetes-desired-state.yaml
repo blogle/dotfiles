@@ -26,11 +26,25 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE_SHA" "$GITHUB_SHA" | rg -q '^(addrspace/|renovate\.json5$|\.github/workflows/kubernetes-desired-state\.yaml$)'; then
-            echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
-            echo "relevant=false" >> "$GITHUB_OUTPUT"
-            echo "No Kubernetes desired-state or Renovate configuration changes; passing as a no-op."
+            if [[ -z "$BASE_SHA" || -z "$GITHUB_SHA" ]] || ! git cat-file -e "${BASE_SHA}^{commit}" || ! git cat-file -e "${GITHUB_SHA}^{commit}"; then
+              echo "Unable to identify both diff commits; refusing to skip Kubernetes validation." >&2
+              exit 1
+            fi
+            changed_paths="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")" || exit 1
+            relevant=false
+            while IFS= read -r path; do
+              case "$path" in
+                addrspace/*|renovate.json5|.github/workflows/kubernetes-desired-state.yaml)
+                  relevant=true
+                  break
+                  ;;
+              esac
+            done <<< "$changed_paths"
+            echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+            if [[ "$relevant" == "false" ]]; then
+              echo "No Kubernetes desired-state or Renovate configuration changes; passing as a no-op."
+            fi
           fi
       - uses: azure/setup-kubectl@v4
         if: steps.changes.outputs.relevant == 'true'
@@ -118,10 +132,33 @@ jobs:
       - name: Validate Renovate dependency extraction
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-renovate-extraction.py
+      - name: Validate immutable application artifacts
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-image-artifacts.py
       - name: Enforce static safety invariants
         if: steps.changes.outputs.relevant == 'true'
-        run: |
-          if rg -ni 'ref=(master|main)|storageClassName:\s*local-path|openhands' addrspace; then
-            echo 'Found a mutable remote ref, retired local-path storage, or stale OpenHands reference.' >&2
-            exit 1
-          fi
+        run: python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          pattern = re.compile(r"ref=(master|main)|storageClassName:\s*local-path|openhands", re.IGNORECASE)
+          findings = []
+          for path in Path("addrspace").rglob("*"):
+              if not path.is_file():
+                  continue
+              try:
+                  lines = path.read_text().splitlines()
+              except UnicodeDecodeError:
+                  continue
+              findings.extend(
+                  f"{path}:{number}: {line}"
+                  for number, line in enumerate(lines, 1)
+                  if pattern.search(line)
+              )
+          if findings:
+              print("Found mutable remote refs, retired local-path storage, or stale OpenHands references:", file=sys.stderr)
+              print("\n".join(findings), file=sys.stderr)
+              sys.exit(1)
+          print("Static safety invariants passed.")
+          PY
