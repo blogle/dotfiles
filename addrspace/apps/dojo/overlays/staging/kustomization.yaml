@@ -4,8 +4,7 @@ kind: Kustomization
 namespace: dojo-staging
 
 resources:
-# Uses the upstream Dojo base from the rebuilt repository.
-- github.com/blogle/dojo2//deploy/k8s/base?ref=24329406863cb25416b71a04a6b5ceac0dd1dae2
+- github.com/blogle/dojo2//deploy/k8s/base?ref=v0.0.12
 - namespace.yaml
 - ingress.yaml
 - dojo-google-oauth-sealed.yaml
@@ -13,12 +12,12 @@ resources:
 images:
 - name: ghcr.io/blogle/dojo2
   newName: ghcr.io/blogle/dojo2
-  newTag: staging
+  newTag: v0.0.12
+  digest: sha256:12d58fae60cc02780765fcb11882bd69f13c0c3f49b02d4ac97887913457b58f
 
 patches:
 - path: pod-spec.patch.yaml
 - path: backup-cronjob.patch.yaml
-- path: keel-annotations.patch.yaml
 - target:
     kind: ServiceAccount
     name: dojo-backup

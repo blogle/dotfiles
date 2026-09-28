@@ -82,6 +82,7 @@
   ];
 
   age.secrets.nextdns.file = ../../secrets/nextdns.age;
+  age.secrets.addrspace-sealed-secrets-keyring.file = ../../secrets/addrspace-sealed-secrets-keyring.age;
   services.nextdns = {
     enable = true;
     arguments = [
@@ -90,6 +91,36 @@
   };
 
   services.resolved.enable = true;
+
+  # Restore the human/agenix-held Sealed Secrets root before the controller
+  # starts using it. The decrypted YAML exists only in /run/agenix and is
+  # applied through k3s's existing root kubeconfig.
+  systemd.services.addrspace-sealed-secrets-keyring = {
+    description = "Restore the addrspace Sealed Secrets bootstrap keyring";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "k3s.service" ];
+    requires = [ "k3s.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+      Group = "root";
+      UMask = "0077";
+    };
+    path = [ pkgs.kubectl pkgs.coreutils ];
+    script = ''
+      set -euo pipefail
+      kubeconfig=/etc/rancher/k3s/k3s.yaml
+      for attempt in $(seq 1 120); do
+        if kubectl --kubeconfig="$kubeconfig" --request-timeout=5s get --raw=/readyz >/dev/null 2>&1; then
+          kubectl --kubeconfig="$kubeconfig" apply -f ${config.age.secrets.addrspace-sealed-secrets-keyring.path}
+          exit 0
+        fi
+        sleep 5
+      done
+      echo "k3s API did not become ready; Sealed Secrets keyring was not applied" >&2
+      exit 1
+    '';
+  };
 
   # Keep the host clock synchronized and display local Pacific time.
   services.timesyncd.enable = true;

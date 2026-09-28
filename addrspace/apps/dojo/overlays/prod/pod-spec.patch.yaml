@@ -7,7 +7,7 @@ spec:
     spec:
       initContainers:
       - name: fix-permissions
-        image: ghcr.io/blogle/dojo2:v0.0.1
+        image: ghcr.io/blogle/dojo2
         imagePullPolicy: Always
         command: ["/bin/sh", "-c", "chown -R 1000:1000 /data"]
         securityContext:

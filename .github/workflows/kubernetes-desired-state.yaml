@@ -1,0 +1,165 @@
+name: Kubernetes desired state
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Kubernetes desired state
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check whether Kubernetes desired state changed
+        id: changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            if [[ -z "$BASE_SHA" || -z "$GITHUB_SHA" ]] || ! git cat-file -e "${BASE_SHA}^{commit}" || ! git cat-file -e "${GITHUB_SHA}^{commit}"; then
+              echo "Unable to identify both diff commits; refusing to skip Kubernetes validation." >&2
+              exit 1
+            fi
+            changed_paths="$(git diff --name-only "$BASE_SHA" "$GITHUB_SHA")" || exit 1
+            relevant=false
+            while IFS= read -r path; do
+              case "$path" in
+                addrspace/*|renovate.json5|.github/workflows/kubernetes-desired-state.yaml)
+                  relevant=true
+                  break
+                  ;;
+              esac
+            done <<< "$changed_paths"
+            echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+            if [[ "$relevant" == "false" ]]; then
+              echo "No Kubernetes desired-state or Renovate configuration changes; passing as a no-op."
+            fi
+          fi
+      - uses: azure/setup-kubectl@v4
+        if: steps.changes.outputs.relevant == 'true'
+        with:
+          version: v1.35.0
+      - name: Install Flux CLI
+        if: steps.changes.outputs.relevant == 'true'
+        shell: bash
+        run: |
+          version=2.9.5
+          curl --fail --location --silent --show-error \
+            "https://github.com/fluxcd/flux2/releases/download/v${version}/flux_${version}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" flux
+          sudo install "$RUNNER_TEMP/flux" /usr/local/bin/flux
+      - name: Validate all addrspace YAML and Flux object schemas
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          python -m pip install --quiet PyYAML json5
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in Path("addrspace").rglob("*.yaml"):
+              list(yaml.safe_load_all(path.read_text()))
+
+          root = Path("addrspace/clusters/addrspace")
+          source, sync = list(yaml.safe_load_all((root / "flux-system/gotk-sync.yaml").read_text()))
+          assert (source["apiVersion"], source["kind"]) == ("source.toolkit.fluxcd.io/v1", "GitRepository")
+          assert source["spec"]["url"] == "https://github.com/blogle/dotfiles"
+          assert source["spec"]["ref"]["branch"] == "master"
+          assert (sync["apiVersion"], sync["kind"]) == ("kustomize.toolkit.fluxcd.io/v1", "Kustomization")
+          assert sync["spec"]["path"] == "./addrspace/clusters/addrspace"
+          for layer in ("controllers", "infrastructure", "platform", "apps"):
+              resource = yaml.safe_load((root / f"{layer}.yaml").read_text())
+              assert (resource["apiVersion"], resource["kind"]) == ("kustomize.toolkit.fluxcd.io/v1", "Kustomization")
+              spec = resource["spec"]
+              assert spec["path"] == f"./addrspace/{layer}"
+              assert spec["prune"] is False
+              assert spec["sourceRef"] == {"kind": "GitRepository", "name": "flux-system"}
+              assert spec["interval"] == "1m"
+          for layer, dependency in (("infrastructure", "addrspace-controllers"), ("platform", "addrspace-infrastructure"), ("apps", "addrspace-platform")):
+              assert yaml.safe_load((root / f"{layer}.yaml").read_text())["spec"]["dependsOn"] == [{"name": dependency}]
+          assert len(yaml.safe_load((root / "controllers.yaml").read_text())["spec"]["healthChecks"]) >= 20
+          infrastructure = yaml.safe_load((root / "infrastructure.yaml").read_text())["spec"]
+          expected_infrastructure_health = [
+              {"apiVersion": "cert-manager.io/v1", "kind": "ClusterIssuer", "name": "letsencrypt"},
+              {"apiVersion": "bitnami.com/v1alpha1", "kind": "SealedSecret", "name": "cloudflare", "namespace": "cert-manager"},
+              {"apiVersion": "bitnami.com/v1alpha1", "kind": "SealedSecret", "name": "cloudflare", "namespace": "external-dns"},
+          ]
+          assert infrastructure["healthChecks"] == expected_infrastructure_health
+          assert infrastructure.get("wait", False) is not True
+          expected_exprs = {("cert-manager.io/v1", "ClusterIssuer"), ("bitnami.com/v1alpha1", "SealedSecret")}
+          actual_exprs = {
+              (expr["apiVersion"], expr["kind"])
+              for expr in infrastructure["healthCheckExprs"]
+              if expr.get("current") and expr.get("failed")
+          }
+          assert actual_exprs == expected_exprs
+          PY
+      - name: Validate Kustomize layers
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          kubectl kustomize addrspace >/dev/null
+          kubectl kustomize addrspace/controllers >/dev/null
+          kubectl kustomize addrspace/infrastructure >/dev/null
+          kubectl kustomize addrspace/platform >/dev/null
+          kubectl kustomize addrspace/apps >/dev/null
+          kubectl kustomize addrspace/clusters/addrspace >/dev/null
+      - name: Validate Flux reconciliation objects
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          flux build kustomization flux-system \
+            --path addrspace/clusters/addrspace \
+            --kustomization-file addrspace/clusters/addrspace/flux-system/gotk-sync.yaml \
+            --dry-run >/dev/null
+          for layer in controllers infrastructure platform apps; do
+            flux build kustomization "addrspace-$layer" \
+              --path "addrspace/$layer" \
+              --kustomization-file "addrspace/clusters/addrspace/$layer.yaml" \
+              --dry-run >/dev/null
+          done
+      - name: Validate Renovate configuration
+        if: steps.changes.outputs.relevant == 'true'
+        run: npx --yes --package renovate renovate-config-validator --strict renovate.json5
+      - name: Validate Renovate dependency extraction
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-renovate-extraction.py
+      - name: Validate immutable application artifacts
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-image-artifacts.py
+      - name: Enforce static safety invariants
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          pattern = re.compile(r"ref=(master|main)|storageClassName:\s*local-path|openhands", re.IGNORECASE)
+          findings = []
+          for path in Path("addrspace").rglob("*"):
+              if not path.is_file():
+                  continue
+              try:
+                  lines = path.read_text().splitlines()
+              except UnicodeDecodeError:
+                  continue
+              findings.extend(
+                  f"{path}:{number}: {line}"
+                  for number, line in enumerate(lines, 1)
+                  if pattern.search(line)
+              )
+          if findings:
+              print("Found mutable remote refs, retired local-path storage, or stale OpenHands references:", file=sys.stderr)
+              print("\n".join(findings), file=sys.stderr)
+              sys.exit(1)
+          print("Static safety invariants passed.")
+          PY

@@ -1,156 +1,147 @@
 # addrspace Kubernetes cluster
 
-## Purpose and ownership
-
-The cluster is named `addrspace`; `nandstorm` is its current k3s host/node.
-Host operating-system and node configuration belongs under `hosts/`. Kubernetes
-desired state belongs under `addrspace/`.
-
-## Repository layout
-
-```text
-addrspace/
-├── controllers/     # CRD and controller providers
-├── infrastructure/  # cluster configuration requiring those providers
-├── platform/        # shared services and observability
-├── apps/            # application workloads and their secrets
-├── scripts/
-└── README.md
-```
-
-This file is the cluster operations and bootstrap runbook. Application-specific
-operational contracts remain alongside their applications.
-
-## Operate the established cluster
-
-Flux is not bootstrapped. The top-level Kustomization aggregates all four layers
-(`controllers`, `infrastructure`, `platform`, `apps`) for convenience on an
-already-established cluster. Review and apply from the repository root:
-
-```sh
-kubectl diff -k addrspace
-kubectl apply -k addrspace
-```
-
-Once Flux is bootstrapped, normal deployment should be commit/merge to Git and
-Flux reconciliation. Direct `kubectl apply` should then be limited to
-break-glass or debugging.
-
-## Reconstruct a fresh cluster
-
-The aggregate apply above is not a fresh-cluster bootstrap procedure. Kustomize
-orders objects but does not wait for asynchronously installed CRDs or controller
-readiness. Restore/build `nandstorm` first and confirm k3s is healthy, then apply
-the layers in stages:
-
-1. If rebuilding under the current transitional secret model, restore the
-   historical Sealed Secrets keyring (recovery steps below).
-2. Apply the controller providers:
-
-   ```sh
-   kubectl apply -k addrspace/controllers
-   ```
-
-3. Wait for controller deployments and their required CRDs to become ready.
-   In particular, confirm Sealed Secrets, cert-manager, MetalLB, OpenEBS, and
-   the Prometheus Operator are ready before proceeding.
-4. Apply infrastructure:
-
-   ```sh
-   kubectl apply -k addrspace/infrastructure
-   ```
-
-5. Verify the `ClusterIssuer`, MetalLB address configuration, OpenEBS
-   `StorageClass` and snapshot class, and that SealedSecrets decrypt into their
-   target Secrets.
-6. Apply platform services:
-
-   ```sh
-   kubectl apply -k addrspace/platform
-   ```
-
-7. Wait for platform services and operators to become healthy, then apply apps:
-
-   ```sh
-   kubectl apply -k addrspace/apps
-   ```
-
-8. Validate cluster health, workloads, claims, certificates, and external
-   service addresses.
-
-The readiness boundaries are intentional: the Sealed Secrets controller must
-precede SealedSecret resources; cert-manager and its CRDs precede `ClusterIssuer`
-`L2Advertisement`; OpenEBS and its CSI/CRDs precede StorageClasses and PVC
-consumers; and Prometheus Operator CRDs precede `PrometheusRule`, `Probe`, and
-`ServiceMonitor` resources. The OpenEBS chart installs its ZFS and snapshot
-support. The controller layer already declares these providers. Do not apply
-later layers until the corresponding provider is ready.
-
-## Storage
-
-Mutable Kubernetes application state uses OpenEBS ZFS LocalPV. Persistent claims
-should normally use the appropriate `openebs-zfspv` or
-`openebs-zfspv-retain` StorageClass. `/media` and `/persist/knowledge` vault
-data are intentional direct hostPath-backed exceptions. The completed
-`local-path` PVC migration sources have been retired and must not be reintroduced.
-
-## Secrets
-
-Application secrets are committed as SealedSecrets. The historical Sealed
-Secrets controller keyring has an agenix-encrypted, point-in-time disaster-
-recovery backup in `secrets/addrspace-sealed-secrets-keyring.age`. It exists only
-to reconstruct the current cluster during the transition and is not a routine
-deployment artifact. This does not establish an operational process for
-periodically backing up controller-generated sealing keys; key rotation remains
-enabled. This backup is deliberately transitional and should eventually
-disappear. The immediate next secrets/bootstrap iteration should provision the
-cryptographic root of trust through GitOps before Sealed Secrets starts, rather
-than exporting a root from an already-running controller.
-
-For emergency recovery only, decrypt to a restricted temporary file and apply
-that file without displaying its contents:
-
-```sh
-set -e
-umask 077
-tmp=$(mktemp)
-trap 'shred -u "$tmp" 2>/dev/null || rm -f "$tmp"' EXIT
-agenix -d secrets/addrspace-sealed-secrets-keyring.age > "$tmp"
-chmod 600 "$tmp"
-kubectl apply -f "$tmp"
-```
-
-Keep the temporary file on a protected filesystem and remove it immediately.
-This manual recovery path is temporary and should be replaced by the upcoming
-GitOps-provisioned root of trust.
-
-## Dependency boundaries
-
-The future reconciliation order is:
+`addrspace` is the Kubernetes cluster hosted by the `nandstorm` k3s node.
+Host operating-system configuration belongs under `hosts/`; Kubernetes desired
+state belongs here. The cluster layers and Flux reconciliation order are:
 
 ```text
 controllers → infrastructure → platform → apps
 ```
 
-CRDs must be established by healthy controllers before custom resources are
-reconciled. The staged bootstrap above describes the readiness checks; preserve
-those dependencies when defining Flux health checks. Application SealedSecrets
-remain with their applications and depend on the Sealed Secrets controller.
+Flux Kustomizations point at those four existing directories; workload manifests
+are not duplicated under `clusters/addrspace/`.
 
-## Agent Sandbox
+## Normal deployment
 
-Anvil vendors the exact upstream Agent Sandbox v1.0.2 release manifest at Anvil
-commit `13334d5709a6a9f1f1c8894da33b8ef09565a3df`; its base intentionally does
-not install the controller. `addrspace/controllers/agent-sandbox` declares that
-pinned platform dependency and owns its installation. Anvil workloads consume
-Agent Sandbox but do not own its lifecycle.
+Edit Kubernetes desired state, open and merge a PR, and Flux reconciles `master`
+automatically (source and layer intervals are one minute). Do not run
+`kubectl apply -k addrspace` for routine deployment.
 
-## Flux status
+Renovate proposes Kubernetes/GitOps dependency updates as inspectable PRs. The
+`Kubernetes desired state` required check validates manifests and policy; GitHub
+auto-merge merges eligible Renovate PRs only after required checks pass and the
+branch is current with `master`. Nix dependencies and host configuration remain
+manually reviewed and deployed.
 
-```text
-Flux-ready structure: yes
-Flux bootstrapped: no
+## Status and manual reconciliation
+
+```sh
+flux get sources git -A
+flux get kustomizations -A
+flux reconcile source git flux-system -n flux-system
+flux reconcile kustomization addrspace-controllers -n flux-system
+flux reconcile kustomization addrspace-infrastructure -n flux-system
+flux reconcile kustomization addrspace-platform -n flux-system
+flux reconcile kustomization addrspace-apps -n flux-system
 ```
 
-No Flux controllers, sources, cluster entrypoint, or reconciliation resources
-are currently present; bootstrapping Flux is a separate follow-up.
+The reconciliation order is enforced with `dependsOn`. The controllers layer
+waits for ready deployments/daemonsets and established provider CRDs, including
+Sealed Secrets, cert-manager, MetalLB, OpenEBS ZFS LocalPV, Agent Sandbox, and
+Prometheus Operator. Infrastructure waits for its `ClusterIssuer` and
+SealedSecrets to report Ready/Synced. Platform and apps wait on their upstream
+layer. Kustomizations use targeted checks rather than `wait: true` for every
+resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
+do not all represent provider readiness. Pruning is disabled in every layer
+while Flux ownership is being adopted; updates and drift correction are active.
+
+Direct `kubectl` changes are break-glass only. Flux is authoritative and may
+revert a direct mutation at its next reconciliation. Commit the durable fix to
+Git. Inspect any adoption or upgrade before proceeding:
+
+```sh
+kubectl kustomize addrspace >/tmp/addrspace.yaml
+kubectl diff -k addrspace
+```
+
+## First Flux adoption / fresh bootstrap
+
+The Sealed Secrets controller's cryptographic root is held outside Kubernetes
+in the agenix-encrypted `secrets/addrspace-sealed-secrets-keyring.age` artifact.
+NixOS decrypts it to the root-readable `/run/agenix` runtime path, then a
+one-shot systemd unit waits for the k3s API and idempotently applies the exact
+Secret objects using k3s's existing root kubeconfig. The decrypted manifest is
+never stored in the Nix store or Git plaintext. Controller key renewal is
+disabled (`--key-renew-period=0`); historical keys are retained and sealing-key
+lifecycle is an intentional manual operation.
+
+After this change is merged, activate the bootstrap prerequisite manually on
+`nandstorm` using the repository's normal deployment command, for example:
+
+```sh
+sudo nixos-rebuild switch --flake .#nandstorm
+```
+
+Verify the 14 key Secret objects exist in `kube-system` without printing their
+contents, then perform the one-time Flux adoption as root with the local k3s
+kubeconfig. Apply the generated controller installation first so its CRDs exist,
+then apply the sync resources; the sync's root Flux Kustomization will reconcile
+the committed cluster entrypoint and all four layers:
+
+```sh
+kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml apply \
+  -f addrspace/clusters/addrspace/flux-system/gotk-components.yaml
+kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml wait \
+  --for=condition=Established --timeout=2m \
+  crd/gitrepositories.source.toolkit.fluxcd.io \
+  crd/kustomizations.kustomize.toolkit.fluxcd.io
+kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml apply \
+  -f addrspace/clusters/addrspace/flux-system/gotk-sync.yaml
+```
+
+Verify `flux-system` GitRepository Ready, then verify
+`addrspace-controllers`, `addrspace-infrastructure`, `addrspace-platform`, and
+`addrspace-apps` become Ready in order. Review reconciliation events and live
+diffs for unexpected changes. Do not apply the aggregate `addrspace/` Kustomize
+root during adoption; it is retained for static validation and deliberate
+operator inspection, not normal deployment.
+
+The public GitHub repository is read via unauthenticated HTTPS. Flux has no
+GitHub credential and no write access. There is no public webhook receiver.
+
+## Storage and dependency ownership
+
+Persistent application state uses OpenEBS ZFS LocalPV (`openebs-zfspv` or
+`openebs-zfspv-retain`). `/media` and `/persist/knowledge` are intentional
+persisted hostPath exceptions. The retired `local-path` PVC migration sources
+must not be reintroduced.
+
+Anvil consumes Agent Sandbox; it does not own the provider. The controller layer
+installs the exact upstream Agent Sandbox v1.0.2 manifest vendored at Anvil's
+currently pinned commit. That vendor pin is maintained separately from Anvil's
+deployable main revision.
+
+## Application delivery policy
+
+### Anvil: automatic delivery from passing main builds
+
+Every successful Anvil `main` build publishes immutable `sha-<commit>` images
+for both Anvil and its sandbox. One Renovate dependency advances the Kustomize
+base and both image tags to that same commit. Kubernetes CI verifies both exact
+GHCR artifacts exist; a passing, current Renovate PR can then automerge and
+Flux deploys it. The vendor-provided Agent Sandbox controller pin remains a
+separate dependency.
+
+### Dojo staging: automatic delivery of semantic releases
+
+Staging tracks Dojo semantic releases, not `master` HEAD. Commits which do not
+produce a semantic release do not change staging. Each release produces a
+`vX.Y.Z` Git tag and matching GHCR image; Renovate advances the staging base,
+image version, and image digest together. CI verifies the release image matches
+the pinned digest, then a passing, current Renovate PR can automerge and Flux
+deploys staging. The mutable `staging` image tag and Keel polling are not used.
+
+### Dojo production: operator-selected stable release
+
+Production remains pinned to the operator-selected `v0.0.4` image and its
+immutable digest, with the existing Kustomize base commit retained. Renovate
+does not advance the Dojo production base or application image. A production
+upgrade is an explicit human change through a normal PR, followed by CI, merge,
+and Flux reconciliation.
+
+## Nix deployment boundary
+
+Kubernetes GitOps does not imply automated NixOS or Home Manager deployment.
+GitHub Actions may run Nix checks/builds, but no action activates a host. Nix
+flake inputs, host packages, and NixOS/Home Manager changes remain manually
+reviewed and deployed. Renovate's Nix and GitHub Actions managers are not enabled.
