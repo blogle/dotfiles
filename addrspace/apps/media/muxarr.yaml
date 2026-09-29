@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: muxarr
-        image: ghcr.io/kirovair/muxarr@sha256:ef729fe3f4b51feb50d21a44a95d26c745aee45429097692652f470b115e520a
+        image: ghcr.io/kirovair/muxarr@sha256:b506ac7107ab166fe1d65959e04f15a07692f230a3da823329f51628cb25b709
         # Muxarr's wrapper cannot remap appuser to UID 0. Media is already
         # root-owned for the existing media workloads, so run the app directly.
         command: [dotnet, Muxarr.Web.dll]
