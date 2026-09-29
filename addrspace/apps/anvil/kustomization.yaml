@@ -8,6 +8,7 @@ resources:
   - certificate.yaml
   - ingress.yaml
   - github-app-credentials-anvil.sealed.yaml
+  - nix-shared-pvc.yaml
 
 images:
   - name: ghcr.io/blogle/anvil
@@ -19,3 +20,4 @@ patches:
   - path: runtime-config.patch.yaml
   - path: profile-pvc.patch.yaml
   - path: profile-deployment.patch.yaml
+  - path: nix-daemon.patch.yaml
