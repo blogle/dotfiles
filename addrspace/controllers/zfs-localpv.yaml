@@ -6,7 +6,7 @@ metadata:
 spec:
   repo: https://openebs.github.io/zfs-localpv
   chart: zfs-localpv
-  version: 2.11.0
+  version: 2.11.1
   targetNamespace: openebs
   createNamespace: true
   valuesContent: |-
