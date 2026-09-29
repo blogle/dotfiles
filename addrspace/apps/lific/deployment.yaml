@@ -30,7 +30,7 @@ spec:
         # ConfigMap mount cannot support. Copy the declarative source into a
         # writable, pod-local file owned by the runtime user.
         - name: prepare-config
-          image: busybox:1.36
+          image: busybox:1.38
           command:
             - /bin/sh
             - -ec
@@ -43,7 +43,7 @@ spec:
               mountPath: /etc/lific
         # Ensure the data directory is owned by the runtime user and has proper permissions.
         - name: fix-data-permissions
-          image: busybox:1.36
+          image: busybox:1.38
           command:
             - /bin/sh
             - -ec
