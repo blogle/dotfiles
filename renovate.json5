@@ -83,7 +83,7 @@
       matchStrings: [
         '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<middle>\\s*\\n\\s*-\\s*certificate\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*github-app-credentials-anvil\\.sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<between>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-sandbox\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}',
       ],
-      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{middle}}}{{{newDigest}}}{{{between}}}{{{newDigest}}}',
+      autoReplaceStringTemplate: 'github.com/blogle/anvil//k8s/base?ref={{{newDigest}}}\n  - certificate.yaml\n  - ingress.yaml\n  - github-app-credentials-anvil.sealed.yaml\n\nimages:\n  - name: ghcr.io/blogle/anvil\n    newTag: sha-{{{newDigest}}}\n  - name: ghcr.io/blogle/anvil-sandbox\n    newTag: sha-{{{newDigest}}}',
       depNameTemplate: 'blogle/anvil',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
@@ -109,7 +109,7 @@
         '(?<prefix>raw\\.githubusercontent\\.com/blogle/anvil/)(?<currentDigest>[a-f0-9]{40})(?<suffix>\\/k8s/vendor/agent-sandbox/)',
       ],
       autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{suffix}}}',
-      depNameTemplate: 'blogle/anvil',
+      depNameTemplate: 'blogle/anvil-agent-sandbox',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
       datasourceTemplate: 'git-refs',
