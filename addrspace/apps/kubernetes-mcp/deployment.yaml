@@ -20,7 +20,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: kubernetes-mcp
-          image: quay.io/containers/kubernetes_mcp_server@sha256:f6b7c2c9c4e4a6f5f13b53004cacf1125e00773b9d831bc8d97581299bc3be53
+          image: quay.io/containers/kubernetes_mcp_server@sha256:a07a07d2a31d1cf612e4fbe689ff30ef07f4ffe4d3b9447a8b6ac3b4b11e8c7b
           args:
             - --port
             - "8080"
