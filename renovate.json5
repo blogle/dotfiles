@@ -95,9 +95,9 @@
       description: 'Anvil main base and both successful-build images at one commit',
       managerFilePatterns: ['/^addrspace\\/apps\\/anvil\\/kustomization\\.yaml$/'],
       matchStrings: [
-        '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<middle>\\s*\\n\\s*-\\s*certificate\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*github-app-credentials-anvil\\.sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<between>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-sandbox\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}',
+        '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<middle>\\s*\\n\\s*-\\s*certificate\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*github-app-credentials-anvil\\.sealed\\.yaml\\s*\\n\\s*-\\s*nix-shared-pvc\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<between>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-sandbox\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}',
       ],
-      autoReplaceStringTemplate: 'github.com/blogle/anvil//k8s/base?ref={{{newDigest}}}\n  - certificate.yaml\n  - ingress.yaml\n  - github-app-credentials-anvil.sealed.yaml\n\nimages:\n  - name: ghcr.io/blogle/anvil\n    newTag: sha-{{{newDigest}}}\n  - name: ghcr.io/blogle/anvil-sandbox\n    newTag: sha-{{{newDigest}}}',
+      autoReplaceStringTemplate: 'github.com/blogle/anvil//k8s/base?ref={{{newDigest}}}\n  - certificate.yaml\n  - ingress.yaml\n  - github-app-credentials-anvil.sealed.yaml\n  - nix-shared-pvc.yaml\n\nimages:\n  - name: ghcr.io/blogle/anvil\n    newTag: sha-{{{newDigest}}}\n  - name: ghcr.io/blogle/anvil-sandbox\n    newTag: sha-{{{newDigest}}}',
       depNameTemplate: 'blogle/anvil',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
