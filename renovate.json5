@@ -3,6 +3,8 @@
   extends: ['config:recommended'],
   enabledManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
   dependencyDashboard: true,
+  prConcurrentLimit: 2,
+  branchConcurrentLimit: 2,
   labels: ['dependencies', 'kubernetes'],
   packageRules: [
     {
@@ -35,6 +37,18 @@
       matchPackageNames: ['blogle/dojo2', 'ghcr.io/blogle/dojo2'],
       matchFileNames: ['addrspace/apps/dojo/overlays/prod/**'],
       enabled: false,
+    },
+    {
+      matchDatasources: ['docker'],
+      matchUpdateTypes: ['minor', 'patch', 'pin', 'digest'],
+      groupName: 'container image updates',
+      groupSlug: 'container-images',
+    },
+    {
+      matchDatasources: ['helm'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'Helm chart updates',
+      groupSlug: 'helm-charts',
     },
     {
       matchManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
