@@ -24,7 +24,7 @@ spec:
   restartPolicy: Always
   containers:
     - name: smoke
-      image: busybox:1.37.0
+      image: busybox:1.38.0
       command: ["sh", "-c", "test -f /data/sentinel && cat /data/sentinel || { date -u > /data/sentinel; sync; }; sleep 3600"]
       volumeMounts:
         - name: data
