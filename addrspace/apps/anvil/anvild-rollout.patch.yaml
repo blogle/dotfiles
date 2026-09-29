@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anvild
+spec:
+  template:
+    metadata:
+      annotations:
+        anvil.thejeffer.net/runtime-config-revision: shared-nix-zvol-2026-09-29

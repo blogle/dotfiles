@@ -21,3 +21,4 @@ patches:
   - path: profile-pvc.patch.yaml
   - path: profile-deployment.patch.yaml
   - path: nix-daemon.patch.yaml
+  - path: anvild-rollout.patch.yaml
