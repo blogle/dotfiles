@@ -89,7 +89,7 @@ spec:
             - name: models
               mountPath: /root/.ollama
         - name: model-bootstrap
-          image: docker.io/curlimages/curl:8.16.0@sha256:5a91ea0c9c3ee27b4abe657b68cf6bf0676afa13b236b3bda34283cb3924d4f6
+          image: docker.io/curlimages/curl:8.22.0@sha256:43366cd60f226c7655181a0f7e85c468a41d182fdd2dc2c1c3b872a2b9d05d7a
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
