@@ -22,7 +22,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: nexus
-          image: ghcr.io/grafbase/nexus@sha256:306ee6c0ae08036aea4a6cec424b27e6506b944f9e3d5c945ef34c1335988076
+          image: ghcr.io/grafbase/nexus@sha256:e904ebe3539b5e75a074c69ad277d531d2483583d4c1d67eb0b64fa23e22312f
           args:
             - --config
             - /etc/nexus/nexus.toml
