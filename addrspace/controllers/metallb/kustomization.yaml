@@ -4,4 +4,4 @@ kind: Kustomization
 # Installs MetalLB, its CRDs, and controller. Addrspace-specific pools and
 # advertisements are declared in infrastructure/metallb.
 resources:
-  - github.com/metallb/metallb/config/native?ref=v0.16.0
+  - github.com/metallb/metallb/config/native?ref=v0.16.1
