@@ -7,7 +7,7 @@ data:
   ANVIL_ANNOTATION_PREFIX: anvil.thejeffer.net
   ANVIL_GIT_COMMITTER_NAME: Anvil
   ANVIL_GIT_COMMITTER_EMAIL: anvil@noreply.thejeffer.net
-  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-13334d5709a6a9f1f1c8894da33b8ef09565a3df
+  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-7c473209fad3348beea8baa557158484e64554fa
   ANVIL_NIX_PVC: anvil-nix-shared
   BASE_DOMAIN: preview.thejeffer.net
   AGENT_SANDBOX_ROUTER_URL: http://sandbox-router-svc.agent-sandbox-system.svc.cluster.local:8080
