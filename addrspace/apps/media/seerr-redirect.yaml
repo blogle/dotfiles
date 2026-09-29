@@ -45,7 +45,7 @@ spec:
     spec:
       containers:
         - name: noop-404
-          image: ghcr.io/traefik/whoami:v1.10
+          image: ghcr.io/traefik/whoami:v1.12
           ports:
             - containerPort: 8080
           command: ["/whoami"]

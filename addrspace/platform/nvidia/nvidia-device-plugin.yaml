@@ -40,7 +40,7 @@ spec:
           readOnly: true
       containers:
       - name: nvidia-device-plugin
-        image: nvcr.io/nvidia/k8s-device-plugin:v0.19.2
+        image: nvcr.io/nvidia/k8s-device-plugin:v0.20.1
         args:
         - "--fail-on-init-error=false"
         # Use the host-generated nvidia.com/gpu CDI spec. The plugin-generated
