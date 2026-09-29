@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 from urllib.parse import urlencode
@@ -191,6 +192,106 @@ def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
     print("Anvil extraction accepts an arbitrary 40-character SHA and keeps all three values coupled.")
 
 
+def assert_renovate_proposes_one_anvil_update():
+    """Run Renovate's full update pipeline on a stale Anvil fixture."""
+    fixture_sha = "a" * 40
+
+    with tempfile.TemporaryDirectory(prefix="renovate-anvil-update-") as temporary:
+        checkout = Path(temporary) / "checkout"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(ROOT), str(checkout)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        manifest = checkout / "addrspace/apps/anvil/kustomization.yaml"
+        content, count = re.subn(
+            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}",
+            fixture_sha,
+            manifest.read_text(),
+        )
+        if count != 3:
+            raise AssertionError(f"Expected three Anvil SHA fields in fixture, found {count}")
+        manifest.write_text(content)
+        shutil.copy(ROOT / "renovate.json5", checkout / "renovate.json5")
+        config = json5.loads((checkout / "renovate.json5").read_text())
+        anvil_manager = next(
+            manager
+            for manager in config["customManagers"]
+            if manager.get("description", "").startswith("Anvil main base")
+        )
+        match_string = anvil_manager["matchStrings"][0].replace("(?<", "(?P<")
+        if not re.search(match_string, content):
+            raise AssertionError("Anvil update fixture does not match its configured regex")
+        subprocess.run(
+            ["git", "add", str(manifest.relative_to(checkout)), "renovate.json5"],
+            cwd=checkout,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Renovate update test",
+                "-c",
+                "user.email=renovate-test@example.invalid",
+                "commit",
+                "--quiet",
+                "-m",
+                "test fixture: stale Anvil main",
+            ],
+            cwd=checkout,
+            check=True,
+        )
+
+        env = os.environ.copy()
+        env["LOG_LEVEL"] = "debug"
+        env["RENOVATE_BASE_DIR"] = str(Path(temporary) / "renovate-cache")
+        result = subprocess.run(
+            [
+                "npx",
+                "--yes",
+                "--package",
+                "renovate",
+                "renovate",
+                "--platform=local",
+                "--dry-run=full",
+                "--include-paths=addrspace/apps/anvil/kustomization.yaml",
+            ],
+            cwd=checkout,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        output = result.stdout
+        if result.returncode != 0:
+            raise AssertionError(f"Renovate Anvil full update failed:\n{output[-10000:]}")
+        if (
+            "packageFiles with updates" not in output
+            or '"depName": "blogle/anvil"' not in output
+            or '"branchName": "renovate/blogle-anvil-digest"' not in output
+            or "WORKER_FILE_UPDATE_FAILED" in output
+            or "Error updating branch: update failure" in output
+        ):
+            raise AssertionError("Renovate full dry-run did not recognize the Anvil update")
+        target_matches = re.findall(r'"newDigest":\s*"([a-f0-9]{40})"', output)
+        if not target_matches or target_matches[0] == fixture_sha:
+            raise AssertionError(f"Renovate did not resolve a new Anvil main SHA:\n{output[-10000:]}")
+        target_sha = target_matches[0]
+        match = re.search(match_string, content)
+        if not match:
+            raise AssertionError("Anvil update fixture does not match its configured regex")
+
+        rendered = anvil_manager["autoReplaceStringTemplate"].replace("{{{newDigest}}}", target_sha)
+        updated_content = content.replace(match.group(0), rendered)
+        if re.findall(r"(?:ref=|newTag: sha-)([a-f0-9]{40})", updated_content) != [target_sha] * 3:
+            raise AssertionError("Renovate update did not preserve the three-way Anvil SHA coupling")
+        print(f"Renovate full dry-run and rendered replacement preserve Anvil coupling: {fixture_sha} -> {target_sha}")
+
+
 def assert_renovate_proposes_one_staging_release():
     """Run Renovate's update pipeline on a throwaway old-release fixture."""
     fixture_tag, fixture_digest, target_tag = registry_release_fixture()
@@ -357,13 +458,16 @@ def main():
     assert anvil_record[0].get("autoReplaceStringTemplate", "").count("{{{newDigest}}}") == 3
     assert anvil[0].get("currentValue") == "main"
     assert_anvil_accepts_arbitrary_sha_fixture(anvil_sha)
-    require_dep(
+    assert_renovate_proposes_one_anvil_update()
+    vendor = require_dep(
         files,
         "regex",
         "addrspace/controllers/agent-sandbox/kustomization.yaml",
-        "blogle/anvil",
+        "blogle/anvil-agent-sandbox",
         "git-refs",
     )
+    assert vendor[0].get("packageName") == "https://github.com/blogle/anvil"
+    assert vendor[0].get("currentValue") == "main"
     assert_manager_sources_are_disabled(
         files,
         rules,
