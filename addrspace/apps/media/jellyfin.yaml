@@ -18,7 +18,7 @@ spec:
       # Reinstall the SSO plugin if it is removed so browser OIDC remains
       # available after a pod recreation.
       - name: install-sso-plugin
-        image: alpine:3.22
+        image: alpine:3.24
         command:
         - sh
         - -ec
@@ -40,7 +40,7 @@ spec:
           mountPath: /run/secrets/jellyfin-sso-oidc
           readOnly: true
       - name: configure-sso
-        image: alpine:3.22
+        image: alpine:3.24
         command:
         - sh
         - -ec
@@ -103,7 +103,7 @@ spec:
           mountPath: /run/secrets/jellyfin-sso-oidc
           readOnly: true
       - name: configure-branding
-        image: alpine:3.22
+        image: alpine:3.24
         command:
         - sh
         - -ec
