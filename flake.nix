@@ -160,13 +160,16 @@
       "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
     };
 
-    # Repository validation tools for Kubernetes desired state. Keeping these
-    # in the normal `nix develop` environment makes manifest checks reproducible.
+    # Repository validation and pinned-upstream source-audit tools. The base
+    # flake had no dev shell; keeping these in normal `nix develop` makes the
+    # documented Kubernetes/Maple checks reproducible.
     devShells."${system}".default = homePkgs.mkShell {
       packages = with homePkgs; [
         kubernetes-helm
         kubectl
         kustomize
+        docker-compose
+        bun
         (python3.withPackages (pythonPackages: [
           pythonPackages.json5
           pythonPackages.pyyaml

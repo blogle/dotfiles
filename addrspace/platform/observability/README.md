@@ -9,7 +9,8 @@ available and verified.
 
 ## Upstream deployment boundary (merge blocker)
 
-At upstream `main` (inspected at `671e80a`), `deploy/` contains only
+At upstream `main` commit
+`671e80a806a0c714293eefec338f891bcda4c39f`, `deploy/` contains only
 `docker-agent`, `k8s-infra`, and `maple-otel`. The MapleTechLabs GitHub Container
 Registry lists only those collector images and charts; it publishes no API,
 web, ingest, alerting, scraper, or MCP images. The top-level
@@ -21,6 +22,77 @@ starts only Postgres, ElectricSQL, ClickHouse and a collector, not the app/MCP
 workers. The API and MCP entry points are Cloudflare Workers in
 `apps/api/src/worker.ts` and `apps/ai/src/worker.ts`, with no published
 container/production Kubernetes runtime.
+
+`docker-compose config --quiet` succeeds only after creating the required local
+`.env`; it does not validate build contexts or container startup. Actual
+`docker-compose build --check alerting` fails because the alerting Dockerfile is
+missing, and executing the API Dockerfile command from `apps/api/` fails because
+the `start` package script is absent.
+
+### Pinned-source build/runtime audit
+
+The upstream source has individual Dockerfiles for the static `apps/web` site,
+Rust `apps/ingest`, `apps/scraper`, and an `apps/electric` service. Those builds
+alone do not make a working product stack:
+
+| Service | Upstream build/runtime contract | Self-host K8s result |
+| --- | --- | --- |
+| Web | `apps/web/Dockerfile` builds a static SPA; `VITE_API_BASE_URL` and auth mode are build args. | Buildable, but depends on a routable API URL. |
+| Ingest | `apps/ingest/Dockerfile` compiles the Rust gateway. | Buildable; requires upstream API/internal auth contracts and a running collector. |
+| Scraper | `apps/scraper/Dockerfile` builds the Bun process. | Buildable; it calls the API and ingest endpoints. |
+| Electric | `apps/electric/Dockerfile` exists; `alchemy.run.ts` creates its production service on ECS. | Buildable, but its upstream deployment factory is ECS-specific. |
+| API | `apps/api/Dockerfile` ends with `bun run start`, but `apps/api/package.json` has no `start` script. `apps/api/src/worker.ts` exports an `Alchemy.Worker` with Cloudflare `WorkerEnvironment`, service bindings, Durable Object, queues, cron, and Workflow resources. | No runnable upstream container entry point; needs a Worker runtime/bindings adapter. |
+| Alerting | `apps/alerting/src/worker.ts` is an Alchemy Cloudflare Worker; the root Compose references the nonexistent `apps/alerting/Dockerfile`. | No upstream image/build target. |
+| AI/MCP | `apps/ai/src/worker.ts` exports the Worker hosting MCP and `ChatSessionObject`; API forwards `/mcp` over a Cloudflare service binding. | No container target; MCP cannot be moved to a local service without a supported Worker runtime. |
+| Electric Sync | `apps/electric-sync/src/worker.ts` is an Alchemy Worker. | No container target. |
+
+The individually buildable `web`, Rust `ingest`, `scraper`, and Electric images
+do not complete this table's missing API/MCP runtime. Publishing that subset as
+`ghcr.io/blogle` images would still leave the product unable to serve its API,
+dashboard queries, and MCP tools; therefore this PR does not add an image-publish
+workflow for a non-runnable stack. The API Dockerfile itself was tested at its
+declared working directory with upstream Bun 1.4.2: `bun run start` exits with
+`Script not found "start"`.
+
+The dotfiles repository currently has no Docker/Buildx image-publishing
+workflow; its Kubernetes workflow validates manifests and already-published
+artifacts. Adding a GHCR workflow for only the buildable subset would publish
+images that cannot serve Maple without the missing API/MCP Workers, so it is not
+a functional workaround.
+
+`docs/infra.md` (same upstream revision) says `bun dev` runs these Workers through
+Alchemy's **local development runtime**, while non-Workers are `Command.Dev`
+children and that command is a no-op on deploy. It is not a production adapter.
+The upstream dev adapter was actually attempted from the pinned source after
+`bun install --frozen-lockfile` and `bun run alchemy:build-deps` succeeded:
+`ALCHEMY_LOCAL_STATE=1 bun run dev api ai` fails during stack planning with
+`FlociError: docker run failed: Executable not found in $PATH: "docker"`.
+Alchemy Floci launches local Worker containers through Docker; this repo's
+`nandstorm` host runs k3s/containerd and has no Docker socket. Provisioning a
+privileged nested Docker daemon solely to run an explicitly dev-only adapter is
+not a production-quality Kubernetes runtime.
+
+Even with that daemon, the dev adapter is not externally routable as-is:
+`alchemy.run.ts` sets API/web/ingest URLs from `Portless.routeUrl`, which hardcodes
+`https://<app>.localhost` (`packages/infra/src/dev-urls.ts`), while
+`lib/alchemy-portless/src/Route.ts` binds workers on `127.0.0.1`. External
+browsers resolve `.localhost` to their own loopback. `MAPLE_PG_URL` is also
+documented in `.env.example` as required to configure the dev Hyperdrive origin;
+the dev binding itself dials `localhost:5499`. No unmodified upstream production
+adapter translates these local-only bindings/routes into self-hosted Kubernetes
+Services. An adapter would require source/runtime changes or a privileged local
+development stack, neither of which is a sound supported self-host deployment.
+
+### Database/schema initialization
+
+Canonical application Postgres migrations are `packages/db/drizzle`, applied
+upstream with `bun run db:migrate:local`. Maple telemetry ClickHouse schema is
+maintained by `packages/clickhouse-cli`; upstream development docs use
+`bun run --cwd packages/clickhouse-cli start apply --url=... --user=maple
+--password=... --database=default`. These steps could initialize storage once
+the required API/MCP worker runtime and sealed self-host credentials are
+available. The collector candidate is not activated against an uninitialized
+ClickHouse database.
 
 Accordingly, this repository cannot yet render a functional, self-hosted Maple
 application/backend, obtain its database schema and credentials, or provide a
