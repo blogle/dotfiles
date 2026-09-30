@@ -23,6 +23,12 @@ workers. The API and MCP entry points are Cloudflare Workers in
 `apps/api/src/worker.ts` and `apps/ai/src/worker.ts`, with no published
 container/production Kubernetes runtime.
 
+I ran the Compose checks against this checkout: `docker-compose config --quiet`
+passes with a temporary local `.env`, but `docker-compose build --check
+alerting` fails on the missing Dockerfile. The API image's command was tested
+with Bun 1.4.2 and fails with `Script not found "start"`. Thus the syntactically
+valid root Compose file does not produce a running self-hosted application.
+
 `docker-compose config --quiet` succeeds only after creating the required local
 `.env`; it does not validate build contexts or container startup. Actual
 `docker-compose build --check alerting` fails because the alerting Dockerfile is
