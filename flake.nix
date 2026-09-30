@@ -211,7 +211,10 @@
         nixpkgs.legacyPackages.${system}.helm
         nixpkgs.legacyPackages.${system}.kubectl
         nixpkgs.legacyPackages.${system}.kustomize
-        (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [ pythonPackages.json5 ]))
+        (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [
+          pythonPackages.json5
+          pythonPackages.pyyaml
+        ]))
         nixpkgs.legacyPackages.${system}.nodejs
       ];
     };

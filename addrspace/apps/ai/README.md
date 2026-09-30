@@ -47,13 +47,15 @@ DCGM Exporter uses the pinned NVIDIA 4.4.2-4.7.1 Ubuntu image at digest
 `sha256:6b5975cdd430d05692c92137bb264938196ee9165e55205a0e31a5e89a9873ee`.
 The newer 4.6.0-4.8.3 distroless image exited during DCGM initialization on this
 NixOS/Volta host; the Ubuntu image was the smallest compatible adjustment.
-The OTel Prometheus receiver scrapes `dcgm-exporter` every 15 seconds and
-converts its metrics to OTLP for Maple. Ollama stdout/stderr is collected by
-the Maple Kubernetes collector as pod logs. Ollama has no verified native OTLP
-exporter or documented OTEL env-var interface in this deployment, so its
-application telemetry remains a documented gap; Kubernetes and GPU metrics
-and logs are collected. Request-body debug logging is disabled; prompts,
-responses, and embedding inputs are not logged.
+The draft migration includes an OTel Prometheus receiver configuration for
+`dcgm-exporter` at 15 seconds and Maple Kubernetes log collection, but neither
+collector is activated until a working self-hosted Maple backend is available.
+The existing observability stack remains live while the migration is blocked.
+Ollama has no verified native OTLP exporter or documented OTEL env-var
+interface in this deployment; after the Maple receiver is available, collect
+its pod logs and Kubernetes/GPU metrics instead of inventing application
+telemetry variables. Request-body debug logging is disabled; prompts, responses,
+and embedding inputs are not logged.
 
 `maravexa/ollama-exporter` was evaluated but rejected for this deployment. It
 is a new, single-maintainer project with low adoption, no signed release/SBOM
@@ -123,7 +125,7 @@ provide that stable FHS symlink to the Nix-store binary before registration.
   all-GPU allocation did not deadlock. The replacement found 11 existing
   blobs, retained all three model digests and 9.7 GiB store size, and performed
   no model downloads.
-- The former Grafana dashboard, PrometheusRule alert, and Prometheus/Loki
-  validation references are removed. Validate GPU metric availability and
-  Ollama log resource metadata in Maple after the self-hosted Maple backend is
-  available.
+- The Grafana dashboard and PrometheusRule definitions have been removed from
+  Git. They remain in the cluster while Flux pruning is disabled and the
+  migration is blocked. Validate GPU metrics and Ollama log resource metadata
+  in Maple before manually retiring the existing stack.

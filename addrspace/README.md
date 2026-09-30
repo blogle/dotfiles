@@ -42,10 +42,10 @@ Infrastructure waits for its `ClusterIssuer` and
 SealedSecrets to report Ready/Synced. Platform and apps wait on their upstream
 layer. Kustomizations use targeted checks rather than `wait: true` for every
 resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
-do not all represent provider readiness. Pruning is enabled for the controllers,
-platform, and apps roots so removed GitOps definitions, releases, and dashboards
-are removed during this cutover. Retain-oriented ZFS PV reclaim policies keep
-retired observability datasets from being intentionally destroyed.
+do not all represent provider readiness. Pruning remains disabled in every
+layer. Removed observability HelmChart resources therefore require the documented
+manual retirement procedure after the replacement is verified; this PR does not
+change cluster-wide deletion behavior.
 
 `addrspace-apps` is not Ready until the Anvil Deployments `anvil-nix-daemon`,
 `anvild`, `anvil-router`, `anvil-mcp`, and `anvil-profile` report native

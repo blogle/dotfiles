@@ -1,8 +1,6 @@
-# Maple's upstream Kubernetes infrastructure collector and a small Prometheus
-# receiver for legacy Prometheus-native application exporters. The collector
-# release is upstream Maple's published chart; Maple's server/backend services
-# are not yet published as a Kubernetes deployment by upstream (see README).
+# Namespace is retained as the migration target. Maple collector resources are
+# intentionally not activated while the upstream self-hosted backend is absent
+# (see README); old releases remain live because Flux pruning stays disabled.
 resources:
   - namespace.yaml
-  - maple-collector.yaml
-  - prometheus-receiver.yaml
+  - grafana-oidc-v3.sealed.yaml
