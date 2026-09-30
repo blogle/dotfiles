@@ -5,11 +5,13 @@ Host operating-system configuration belongs under `hosts/`; Kubernetes desired
 state belongs here. The cluster layers and Flux reconciliation order are:
 
 ```text
-controllers → infrastructure → platform → apps
+controllers → infrastructure → platform → clickstack-operators → clickstack → apps
 ```
 
-Flux Kustomizations point at those four existing directories; workload manifests
-are not duplicated under `clusters/addrspace/`.
+Flux Kustomizations point at those directories; workload manifests are not
+duplicated under `clusters/addrspace/`. The ClickStack operator layer installs
+CRDs before the ClickStack chart creates operator-managed resources; apps wait
+for ClickStack health before redirecting producers.
 
 ## Normal deployment
 
@@ -32,20 +34,25 @@ flux reconcile source git flux-system -n flux-system
 flux reconcile kustomization addrspace-controllers -n flux-system
 flux reconcile kustomization addrspace-infrastructure -n flux-system
 flux reconcile kustomization addrspace-platform -n flux-system
+flux reconcile kustomization addrspace-clickstack-operators -n flux-system
+flux reconcile kustomization addrspace-clickstack -n flux-system
 flux reconcile kustomization addrspace-apps -n flux-system
 ```
 
 The reconciliation order is enforced with `dependsOn`. The controllers layer
 waits for ready deployments/daemonsets and established provider CRDs, including
 Sealed Secrets, cert-manager, MetalLB, OpenEBS ZFS LocalPV, and Agent Sandbox.
-Infrastructure waits for its `ClusterIssuer` and
-SealedSecrets to report Ready/Synced. Platform and apps wait on their upstream
-layer. Kustomizations use targeted checks rather than `wait: true` for every
+Infrastructure waits for its `ClusterIssuer` and SealedSecrets to report
+Ready/Synced. Platform waits on infrastructure; ClickStack operators wait on
+platform; ClickStack waits on platform and operators; apps wait on ClickStack.
+Kustomizations use targeted checks rather than `wait: true` for every
 resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
-do not all represent provider readiness. Pruning remains disabled in every
-layer. Removed observability HelmChart resources therefore require the documented
-manual retirement procedure after the replacement is verified; this PR does not
-change cluster-wide deletion behavior.
+do not all represent provider readiness. The apps layer checks Nexus readiness;
+its replacement pod waits for the sealed ClickStack MCP key while the existing
+replica continues serving. Pruning remains disabled in every layer. Removed
+observability HelmChart resources therefore require the documented manual
+retirement procedure after the replacement is verified; this PR does not change
+cluster-wide deletion behavior.
 
 Direct `kubectl` changes are break-glass only. Flux is authoritative and may
 revert a direct mutation at its next reconciliation. Commit the durable fix to

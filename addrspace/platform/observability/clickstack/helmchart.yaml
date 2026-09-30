@@ -1,0 +1,418 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: clickstack
+  namespace: kube-system
+spec:
+  repo: https://clickhouse.github.io/ClickStack-helm-charts
+  chart: clickstack
+  version: 3.4.0
+  targetNamespace: observability
+  createNamespace: true
+  timeout: 30m
+  failurePolicy: retry
+  # This values file contains only credentials. Seal it as a SealedSecret named
+  # clickstack-values in kube-system; Helm reads the decrypted values at install
+  # time. The secret is a documented draft merge gate until ciphertext is made
+  # with the live controller's public certificate.
+  valuesSecrets:
+    - name: clickstack-values
+      keys:
+        - values.yaml
+  valuesContent: |-
+    global:
+      otelCollector:
+        customConfig: |
+          receivers:
+            filelog/k8s:
+              include:
+                - /var/log/pods/*/*/*.log
+              exclude:
+                - /var/log/pods/observability_clickstack-otel-collector-*/*/*.log
+              start_at: end
+              include_file_path: true
+              operators:
+                - id: container-parser
+                  type: container
+                  add_metadata_from_filepath: true
+
+            hostmetrics:
+              collection_interval: 30s
+              root_path: /hostfs
+              scrapers:
+                cpu:
+                  metrics:
+                    system.cpu.utilization:
+                      enabled: true
+                load: {}
+                memory:
+                  metrics:
+                    system.memory.utilization:
+                      enabled: true
+                disk: {}
+                filesystem:
+                  metrics:
+                    system.filesystem.utilization:
+                      enabled: true
+                network: {}
+
+            kubeletstats:
+              collection_interval: 30s
+              auth_type: serviceAccount
+              endpoint: https://${env:K8S_NODE_IP}:10250
+              insecure_skip_verify: true
+              node: ${env:K8S_NODE_NAME}
+              k8s_api_config:
+                auth_type: serviceAccount
+              metric_groups: [container, pod, node, volume]
+
+            k8s_cluster:
+              auth_type: serviceAccount
+              collection_interval: 30s
+              node_conditions_to_report:
+                - Ready
+                - MemoryPressure
+                - DiskPressure
+                - PIDPressure
+              allocatable_types_to_report: [cpu, memory]
+
+            prometheus:
+              config:
+                global:
+                  scrape_interval: 60s
+                  scrape_timeout: 20s
+                scrape_configs:
+                  - job_name: dcgm-exporter
+                    scrape_interval: 15s
+                    static_configs:
+                      - targets:
+                          - dcgm-exporter.kube-system.svc.cluster.local:9400
+                  - job_name: exportarr-sonarr
+                    static_configs:
+                      - targets:
+                          - sonarr-exporter.media.svc.cluster.local:9704
+                  - job_name: exportarr-radarr
+                    static_configs:
+                      - targets:
+                          - radarr-exporter.media.svc.cluster.local:9704
+                  - job_name: exportarr-prowlarr
+                    static_configs:
+                      - targets:
+                          - prowlarr-exporter.media.svc.cluster.local:9704
+                  - job_name: flux-pod-annotations
+                    kubernetes_sd_configs:
+                      - role: pod
+                        namespaces:
+                          names: [flux-system]
+                    relabel_configs:
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                        action: keep
+                        regex: "true"
+                      - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                        action: replace
+                        regex: (.+);(.+)
+                        replacement: $1:$2
+                        target_label: __address__
+                      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                        action: replace
+                        regex: (.+)
+                        target_label: __metrics_path__
+                      - source_labels: [__meta_kubernetes_namespace]
+                        target_label: namespace
+                      - source_labels: [__meta_kubernetes_pod_name]
+                        target_label: pod
+
+          processors:
+            k8sattributes/otlp:
+              auth_type: serviceAccount
+              passthrough: false
+              pod_association:
+                - sources:
+                    - from: connection
+              extract:
+                metadata:
+                  - k8s.namespace.name
+                  - k8s.deployment.name
+                  - k8s.statefulset.name
+                  - k8s.daemonset.name
+                  - k8s.node.name
+                  - k8s.pod.name
+                  - k8s.pod.uid
+            k8sattributes/filelog:
+              auth_type: serviceAccount
+              passthrough: false
+              pod_association:
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.uid
+              extract:
+                metadata:
+                  - k8s.namespace.name
+                  - k8s.deployment.name
+                  - k8s.statefulset.name
+                  - k8s.daemonset.name
+                  - k8s.node.name
+                  - k8s.pod.name
+                  - k8s.pod.uid
+            resource/homelab:
+              attributes:
+                - key: k8s.cluster.name
+                  value: nandstorm
+                  action: upsert
+                - key: deployment.environment.name
+                  value: homelab
+                  action: upsert
+            resource/node:
+              attributes:
+                - key: host.name
+                  value: ${env:K8S_NODE_NAME}
+                  action: upsert
+            batch/clickstack:
+              timeout: 1s
+              send_batch_size: 1000
+              send_batch_max_size: 2000
+
+          service:
+            pipelines:
+              # The ClickStack standalone config already receives and exports
+              # OTLP traces/metrics/logs. Preserve those signal pipelines and
+              # add metadata enrichment rather than dropping any signal.
+              traces:
+                receivers: [otlp/hyperdx]
+                processors: [memory_limiter, k8sattributes/otlp, resource/homelab, batch/clickstack]
+                exporters: [clickhouse]
+              metrics:
+                receivers: [otlp/hyperdx]
+                processors: [memory_limiter, k8sattributes/otlp, resource/homelab, batch/clickstack]
+                exporters: [clickhouse]
+              logs/out-default:
+                receivers: [routing/logs]
+                processors: [memory_limiter, resource/homelab, transform, batch/clickstack]
+                exporters: [clickhouse]
+              logs/out-rrweb:
+                receivers: [routing/logs]
+                processors: [memory_limiter, resource/homelab, batch/clickstack]
+                exporters: [clickhouse/rrweb]
+              logs/kubernetes:
+                receivers: [filelog/k8s]
+                processors: [memory_limiter, k8sattributes/filelog, resource/homelab, transform, batch/clickstack]
+                exporters: [clickhouse]
+              metrics/kubernetes:
+                receivers: [kubeletstats, k8s_cluster]
+                processors: [memory_limiter, resource/homelab, batch/clickstack]
+                exporters: [clickhouse]
+              metrics/hostmetrics:
+                receivers: [hostmetrics]
+                processors: [memory_limiter, resource/node, resource/homelab, batch/clickstack]
+                exporters: [clickhouse]
+              metrics/prometheus:
+                receivers: [prometheus]
+                processors: [memory_limiter, resource/homelab, batch/clickstack]
+                exporters: [clickhouse]
+
+    hyperdx:
+      frontendUrl: https://clickstack.thejeffer.net
+      config:
+        FRONTEND_URL: https://clickstack.thejeffer.net
+        # Empty selects the documented OSS standalone ClickStack collector
+        # mode: OTLP stays ClusterIP-only and exports directly to ClickHouse.
+        OPAMP_SERVER_URL: ""
+        MONGO_URI: mongodb://hyperdx:$(MONGODB_PASSWORD)@clickstack-mongodb-svc:27017/hyperdx?authSource=hyperdx
+        HYPERDX_OTEL_EXPORTER_TABLES_TTL: 720h
+        USAGE_STATS_ENABLED: "false"
+      deployment:
+        image:
+          repository: docker.hyperdx.io/hyperdx/hyperdx
+          tag: "2.39.1"
+          pullPolicy: IfNotPresent
+        replicas: 1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+        env:
+          # Kubernetes expands this reference from clickstack-secret, preventing
+          # the MongoDB credential from being written into the generated ConfigMap.
+          - name: MONGO_URI
+            value: mongodb://hyperdx:$(MONGODB_PASSWORD)@clickstack-mongodb-svc:27017/hyperdx?authSource=hyperdx
+        defaultConnections: |-
+          [
+            {
+              "name": "ClickStack ClickHouse",
+              "host": "http://clickstack-clickhouse-clickhouse-headless.observability.svc.cluster.local:8123",
+              "port": 8123,
+              "username": "app",
+              "password": "$(CLICKHOUSE_APP_PASSWORD)"
+            }
+          ]
+      ingress:
+        enabled: true
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.middlewares: auth-sso-errors@kubernetescrd,auth-sso-auth@kubernetescrd
+        spec:
+          ingressClassName: traefik
+          tls:
+            - hosts:
+                - clickstack.thejeffer.net
+              secretName: clickstack-tls
+          rules:
+            - host: clickstack.thejeffer.net
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: clickstack-app
+                        port:
+                          name: app
+
+    clickhouse:
+      enabled: true
+      cluster:
+        spec:
+          replicas: 1
+          shards: 1
+          containerTemplate:
+            image:
+              repository: clickhouse/clickhouse-server
+              tag: null
+              hash: sha256:258d438215084cad2b4504749bd7046a869a82789983831df6348a737c1a85f6
+            resources:
+              requests:
+                cpu: "1"
+                memory: 2Gi
+              limits:
+                cpu: "2"
+                memory: 4Gi
+          dataVolumeClaimSpec:
+            accessModes: [ReadWriteOnce]
+            storageClassName: openebs-zfspv-retain
+            resources:
+              requests:
+                storage: 40Gi
+          settings:
+            logger:
+              level: information
+              size: 100M
+              count: 10
+            extraConfig:
+              max_connections: 512
+              max_concurrent_queries: 50
+              query_log:
+                ttl: event_date + INTERVAL 7 DAY DELETE
+              part_log:
+                ttl: event_date + INTERVAL 7 DAY DELETE
+              text_log:
+                ttl: event_date + INTERVAL 7 DAY DELETE
+              metric_log:
+                ttl: event_date + INTERVAL 7 DAY DELETE
+              asynchronous_metric_log:
+                ttl: event_date + INTERVAL 7 DAY DELETE
+            extraUsersConfig:
+              users:
+                app:
+                  password: null
+                  password_sha256_hex: '{{ .Values.hyperdx.secrets.CLICKHOUSE_APP_PASSWORD | sha256sum }}'
+                  profile: default
+                  grants:
+                    - query: "GRANT SHOW ON *.*, SELECT ON system.*, SELECT ON default.*"
+                otelcollector:
+                  password: null
+                  password_sha256_hex: '{{ .Values.hyperdx.secrets.CLICKHOUSE_PASSWORD | sha256sum }}'
+                  profile: default
+                  grants:
+                    - query: "GRANT SELECT, INSERT, CREATE, SHOW ON default.*"
+      keeper:
+        spec:
+          replicas: 1
+          containerTemplate:
+            image:
+              repository: clickhouse/clickhouse-server
+              tag: null
+              hash: sha256:258d438215084cad2b4504749bd7046a869a82789983831df6348a737c1a85f6
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+          dataVolumeClaimSpec:
+            accessModes: [ReadWriteOnce]
+            storageClassName: openebs-zfspv-retain
+            resources:
+              requests:
+                storage: 5Gi
+
+    mongodb:
+      enabled: true
+      spec:
+        members: 1
+        type: ReplicaSet
+        version: "5.0.32"
+        security:
+          authentication:
+            modes: [SCRAM]
+        statefulSet:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: mongod
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+            volumeClaimTemplates:
+              - metadata:
+                  name: data-volume
+                spec:
+                  accessModes: [ReadWriteOnce]
+                  storageClassName: openebs-zfspv-retain
+                  resources:
+                    requests:
+                      storage: 5Gi
+
+    otel-collector:
+      enabled: true
+      mode: daemonset
+      image:
+        repository: docker.clickhouse.com/clickhouse/clickstack-otel-collector
+        tag: "2.39.1"
+        pullPolicy: IfNotPresent
+      service:
+        enabled: true
+        type: ClusterIP
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+      presets:
+        logsCollection:
+          enabled: true
+          storeCheckpoints: false
+        hostMetrics:
+          enabled: true
+        kubernetesAttributes:
+          enabled: true
+        kubeletMetrics:
+          enabled: true
+        clusterMetrics:
+          enabled: true
+      ports:
+        otlp:
+          hostPort: null
+        otlp-http:
+          hostPort: null

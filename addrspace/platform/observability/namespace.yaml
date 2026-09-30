@@ -5,3 +5,15 @@ metadata:
   name: observability
   labels:
     pod-security.kubernetes.io/enforce: privileged
+---
+# During the staged cutover, old retained claims remain alongside ClickStack's
+# new operator-managed ClickHouse/Keeper/MongoDB claims.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: observability-storage-budget
+  namespace: observability
+spec:
+  hard:
+    requests.storage: 192Gi
+    persistentvolumeclaims: "24"

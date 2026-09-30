@@ -1,6 +1,5 @@
-# Namespace is retained as the migration target. Maple collector resources are
-# intentionally not activated while the upstream self-hosted backend is absent
-# (see README); old releases remain live because Flux pruning stays disabled.
+# ClickStack app resources reconcile in the dedicated post-platform Flux layer;
+# this base layer owns the namespace and its migration-overlap storage quota.
 resources:
   - namespace.yaml
   - grafana-oidc-v3.sealed.yaml
