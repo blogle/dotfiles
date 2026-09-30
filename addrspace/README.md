@@ -37,13 +37,15 @@ flux reconcile kustomization addrspace-apps -n flux-system
 
 The reconciliation order is enforced with `dependsOn`. The controllers layer
 waits for ready deployments/daemonsets and established provider CRDs, including
-Sealed Secrets, cert-manager, MetalLB, OpenEBS ZFS LocalPV, Agent Sandbox, and
-Prometheus Operator. Infrastructure waits for its `ClusterIssuer` and
+Sealed Secrets, cert-manager, MetalLB, OpenEBS ZFS LocalPV, and Agent Sandbox.
+Infrastructure waits for its `ClusterIssuer` and
 SealedSecrets to report Ready/Synced. Platform and apps wait on their upstream
 layer. Kustomizations use targeted checks rather than `wait: true` for every
 resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
-do not all represent provider readiness. Pruning is disabled in every layer
-while Flux ownership is being adopted; updates and drift correction are active.
+do not all represent provider readiness. Pruning is enabled for the controllers,
+platform, and apps roots so removed GitOps definitions, releases, and dashboards
+are removed during this cutover. Retain-oriented ZFS PV reclaim policies keep
+retired observability datasets from being intentionally destroyed.
 
 `addrspace-apps` is not Ready until the Anvil Deployments `anvil-nix-daemon`,
 `anvild`, `anvil-router`, `anvil-mcp`, and `anvil-profile` report native

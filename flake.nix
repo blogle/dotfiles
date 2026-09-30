@@ -208,6 +208,11 @@
         nixpkgs.legacyPackages.${system}.just
         nixpkgs.legacyPackages.${system}.jq
         nixpkgs.legacyPackages.${system}.nix-eval-jobs
+        nixpkgs.legacyPackages.${system}.helm
+        nixpkgs.legacyPackages.${system}.kubectl
+        nixpkgs.legacyPackages.${system}.kustomize
+        (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [ pythonPackages.json5 ]))
+        nixpkgs.legacyPackages.${system}.nodejs
       ];
     };
 

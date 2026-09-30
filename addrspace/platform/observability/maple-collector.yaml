@@ -1,0 +1,83 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: maple-k8s-infra
+  namespace: kube-system
+spec:
+  repo: oci://ghcr.io/mapletechlabs/charts
+  chart: maple-k8s-infra
+  version: 0.6.0
+  targetNamespace: observability
+  createNamespace: true
+  valuesContent: |-
+    global:
+      clusterName: nandstorm
+      deploymentEnvironment: homelab
+
+    # Maple upstream's Kubernetes collector natively gathers host/kubelet and
+    # cluster metrics, container logs and OTLP. Direct ClickHouse export is the
+    # documented self-hosted path; the application/backend and ClickHouse
+    # deployment are blocked on upstream publishing supported K8s resources.
+    maple:
+      clickhouseExport:
+        enabled: true
+        mode: replace
+        image:
+          repository: ghcr.io/mapletechlabs/maple/otel-collector-maple
+          tag: "0.2.0"
+          pullPolicy: IfNotPresent
+        endpoint: http://maple-clickhouse.observability.svc.cluster.local:8123
+        database: default
+        username: maple
+        orgId: default
+        password:
+          existingSecret:
+            name: maple-clickhouse-credentials
+            key: password
+
+    processors:
+      resourceDetection:
+        enabled: true
+
+    presets:
+      podLogs:
+        enabled: true
+      k8sEvents:
+        enabled: true
+      otlpReceiver:
+        grpc:
+          hostPort: null
+        http:
+          hostPort: null
+      kubeletMetrics:
+        enabled: true
+      clusterMetrics:
+        enabled: true
+
+    autoInstrumentation:
+      enabled: true
+      operator:
+        enabled: true
+      instrumentation:
+        name: maple-default
+        otlpEndpointOverride: http://maple-k8s-infra-agent.observability.svc.cluster.local:4318
+
+    agent:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 750m
+          memory: 768Mi
+
+    clusterCollector:
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 768Mi

@@ -1,16 +1,10 @@
 ---
-# Exportarr instances for the *arr stack. Each Deployment runs a tiny
-# Exportarr sidecar that scrapes its arr's API and exposes Prometheus
-# metrics at :9704; the matching ServiceMonitor lets Prometheus (which is
-# configured with an empty match-all ruleSelector, see
-# controllers/kube-prometheus-stack.yaml) pick it up.
+# Exportarr instances for the *arr stack. The OTel Prometheus receiver scrapes
+# these endpoints using the stable service DNS names configured in
+# platform/observability/prometheus-receiver.yaml.
 #
-# These exporters + ServiceMonitors live in the `media` namespace next to
-# the apps they observe (per spec): app-specific telemetry intent stays
-# colocated with the app. Shared platform backends stay in `observability`.
-#
-# LOWER-VALUE: this is media-stack low-value telemetry, so the ServiceMonitors
-# scrape at the spec's `lowValueServiceScrapeInterval` (60s).
+# Exporters remain alongside the apps they observe; their scrape jobs live in
+# the central OTel collector because ServiceMonitor is a Prometheus Operator CRD.
 #
 # TODO(operator): create the per-app API-key Secrets used below so the
 # exporters can actually authenticate. Example for sonarr:
@@ -82,26 +76,6 @@ spec:
       port: 9704
       targetPort: metrics
 ---
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: sonarr-exporter
-  namespace: media
-  labels:
-    app: sonarr-exporter
-spec:
-  selector:
-    matchLabels:
-      app: sonarr-exporter
-  namespaceSelector:
-    matchNames:
-      - media
-  endpoints:
-    - port: metrics
-      interval: 60s
-      scrapeTimeout: 30s
-      path: /metrics
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -165,26 +139,6 @@ spec:
       port: 9704
       targetPort: metrics
 ---
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: radarr-exporter
-  namespace: media
-  labels:
-    app: radarr-exporter
-spec:
-  selector:
-    matchLabels:
-      app: radarr-exporter
-  namespaceSelector:
-    matchNames:
-      - media
-  endpoints:
-    - port: metrics
-      interval: 60s
-      scrapeTimeout: 30s
-      path: /metrics
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -247,23 +201,3 @@ spec:
     - name: metrics
       port: 9704
       targetPort: metrics
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: prowlarr-exporter
-  namespace: media
-  labels:
-    app: prowlarr-exporter
-spec:
-  selector:
-    matchLabels:
-      app: prowlarr-exporter
-  namespaceSelector:
-    matchNames:
-      - media
-  endpoints:
-    - port: metrics
-      interval: 60s
-      scrapeTimeout: 30s
-      path: /metrics
