@@ -79,7 +79,7 @@
       description: 'Rancher HelmChart CR versions',
       managerFilePatterns: ['/^addrspace\\/.+\\.ya?ml$/'],
       matchStrings: [
-        'repo:\\s*(?<registryUrl>(?:https://|oci://)[^\\s]+)\\s*\\n\\s*chart:\\s*(?<depName>[^\\s]+)\\s*\\n\\s*version:\\s*(?<currentValue>[^\\s]+)',
+        'repo:\\s*(?<registryUrl>https://[^\\s]+)\\s*\\n\\s*chart:\\s*(?<depName>[^\\s]+)\\s*\\n\\s*version:\\s*(?<currentValue>[^\\s]+)',
       ],
       datasourceTemplate: 'helm',
       registryUrlTemplate: '{{{registryUrl}}}',
