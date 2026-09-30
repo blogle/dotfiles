@@ -15,7 +15,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: nvidia-smi
-              image: nvidia/cuda:12.9.2-base-ubuntu22.04
+              image: nvidia/cuda:13.4.2-base-ubuntu22.04
               imagePullPolicy: IfNotPresent
               command: ["bash", "-lc"]
               args:
