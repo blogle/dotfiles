@@ -160,6 +160,18 @@
       "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
     };
 
+    # Repository validation tools for Kubernetes desired state. Keeping these
+    # in the normal `nix develop` environment makes manifest checks reproducible.
+    devShells."${system}".default = homePkgs.mkShell {
+      packages = with homePkgs; [
+        helm
+        kubectl
+        kustomize
+        (python3.withPackages (pythonPackages: [ pythonPackages.json5 ]))
+        nodejs
+      ];
+    };
+
   };
 
 }

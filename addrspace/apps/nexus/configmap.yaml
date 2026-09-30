@@ -60,5 +60,5 @@ data:
 
     [telemetry.exporters.otlp]
     enabled = true
-    endpoint = "http://alloy-otel.observability.svc.cluster.local:4317"
+    endpoint = "http://maple-k8s-infra-agent.observability.svc.cluster.local:4317"
     protocol = "grpc"

@@ -7,7 +7,6 @@ resources:
   - metallb
   - agent-sandbox
   - zfs-localpv.yaml
-  - kube-prometheus-stack.yaml
 
 patches:
   - path: sealed-secrets-renewal.patch.yaml

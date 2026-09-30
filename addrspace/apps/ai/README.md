@@ -47,11 +47,13 @@ DCGM Exporter uses the pinned NVIDIA 4.4.2-4.7.1 Ubuntu image at digest
 `sha256:6b5975cdd430d05692c92137bb264938196ee9165e55205a0e31a5e89a9873ee`.
 The newer 4.6.0-4.8.3 distroless image exited during DCGM initialization on this
 NixOS/Volta host; the Ubuntu image was the smallest compatible adjustment.
-Prometheus discovers `ServiceMonitor/dcgm-exporter` at a 15-second interval.
-Grafana imports the **Ollama and NVIDIA GPUs** dashboard (UID `ollama-gpu`) from
-the `ollama-gpu-dashboard` ConfigMap. Ollama stdout/stderr is collected by Alloy
-and queried in Loki with `{namespace="ai", app="ollama"}`. Request-body debug
-logging is disabled; prompts, responses, and embedding inputs are not logged.
+The OTel Prometheus receiver scrapes `dcgm-exporter` every 15 seconds and
+converts its metrics to OTLP for Maple. Ollama stdout/stderr is collected by
+the Maple Kubernetes collector as pod logs. Ollama has no verified native OTLP
+exporter or documented OTEL env-var interface in this deployment, so its
+application telemetry remains a documented gap; Kubernetes and GPU metrics
+and logs are collected. Request-body debug logging is disabled; prompts,
+responses, and embedding inputs are not logged.
 
 `maravexa/ollama-exporter` was evaluated but rejected for this deployment. It
 is a new, single-maintainer project with low adoption, no signed release/SBOM
@@ -121,8 +123,7 @@ provide that stable FHS symlink to the Nix-store binary before registration.
   all-GPU allocation did not deadlock. The replacement found 11 existing
   blobs, retained all three model digests and 9.7 GiB store size, and performed
   no model downloads.
-- Prometheus reported `up{service="dcgm-exporter"}=1`, three GPU series, and
-  Ollama CPU/RAM metrics. The Prometheus Operator validated `ollama-alerts`.
-  Grafana mounted `ollama-gpu.json`, and a Loki query for
-  `{namespace="ai", app="ollama"}` returned logs carrying namespace, pod,
-  container, node, and app labels.
+- The former Grafana dashboard, PrometheusRule alert, and Prometheus/Loki
+  validation references are removed. Validate GPU metric availability and
+  Ollama log resource metadata in Maple after the self-hosted Maple backend is
+  available.
