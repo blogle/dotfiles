@@ -215,6 +215,8 @@
           pythonPackages.json5
           pythonPackages.pyyaml
         ]))
+        nixpkgs.legacyPackages.${system}.docker-compose
+        nixpkgs.legacyPackages.${system}.bun
         nixpkgs.legacyPackages.${system}.nodejs
       ];
     };
