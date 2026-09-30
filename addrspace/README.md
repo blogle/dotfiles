@@ -48,11 +48,12 @@ platform; ClickStack waits on platform and operators; apps wait on ClickStack.
 Kustomizations use targeted checks rather than `wait: true` for every
 resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
 do not all represent provider readiness. The apps layer checks Nexus readiness;
-its replacement pod waits for the sealed ClickStack MCP key while the existing
-replica continues serving. Pruning remains disabled in every layer. Removed
-observability HelmChart resources therefore require the documented manual
-retirement procedure after the replacement is verified; this PR does not change
-cluster-wide deletion behavior.
+it first redirects Nexus OTLP without enabling ClickStack MCP. Once HyperDX has
+an initialized user/team and Personal API Access Key, one follow-up commit adds
+the sealed key and Nexus MCP wiring together. Pruning remains disabled in every
+layer. Removed observability HelmChart resources therefore require the
+documented manual retirement procedure after the replacement is verified; this
+PR does not change cluster-wide deletion behavior.
 
 `addrspace-apps` is not Ready until the Anvil Deployments `anvil-nix-daemon`,
 `anvild`, `anvil-router`, `anvil-mcp`, and `anvil-profile` report native
