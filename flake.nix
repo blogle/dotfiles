@@ -164,7 +164,7 @@
     # in the normal `nix develop` environment makes manifest checks reproducible.
     devShells."${system}".default = homePkgs.mkShell {
       packages = with homePkgs; [
-        helm
+        kubernetes-helm
         kubectl
         kustomize
         (python3.withPackages (pythonPackages: [ pythonPackages.json5 ]))
