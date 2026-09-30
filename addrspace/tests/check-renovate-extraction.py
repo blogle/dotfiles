@@ -77,7 +77,7 @@ def assert_manager_sources_are_disabled(files, rules, managers, package_files, p
                     )
 
 
-def registry_release_fixture():
+def registry_release_fixture(current_tag):
     repository = "blogle/dojo2"
     query = urlencode({"scope": f"repository:{repository}:pull", "service": "ghcr.io"})
     with urlopen(f"https://ghcr.io/token?{query}", timeout=15) as response:
@@ -94,7 +94,13 @@ def registry_release_fixture():
     )
     if len(releases) < 2:
         raise AssertionError("Need two published Dojo semantic images to exercise a Renovate update")
-    fixture_tag, target_tag = releases[-2:]
+    target_tag = releases[-1]
+    fixture_candidates = [tag for tag in releases[:-1] if tag != current_tag]
+    if not fixture_candidates:
+        raise AssertionError(
+            f"Need a published Dojo semantic image distinct from current staging tag {current_tag}"
+        )
+    fixture_tag = fixture_candidates[-1]
     manifest_request = Request(
         f"https://ghcr.io/v2/{repository}/manifests/{fixture_tag}",
         headers={
@@ -294,8 +300,6 @@ def assert_renovate_proposes_one_anvil_update():
 
 def assert_renovate_proposes_one_staging_release():
     """Run Renovate's update pipeline on a throwaway old-release fixture."""
-    fixture_tag, fixture_digest, target_tag = registry_release_fixture()
-
     with tempfile.TemporaryDirectory(prefix="renovate-dojo-release-") as temporary:
         checkout = Path(temporary) / "checkout"
         subprocess.run(
@@ -307,6 +311,10 @@ def assert_renovate_proposes_one_staging_release():
         )
         manifest = checkout / "addrspace/apps/dojo/overlays/staging/kustomization.yaml"
         content = manifest.read_text()
+        current_match = re.search(r"newTag:\s*(v[0-9]+\.[0-9]+\.[0-9]+)", content)
+        if not current_match:
+            raise AssertionError("Could not determine current Dojo staging semantic release")
+        fixture_tag, fixture_digest, target_tag = registry_release_fixture(current_match.group(1))
         content, base_count = re.subn(r"(ref=)v[0-9]+\.[0-9]+\.[0-9]+", rf"\g<1>{fixture_tag}", content, count=1)
         content, tag_count = re.subn(r"(newTag:\s*)v[0-9]+\.[0-9]+\.[0-9]+", rf"\g<1>{fixture_tag}", content, count=1)
         content, digest_count = re.subn(r"(digest:\s*)sha256:[a-f0-9]{64}", rf"\g<1>{fixture_digest}", content, count=1)
