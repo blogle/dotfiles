@@ -166,7 +166,9 @@
       packages = with homePkgs; [
         kubernetes-helm
         kubectl
+        kubeseal
         kustomize
+        openssl
         (python3.withPackages (pythonPackages: [
           pythonPackages.json5
           pythonPackages.pyyaml

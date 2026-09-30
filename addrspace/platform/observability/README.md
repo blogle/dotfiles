@@ -37,9 +37,21 @@ not hand-author OTel tables.
 
 ## Collection
 
-The ClickStack OTel Collector uses its official standalone ClickHouse-export
-configuration (no OpAMP requirement for internal collection). The collector
-DaemonSet's ClusterIP Service is the stable producer endpoint:
+The ClickStack OTel Collector uses the official standalone ClickHouse-export
+configuration. `OPAMP_SERVER_URL` is explicitly empty: the bundled image's
+entrypoint then runs its production standalone path with `config.yaml`,
+`standalone-config.yaml`, and the mounted `CUSTOM_OTELCOL_CONFIG_FILE`; before
+starting the collector it runs the bundled ClickHouse schema migration tool.
+The standalone base config supplies ClickStack's OTLP receiver, ClickHouse
+exporters, routing connector, and base log transforms. The mounted custom config
+adds the Kubernetes/host/Prometheus receivers and re-declares the full signal
+pipelines, retaining both standard and rrweb/session log routes. This opts out
+of remotely managed OpAMP pipeline config so the explicit custom pipelines are
+authoritative; ClickStack's UI/API and MCP remain HyperDX services. The chart's
+documented config-file merge mechanism supports custom configs in standalone
+mode as well as its default supervisor mode.
+
+The collector DaemonSet's ClusterIP Service is the stable producer endpoint:
 
 - gRPC: `clickstack-otel-collector.observability.svc.cluster.local:4317`
 - HTTP: `http://clickstack-otel-collector.observability.svc.cluster.local:4318`
@@ -52,6 +64,19 @@ attributes `k8s.cluster.name=nandstorm` and
 Sonarr/Radarr/Prowlarr Exportarr every 60 seconds. ClickStack's own ClickHouse
 exporter remains the writer for all signals. Collector OTLP ports are
 ClusterIP-only, not Ingress-exposed.
+
+I rendered the exact `3.4.0` chart values and inspected its generated
+DaemonSet/RBAC. The service account token is mounted; `K8S_NODE_NAME` comes from
+`spec.nodeName` and `K8S_NODE_IP` from `status.hostIP`. `kubeletMetrics` grants
+`nodes/stats`; `kubernetesAttributes` grants pod/namespace and ReplicaSet
+lookups; `clusterMetrics` grants the Kubernetes objects plus apps/batch/
+autoscaling required by `k8s_cluster` and Prometheus pod service discovery. The
+collector mounts `/var/log/pods` and host `/` read-only, with host-to-container
+mount propagation for host metrics. The generic `logsCollection` preset is
+disabled because it also mounts `/var/lib/docker/containers`, which is not used
+by this containerd node; the chart is instead given an explicit
+`/var/log/pods` hostPath volume/mount (`type: Directory`) for the filelog
+receiver. Rendered gRPC/HTTP services expose 4317 and 4318 on ClusterIP.
 
 ## UI authentication and MCP
 
@@ -68,44 +93,85 @@ Bearer key is supplied through a Secret reference, not the ConfigMap. Supported
 tools include log/trace/metric query and search, SQL, dashboards, alerts, saved
 searches and team information.
 
-## Sealed-secret setup gate
+## Credential generation and staged bootstrap
 
-The ClickStack K3s `HelmChart` consumes a `values.yaml` key from a SealedSecret
-named `clickstack-values` in `kube-system`; this values document supplies
-ClickHouse, MongoDB and HyperDX credentials. No credential values are stored in
-Git. The current Anvil session has no Kubernetes context or SealedSecrets public
-certificate, so the encrypted values file cannot be generated here. Before
-reconciling the ClickStack HelmChart, generate `clickstack-values.yaml` locally
-with strong random values for `hyperdx.secrets.HYPERDX_API_KEY`,
-`hyperdx.secrets.CLICKHOUSE_PASSWORD`,
-`hyperdx.secrets.CLICKHOUSE_APP_PASSWORD`, and
-`hyperdx.secrets.MONGODB_PASSWORD`. Then seal it using the repo's existing
-controller:
+The ClickStack 3.4.0 chart uses `hyperdx.secrets` as the unified source and
+renders it into `clickstack-secret` for HyperDX and the collector. The MongoDB
+chart template also bridges `MONGODB_PASSWORD` to the `password` key required by
+MongoDBCommunity. The ClickHouse user templates use the two ClickHouse values
+to render password hashes into the operator CR. Auditing every chart template
+and default values file shows four required credential keys:
+
+| `hyperdx.secrets` key | Consumer |
+| --- | --- |
+| `HYPERDX_API_KEY` | HyperDX app and bundled collector environment. |
+| `CLICKHOUSE_PASSWORD` | OTel collector/migrations user. |
+| `CLICKHOUSE_APP_PASSWORD` | HyperDX's ClickHouse query user. |
+| `MONGODB_PASSWORD` | HyperDX and the MongoDBCommunity user Secret. |
+
+Chart 3.4.0 does not template an Express/session secret; no additional session
+key is required by this chart release. The K3s Helm controller requires
+`valuesSecrets` by default and reads `keys` from a Secret in the HelmChart's
+namespace. Here `clickstack-values` must be in `kube-system`, with a key named
+`values.yaml`. `ignoreUpdates` remains false: absent Secret/key prevents chart
+installation; adding/changing the sealed values later triggers an upgrade. Its
+YAML overrides the non-secret `valuesContent` map at the same nested
+`hyperdx.secrets` path. K3s helm-controller projects `valuesContent` to the
+first numbered `/config/values-*.yaml` file and the referenced Secret key to
+the next one; `klipper-helm` passes that glob-ordered list as repeated Helm
+`--values` arguments, so the sealed Secret file is the later/higher-precedence
+override. I rendered the chart with the same two-file order and verified the
+unified Secret, MongoDB password bridge, and ClickHouse password hashes.
+
+Generate and seal the bootstrap file with the repo helper:
 
 ```sh
-kubectl create secret generic clickstack-values \
-  --namespace kube-system \
-  --from-file=values.yaml=clickstack-values.yaml \
-  --dry-run=client -o yaml \
-  | kubeseal --format yaml \
-      --controller-name sealed-secrets-controller \
-      --controller-namespace kube-system \
-  > addrspace/platform/observability/clickstack-values.sealed.yaml
+nix develop --command bash addrspace/scripts/clickstack-seal-secret.sh values
 ```
 
-Add `clickstack-values.sealed.yaml` to this directory's `kustomization.yaml`
-resources so Flux creates the `kube-system` SealedSecret before the ClickStack
-HelmChart is reconciled. Keep the local plaintext file outside Git and remove it
-after sealing.
+It fetches the Sealed Secrets **public** certificate from the current
+`sealed-secrets-controller` in `kube-system`, generates strong random
+credentials, seals a strict-scope Secret, and writes only ciphertext to
+`addrspace/platform/observability/clickstack-values.sealed.yaml`. Plaintext is
+kept in a mode-0700 temporary directory that is removed on exit; the script
+does not apply resources and refuses to overwrite an existing output. Add the
+generated path to this directory's `kustomization.yaml`. This platform layer
+reconciles before the operators and ClickStack charts, so the values Secret is
+available before K3s Helm starts.
 
-The personal MCP API key is created in HyperDX Team Settings after initial user
-registration. Seal it as `clickstack-mcp-credentials` in `nexus` (key
-`api-key`), then restart Nexus so its startup-snapshotted tool catalog includes
-ClickStack. Add the resulting SealedSecret to `addrspace/apps/nexus/kustomization.yaml`.
-The deployment requires this key before a replacement Nexus pod starts; with
-the rolling update strategy the existing replica remains available while the
-credential is missing. This key is not the OTel ingestion key. The PR must
-remain draft until both sealed credentials exist and the MCP catalog is verified.
+### MCP token lifecycle (no Flux dependency deadlock)
+
+The native HyperDX MCP endpoint at `/api/mcp` authenticates with a Personal API
+Access Key created in Team Settings after the first account/team is initialized.
+That key cannot be generated as part of the initial Helm bootstrap. The Flux
+ordering intentionally handles this in two phases:
+
+1. ClickStack waits only for its HyperDX Deployment and collector DaemonSet; it
+   does not depend on Nexus or the MCP token.
+2. Once ClickStack is healthy, the apps layer applies the TinyAuth hostname,
+   Nexus MCP config, and a Nexus Deployment that requires
+   `clickstack-mcp-credentials`. The default Deployment strategy is
+   `RollingUpdate`; with one replica its old pod remains available while a new
+   pod waits for the missing Secret. The apps Kustomization reports NotReady on
+   its Nexus health check, but that does not roll back or block ClickStack.
+3. Create the user/team in HyperDX, create a Personal API Access Key, then seal
+   it interactively:
+
+   ```sh
+   nix develop --command bash addrspace/scripts/clickstack-seal-secret.sh mcp
+   ```
+
+   The helper prompts without echo, seals `clickstack-mcp-credentials` in
+   `nexus`, and writes only ciphertext to
+   `addrspace/apps/nexus/clickstack-mcp-credentials.sealed.yaml`. Add it to
+   `addrspace/apps/nexus/kustomization.yaml`. Once Flux creates the Secret, the
+   replacement Nexus pod starts and the apps health check can pass.
+
+The API key is not an OTel ingestion token. This workspace has no cluster
+context, so the helper cannot fetch the public certificate here and live
+bootstrap has not been performed. Keep the PR draft until both encrypted
+credentials exist and OTLP ingestion, UI access, MCP tools, and Nexus's tool
+catalog are verified.
 
 ## Application OTEL support audit
 
@@ -130,11 +196,27 @@ Operators and ClickStack reconcile before the apps layer; the apps Flux
 Kustomization depends on the ClickStack health checks before Nexus and supported
 OTLP producers are redirected. `prune: false` is unchanged for all cluster
 layers, so removing legacy definitions from Git does not uninstall the live
-releases. After confirming ClickStack UI, OTel schema/ingestion and Nexus MCP
-tools, perform a reviewed, targeted retirement of the old K3s HelmCharts
-(`kube-prometheus-stack`, `grafana`, `loki`, `tempo`, `alloy-logs`, `alloy-otel`,
-`blackbox-exporter`) and obsolete named Prometheus Operator CR instances. Inspect
-all remaining `ServiceMonitor`, `PodMonitor`, `Probe` and `PrometheusRule`
-instances before CRD removal. Retire the Grafana OIDC sealed credential and its
-TinyAuth client configuration in the same reviewed cleanup. Do not delete
-retained PVCs, PVs or ZFS datasets.
+releases.
+
+After verifying the HyperDX UI, OTLP logs/traces/metrics, and Nexus MCP tools,
+run the retirement helper first in plan mode:
+
+```sh
+nix develop --command bash addrspace/scripts/retire-observability-legacy.sh --plan
+```
+
+It scopes its plan to seven K3s HelmCharts in `kube-system`, the two
+repository-owned PrometheusRules, five ServiceMonitors, and four Probes. Apply
+mode rechecks ClickStack app/collector readiness and requires the interactive
+confirmation `RETIRE-VERIFIED-CLICKSTACK`; it deletes those exact CR instances,
+then deletes the named HelmChart objects so K3s helm-controller performs each
+release uninstall. It does not run `helm uninstall`, change Flux pruning, delete
+CRDs, or delete PVCs/PVs/ZFS datasets. Review the remaining
+`monitoring.coreos.com` custom resources/CRDs printed after uninstall and only
+remove a CRD in a separate reviewed action once every namespace has been
+checked for other consumers.
+
+The helper intentionally leaves the old Grafana OIDC sealed secrets and
+TinyAuth client configuration. Remove their Deployment environment references
+and sealed manifests in a separate Git change after confirming Grafana is
+retired; deleting the Secret first would break TinyAuth's required references.

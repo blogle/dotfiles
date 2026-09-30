@@ -401,8 +401,10 @@ spec:
           memory: 2Gi
       presets:
         logsCollection:
-          enabled: true
-          storeCheckpoints: false
+          # The chart preset also mounts /var/lib/docker/containers, which is
+          # absent on this containerd node. Mount only K3s's CRI log directory
+          # below; the custom receiver config supplies the filelog pipeline.
+          enabled: false
         hostMetrics:
           enabled: true
         kubernetesAttributes:
@@ -411,6 +413,24 @@ spec:
           enabled: true
         clusterMetrics:
           enabled: true
+      extraVolumes:
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+            type: Directory
+        # Preserve ClickStack chart's custom collector config mount when
+        # overriding the subchart's extra volumes for the K3s log path.
+        - name: custom-config
+          configMap:
+            name: clickstack-otel-custom-config
+            optional: true
+      extraVolumeMounts:
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
+        - name: custom-config
+          mountPath: /etc/otelcol-contrib/custom
+          readOnly: true
       ports:
         otlp:
           hostPort: null
