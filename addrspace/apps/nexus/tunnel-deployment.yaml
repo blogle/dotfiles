@@ -19,15 +19,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: tunnel-client
-          image: alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              until nc -z nexus 8000; do
-                sleep 1
-              done
-              exec /usr/local/bin/tunnel-client run
+          image: ghcr.io/openai/tunnel-client@sha256:119799b778ba8411a124f53588f9dc837fd62ba03e5fadf77d675123c92ab58e
           env:
             - name: CONTROL_PLANE_TUNNEL_ID
               valueFrom:
@@ -84,12 +76,3 @@ spec:
               port: health
             periodSeconds: 30
             timeoutSeconds: 2
-          volumeMounts:
-            - name: tunnel-client
-              mountPath: /usr/local/bin/tunnel-client
-              readOnly: true
-      volumes:
-        - name: tunnel-client
-          hostPath:
-            path: /run/current-system/sw/bin/tunnel-client
-            type: File
