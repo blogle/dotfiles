@@ -12,7 +12,7 @@ metadata:
 spec:
   repo: https://prometheus-community.github.io/helm-charts
   chart: prometheus-blackbox-exporter
-  version: 11.17.2
+  version: 11.19.1
   targetNamespace: observability
   createNamespace: true
   valuesContent: |-
