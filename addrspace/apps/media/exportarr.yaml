@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:v1.6.2
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           imagePullPolicy: IfNotPresent
           command: ["/exportarr"]
           args: ["sonarr"]
@@ -121,7 +121,7 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:v1.6.2
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           imagePullPolicy: IfNotPresent
           command: ["/exportarr"]
           args: ["radarr"]
@@ -204,7 +204,7 @@ spec:
     spec:
       containers:
         - name: exportarr
-          image: ghcr.io/onedr0p/exportarr:v1.6.2
+          image: ghcr.io/onedr0p/exportarr:v2.3.0
           imagePullPolicy: IfNotPresent
           command: ["/exportarr"]
           args: ["prowlarr"]
