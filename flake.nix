@@ -210,7 +210,9 @@
         nixpkgs.legacyPackages.${system}.nix-eval-jobs
         nixpkgs.legacyPackages.${system}.helm
         nixpkgs.legacyPackages.${system}.kubectl
+        nixpkgs.legacyPackages.${system}.kubeseal
         nixpkgs.legacyPackages.${system}.kustomize
+        nixpkgs.legacyPackages.${system}.openssl
         (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [
           pythonPackages.json5
           pythonPackages.pyyaml
