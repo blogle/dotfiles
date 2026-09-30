@@ -113,7 +113,7 @@ done
 
 for name in "${charts[@]}"; do
   if kubectl get helmchart "$name" -n kube-system -o name --ignore-not-found | grep -q .; then
-    printf 'Requesting helm-controller uninstall for HelmChart %s/kube-system\n' "$name"
+    printf 'Requesting helm-controller uninstall for HelmChart kube-system/%s\n' "$name"
     kubectl delete helmchart "$name" -n kube-system --wait=true --timeout=20m
   fi
 done
