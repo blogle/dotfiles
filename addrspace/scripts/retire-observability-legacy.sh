@@ -9,7 +9,9 @@ Usage: bash addrspace/scripts/retire-observability-legacy.sh [--plan|--apply]
 CR instances this repository owned. --apply requires an interactive typed
 confirmation and ready ClickStack app/collector, deletes those named CRs, then
 deletes the seven named K3s HelmChart objects so helm-controller uninstalls the
-releases. It never deletes CRDs, PVCs, PVs, ZFS datasets, or unrelated objects.
+releases. Pinned Prometheus Operator CRDs are removed only after a second
+confirmation and an empty cluster-wide CR inventory. PVCs, PVs, ZFS datasets,
+and unrelated objects are never deletion targets.
 EOF
 }
 
@@ -28,6 +30,18 @@ context=$(kubectl config current-context 2>/dev/null) || {
 [[ -n "$context" ]] || { printf 'No kubectl context is selected.\n' >&2; exit 1; }
 
 charts=(kube-prometheus-stack grafana loki tempo alloy-logs alloy-otel blackbox-exporter)
+prometheus_crds=(
+  alertmanagerconfigs.monitoring.coreos.com
+  alertmanagers.monitoring.coreos.com
+  podmonitors.monitoring.coreos.com
+  probes.monitoring.coreos.com
+  prometheusagents.monitoring.coreos.com
+  prometheuses.monitoring.coreos.com
+  prometheusrules.monitoring.coreos.com
+  scrapeconfigs.monitoring.coreos.com
+  servicemonitors.monitoring.coreos.com
+  thanosrulers.monitoring.coreos.com
+)
 prometheusrules=(
   'ai/ollama-alerts'
   'observability/observability-alerts'
@@ -52,27 +66,30 @@ print_existing() {
     [[ -n "$entry" ]] || continue
     namespace=${entry%%/*}
     name=${entry#*/}
-    kubectl get "$resource" "$name" -n "$namespace" -o name --ignore-not-found 2>/dev/null || true
+    kubectl get "$resource" "$name" -n "$namespace" -o name --ignore-not-found
   done <<< "$names"
 }
 
 print_monitoring_inventory() {
-  local resource
+  local resource monitoring_resources
+  monitoring_resources=$(kubectl api-resources --api-group=monitoring.coreos.com --verbs=list -o name)
   printf '\nAll current monitoring.coreos.com resources (inventory only):\n'
   while IFS= read -r resource; do
     [[ -n "$resource" ]] || continue
     printf '%s: ' "$resource"
-    kubectl get "$resource" --all-namespaces -o name --ignore-not-found 2>/dev/null | tr '\n' ' '
+    kubectl get "$resource" --all-namespaces -o name --ignore-not-found | tr '\n' ' '
     printf '\n'
-  done < <(kubectl api-resources --api-group=monitoring.coreos.com --verbs=list -o name 2>/dev/null || true)
-  printf 'Installed monitoring.coreos.com CRDs (inventory only):\n'
-  kubectl get crd -o name | grep 'monitoring.coreos.com' || true
+  done <<< "$monitoring_resources"
+  printf 'Installed monitoring.coreos.com CRDs from pinned kube-prometheus-stack:\n'
+  for crd in "${prometheus_crds[@]}"; do
+    kubectl get crd "$crd" -o name --ignore-not-found
+  done
 }
 
 printf 'Cluster context: %s\n' "$context"
 printf '\nExact legacy K3s HelmCharts in kube-system:\n'
 for name in "${charts[@]}"; do
-  kubectl get helmchart "$name" -n kube-system -o name --ignore-not-found 2>/dev/null || true
+  kubectl get helmchart "$name" -n kube-system -o name --ignore-not-found
 done
 printf '\nRepository-owned PrometheusRules:\n'
 print_existing prometheusrules "$(printf '%s\n' "${prometheusrules[@]}")"
@@ -81,7 +98,7 @@ print_existing servicemonitors "$(printf '%s\n' "${servicemonitors[@]}")"
 printf '\nRepository-owned Probes:\n'
 print_existing probes "$(printf '%s\n' "${probes[@]}")"
 print_monitoring_inventory
-printf '\nCRDs, PVCs, PVs, and ZFS datasets are not deletion targets.\n'
+printf '\nPVCs, PVs, and ZFS datasets are never deletion targets. CRDs are considered only after every CR instance is absent.\n'
 
 [[ "$mode" == --apply ]] || exit 0
 [[ -t 0 ]] || { printf 'Refusing --apply without an interactive terminal.\n' >&2; exit 1; }
@@ -118,6 +135,33 @@ for name in "${charts[@]}"; do
   fi
 done
 
-printf '\nPost-uninstall Prometheus Operator inventory (review before any CRD deletion):\n'
+printf '\nPost-uninstall Prometheus Operator inventory:\n'
 print_monitoring_inventory
+
+remaining=0
+monitoring_resources=$(kubectl api-resources --api-group=monitoring.coreos.com --verbs=list -o name)
+while IFS= read -r resource; do
+  [[ -n "$resource" ]] || continue
+  instances=$(kubectl get "$resource" --all-namespaces -o name --ignore-not-found)
+  if [[ -n "$instances" ]]; then
+    printf 'Retaining CRDs; remaining %s instances:\n%s\n' "$resource" "$instances"
+    remaining=1
+  fi
+done <<< "$monitoring_resources"
+
+if (( remaining == 0 )); then
+  printf '\nNo monitoring.coreos.com instances remain. CRD removal is a separate, optional step.\n'
+  read -r -p 'Type REMOVE-PROMETHEUS-OPERATOR-CRDS to remove the pinned chart CRDs: ' crd_confirmation
+  if [[ "$crd_confirmation" == REMOVE-PROMETHEUS-OPERATOR-CRDS ]]; then
+    for crd in "${prometheus_crds[@]}"; do
+      crd_object=$(kubectl get crd "$crd" -o name --ignore-not-found)
+      if [[ -n "$crd_object" ]]; then
+        kubectl delete crd "$crd" --wait=true
+      fi
+    done
+  else
+    printf 'CRDs retained.\n'
+  fi
+fi
+
 printf '\nPVC/PV/ZFS data was not targeted. Remove Grafana TinyAuth client configuration and sealed OIDC material only in a separate reviewed Git change after confirming Grafana is retired.\n'

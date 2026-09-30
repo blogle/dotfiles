@@ -210,11 +210,12 @@ repository-owned PrometheusRules, five ServiceMonitors, and four Probes. Apply
 mode rechecks ClickStack app/collector readiness and requires the interactive
 confirmation `RETIRE-VERIFIED-CLICKSTACK`; it deletes those exact CR instances,
 then deletes the named HelmChart objects so K3s helm-controller performs each
-release uninstall. It does not run `helm uninstall`, change Flux pruning, delete
-CRDs, or delete PVCs/PVs/ZFS datasets. Review the remaining
-`monitoring.coreos.com` custom resources/CRDs printed after uninstall and only
-remove a CRD in a separate reviewed action once every namespace has been
-checked for other consumers.
+release uninstall. It does not run `helm uninstall` or change Flux pruning. It
+then inventories every remaining `monitoring.coreos.com` resource. Only if the
+cluster-wide inventory is empty does it offer a second confirmation to remove
+the ten CRDs shipped by kube-prometheus-stack `88.2.0`; any remaining CR instance
+causes it to retain all CRDs. PVCs, PVs, and ZFS datasets are never deletion
+targets.
 
 The helper intentionally leaves the old Grafana OIDC sealed secrets and
 TinyAuth client configuration. Remove their Deployment environment references
