@@ -134,8 +134,8 @@ It fetches the Sealed Secrets **public** certificate from the current
 credentials, seals a strict-scope Secret, and writes only ciphertext to
 `addrspace/platform/observability/clickstack-values.sealed.yaml`. Plaintext is
 kept in a mode-0700 temporary directory that is removed on exit; the script
-does not apply resources and refuses to overwrite an existing output. Add the
-generated path to this directory's `kustomization.yaml`. This platform layer
+does not apply resources and refuses to overwrite an existing output. It adds
+the sealed path to this directory's `kustomization.yaml`. This platform layer
 reconciles before the operators and ClickStack charts, so the values Secret is
 available before K3s Helm starts.
 
@@ -148,30 +148,30 @@ ordering intentionally handles this in two phases:
 
 1. ClickStack waits only for its HyperDX Deployment and collector DaemonSet; it
    does not depend on Nexus or the MCP token.
-2. Once ClickStack is healthy, the apps layer applies the TinyAuth hostname,
-   Nexus MCP config, and a Nexus Deployment that requires
-   `clickstack-mcp-credentials`. The default Deployment strategy is
-   `RollingUpdate`; with one replica its old pod remains available while a new
-   pod waits for the missing Secret. The apps Kustomization reports NotReady on
-   its Nexus health check, but that does not roll back or block ClickStack.
-3. Create the user/team in HyperDX, create a Personal API Access Key, then seal
-   it interactively:
+2. Once ClickStack is healthy, the apps layer applies the TinyAuth hostname and
+   redirects Nexus OTLP to ClickStack. Nexus MCP remains disabled, so Nexus stays
+   healthy and the apps health check passes without a Personal API Access Key.
+3. Create the user/team in HyperDX and create a Personal API Access Key. Run the
+   helper interactively:
 
    ```sh
    nix develop --command bash addrspace/scripts/clickstack-seal-secret.sh mcp
    ```
 
    The helper prompts without echo, seals `clickstack-mcp-credentials` in
-   `nexus`, and writes only ciphertext to
-   `addrspace/apps/nexus/clickstack-mcp-credentials.sealed.yaml`. Add it to
-   `addrspace/apps/nexus/kustomization.yaml`. Once Flux creates the Secret, the
-   replacement Nexus pod starts and the apps health check can pass.
+   `nexus`, writes only ciphertext to
+   `addrspace/apps/nexus/clickstack-mcp-credentials.sealed.yaml`, adds it to the
+   Nexus Kustomization, and stages the Nexus MCP TOML/environment/checksum
+   changes. Review and commit those four files together as one follow-up. The
+   active Nexus configuration before that follow-up has no reference to the
+   absent MCP Secret; the sealed key and its consumer wiring arrive together.
 
 The API key is not an OTel ingestion token. This workspace has no cluster
 context, so the helper cannot fetch the public certificate here and live
-bootstrap has not been performed. Keep the PR draft until both encrypted
-credentials exist and OTLP ingestion, UI access, MCP tools, and Nexus's tool
-catalog are verified.
+bootstrap has not been performed. The only pre-deploy credential is
+`clickstack-values`; the MCP key is generated after ClickStack starts. Keep the
+PR draft until both encrypted credentials exist and OTLP ingestion, UI access,
+MCP tools, and Nexus's tool catalog are verified.
 
 ## Application OTEL support audit
 

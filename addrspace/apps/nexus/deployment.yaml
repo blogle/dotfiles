@@ -15,7 +15,7 @@ spec:
       labels:
         app: nexus
       annotations:
-        checksum/config: 5308cf01fe023f059ed7b460fe74bb8a8a847035c1f6c9d3c42adcb9c7608754
+        checksum/config: 05e815fb3c8e16eb2028b09bda691075da9d4c88249547a2889a259cbf59cb3e
         anvil.example.invalid/mcp-contract-revision: 8d84110f3ae431d92e004d7dbd2cb9befb7fe6e1
     spec:
       automountServiceAccountToken: false
@@ -37,12 +37,6 @@ spec:
                 secretKeyRef:
                   name: nexus-lific-credentials
                   key: LIFIC_API_KEY
-            - name: CLICKSTACK_MCP_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: clickstack-mcp-credentials
-                  key: api-key
-                  optional: false
           ports:
             - name: http
               containerPort: 8000

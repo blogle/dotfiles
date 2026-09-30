@@ -161,6 +161,9 @@ jobs:
       - name: Validate Renovate dependency extraction
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-renovate-extraction.py
+      - name: Validate ClickStack credential/bootstrap transformations
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-clickstack-bootstrap.py
       - name: Validate immutable application artifacts
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-image-artifacts.py
