@@ -1,7 +1,7 @@
 ---
-# Exportarr instances for the *arr stack. The OTel Prometheus receiver scrapes
-# these endpoints using the stable service DNS names configured in
-# platform/observability/prometheus-receiver.yaml.
+# Exportarr instances for the *arr stack. The inactive OTel Prometheus receiver
+# candidate names these services in platform/observability/prometheus-receiver.yaml;
+# keep the current Prometheus Operator stack running until Maple is functional.
 #
 # Exporters remain alongside the apps they observe; their scrape jobs live in
 # the central OTel collector because ServiceMonitor is a Prometheus Operator CRD.

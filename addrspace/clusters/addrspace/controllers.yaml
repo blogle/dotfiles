@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 1m
   path: ./addrspace/controllers
-  prune: true
+  prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system

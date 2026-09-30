@@ -167,7 +167,10 @@
         kubernetes-helm
         kubectl
         kustomize
-        (python3.withPackages (pythonPackages: [ pythonPackages.json5 ]))
+        (python3.withPackages (pythonPackages: [
+          pythonPackages.json5
+          pythonPackages.pyyaml
+        ]))
         nodejs
       ];
     };
