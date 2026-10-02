@@ -213,7 +213,7 @@ then deletes the named HelmChart objects so K3s helm-controller performs each
 release uninstall. It does not run `helm uninstall` or change Flux pruning. It
 then inventories every remaining `monitoring.coreos.com` resource. Only if the
 cluster-wide inventory is empty does it offer a second confirmation to remove
-the ten CRDs shipped by kube-prometheus-stack `88.2.0`; any remaining CR instance
+the ten CRDs shipped by kube-prometheus-stack `91.8.2`; any remaining CR instance
 causes it to retain all CRDs. PVCs, PVs, and ZFS datasets are never deletion
 targets.
 
