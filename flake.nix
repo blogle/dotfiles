@@ -160,6 +160,23 @@
       "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
     };
 
+    # Repository validation tools. The base flake had no dev shell; keeping
+    # these in normal `nix develop` makes the documented checks reproducible.
+    devShells."${system}".default = homePkgs.mkShell {
+      packages = with homePkgs; [
+        kubernetes-helm
+        kubectl
+        kubeseal
+        kustomize
+        openssl
+        (python3.withPackages (pythonPackages: [
+          pythonPackages.json5
+          pythonPackages.pyyaml
+        ]))
+        nodejs
+      ];
+    };
+
   };
 
 }

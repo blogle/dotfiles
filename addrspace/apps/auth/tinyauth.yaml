@@ -72,6 +72,8 @@ spec:
           value: muxarr.thejeffer.net
         - name: TINYAUTH_APPS_MUXARR_OAUTH_GROUPS
           value: media-users
+        # Keep the existing Grafana SSO contract until the legacy stack has
+        # passed the staged ClickStack migration and its targeted retirement.
         - name: TINYAUTH_APPS_GRAFANA_CONFIG_DOMAIN
           value: grafana.thejeffer.net
         - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_CLIENTID
@@ -88,6 +90,8 @@ spec:
           value: https://grafana.thejeffer.net/login/generic_oauth
         - name: TINYAUTH_OIDC_CLIENTS_GRAFANA3_NAME
           value: Grafana
+        - name: TINYAUTH_APPS_CLICKSTACK_CONFIG_DOMAIN
+          value: clickstack.thejeffer.net
         volumeMounts:
         - name: data
           mountPath: /data

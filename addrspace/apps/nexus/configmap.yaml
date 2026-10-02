@@ -54,11 +54,11 @@ data:
     service_name = "nexus"
 
     [telemetry.resource_attributes]
-    environment = "homelab"
-    cluster = "nandstorm"
+    "deployment.environment.name" = "homelab"
+    "k8s.cluster.name" = "nandstorm"
     component = "mcp-gateway"
 
     [telemetry.exporters.otlp]
     enabled = true
-    endpoint = "http://alloy-otel.observability.svc.cluster.local:4317"
+    endpoint = "http://clickstack-otel-collector.observability.svc.cluster.local:4317"
     protocol = "grpc"

@@ -437,7 +437,8 @@ def main():
     require_dep(files, "regex", "addrspace/controllers/cert-manager.yaml", "cert-manager", "helm")
     require_dep(files, "kustomize", "addrspace/controllers/metallb/kustomization.yaml", "metallb/metallb", "github-tags")
     require_dep(files, "regex", "addrspace/controllers/zfs-localpv.yaml", "zfs-localpv", "helm")
-    require_dep(files, "regex", "addrspace/controllers/kube-prometheus-stack.yaml", "kube-prometheus-stack", "helm")
+    require_dep(files, "regex", "addrspace/platform/observability/clickstack/helmchart.yaml", "clickstack", "helm")
+    require_dep(files, "regex", "addrspace/platform/observability/clickstack-operators/helmchart.yaml", "clickstack-operators", "helm")
 
     rancher_charts = {
         dep.get("depName")
@@ -446,7 +447,8 @@ def main():
         for dep in record.get("deps", [])
         if dep.get("datasource") == "helm"
     }
-    assert {"external-dns", "alloy", "grafana", "loki", "tempo"} <= rancher_charts
+    assert {"external-dns", "clickstack", "clickstack-operators"} <= rancher_charts
+    assert not ({"alloy", "grafana", "loki", "tempo", "kube-prometheus-stack"} & rancher_charts)
 
     config = json5.loads((ROOT / "renovate.json5").read_text())
     rules = config["packageRules"]

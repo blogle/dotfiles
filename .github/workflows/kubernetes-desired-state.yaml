@@ -85,8 +85,27 @@ jobs:
               assert spec["prune"] is False
               assert spec["sourceRef"] == {"kind": "GitRepository", "name": "flux-system"}
               assert spec["interval"] == "1m"
-          for layer, dependency in (("infrastructure", "addrspace-controllers"), ("platform", "addrspace-infrastructure"), ("apps", "addrspace-platform")):
+          for layer, dependency in (("infrastructure", "addrspace-controllers"), ("platform", "addrspace-infrastructure")):
               assert yaml.safe_load((root / f"{layer}.yaml").read_text())["spec"]["dependsOn"] == [{"name": dependency}]
+          clickstack_operators = yaml.safe_load((root / "clickstack-operators.yaml").read_text())["spec"]
+          assert clickstack_operators["path"] == "./addrspace/platform/observability/clickstack-operators"
+          assert clickstack_operators["prune"] is False
+          assert clickstack_operators["dependsOn"] == [{"name": "addrspace-platform"}]
+          clickstack = yaml.safe_load((root / "clickstack.yaml").read_text())["spec"]
+          assert clickstack["path"] == "./addrspace/platform/observability/clickstack"
+          assert clickstack["prune"] is False
+          assert clickstack["dependsOn"] == [
+              {"name": "addrspace-platform"},
+              {"name": "addrspace-clickstack-operators"},
+          ]
+          apps = yaml.safe_load((root / "apps.yaml").read_text())["spec"]
+          assert apps["dependsOn"] == [
+              {"name": "addrspace-platform"},
+              {"name": "addrspace-clickstack"},
+          ]
+          assert apps["healthChecks"] == [
+              {"apiVersion": "apps/v1", "kind": "Deployment", "name": "nexus", "namespace": "nexus"},
+          ]
           assert len(yaml.safe_load((root / "controllers.yaml").read_text())["spec"]["healthChecks"]) >= 20
           infrastructure = yaml.safe_load((root / "infrastructure.yaml").read_text())["spec"]
           expected_infrastructure_health = [
@@ -113,6 +132,8 @@ jobs:
           kubectl kustomize addrspace/platform >/dev/null
           kubectl kustomize addrspace/apps >/dev/null
           kubectl kustomize addrspace/clusters/addrspace >/dev/null
+          kubectl kustomize addrspace/platform/observability/clickstack-operators >/dev/null
+          kubectl kustomize addrspace/platform/observability/clickstack >/dev/null
       - name: Validate Flux reconciliation objects
         if: steps.changes.outputs.relevant == 'true'
         run: |
@@ -126,12 +147,23 @@ jobs:
               --kustomization-file "addrspace/clusters/addrspace/$layer.yaml" \
               --dry-run >/dev/null
           done
+          flux build kustomization addrspace-clickstack-operators \
+            --path addrspace/platform/observability/clickstack-operators \
+            --kustomization-file addrspace/clusters/addrspace/clickstack-operators.yaml \
+            --dry-run >/dev/null
+          flux build kustomization addrspace-clickstack \
+            --path addrspace/platform/observability/clickstack \
+            --kustomization-file addrspace/clusters/addrspace/clickstack.yaml \
+            --dry-run >/dev/null
       - name: Validate Renovate configuration
         if: steps.changes.outputs.relevant == 'true'
         run: npx --yes --package renovate renovate-config-validator --strict renovate.json5
       - name: Validate Renovate dependency extraction
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-renovate-extraction.py
+      - name: Validate ClickStack credential/bootstrap transformations
+        if: steps.changes.outputs.relevant == 'true'
+        run: python addrspace/tests/check-clickstack-bootstrap.py
       - name: Validate immutable application artifacts
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-image-artifacts.py
