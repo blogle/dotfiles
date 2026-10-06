@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: latchkey
+  labels:
+    app: latchkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: latchkey
+  template:
+    metadata:
+      labels:
+        app: latchkey
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: synthesize-headers
+          image: alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              umask 077
+              test -s /run/latchkey/raw/github-pat
+              test -s /run/latchkey/raw/lific-api-key
+              printf 'Bearer %s' "$(cat /run/latchkey/raw/github-pat)" > /run/latchkey/headers/github-authorization
+              printf 'Bearer %s' "$(cat /run/latchkey/raw/lific-api-key)" > /run/latchkey/headers/lific-authorization
+              cp /run/latchkey/raw/lific-host /run/latchkey/headers/lific-host
+              chmod 600 /run/latchkey/headers/*
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: raw-credentials
+              mountPath: /run/latchkey/raw
+              readOnly: true
+            - name: synthesized-headers
+              mountPath: /run/latchkey/headers
+      containers:
+        - name: latchkey
+          image: ghcr.io/blogle/latchkey@sha256:3a376224ca076f6cb3a404dca035266b16465a669096b8ebf061d20984fc5ffb
+          command:
+            - latchkey
+          args:
+            - serve
+            - --mode
+            - standalone
+            - --config
+            - /etc/latchkey/config/standalone.toml
+            - --listen
+            - 0.0.0.0:8080
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/latchkey/config
+              readOnly: true
+            - name: synthesized-headers
+              mountPath: /etc/latchkey/credentials
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: latchkey-config
+        - name: raw-credentials
+          projected:
+            sources:
+              - secret:
+                  name: github-mcp-credentials
+                  items:
+                    - key: GITHUB_PAT
+                      path: github-pat
+              - secret:
+                  name: nexus-lific-credentials
+                  items:
+                    - key: LIFIC_API_KEY
+                      path: lific-api-key
+              - configMap:
+                  name: latchkey-credential-metadata
+                  items:
+                    - key: LIFIC_HOST
+                      path: lific-host
+        - name: synthesized-headers
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
