@@ -52,7 +52,7 @@ spec:
               mountPath: /run/latchkey/headers
       containers:
         - name: latchkey
-          image: ghcr.io/blogle/latchkey:__LATCHKEY_IMAGE_PUBLICATION_REQUIRED__
+          image: ghcr.io/blogle/latchkey@sha256:3a376224ca076f6cb3a404dca035266b16465a669096b8ebf061d20984fc5ffb
           command:
             - latchkey
           args:

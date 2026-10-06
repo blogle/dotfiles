@@ -16,17 +16,13 @@ memory-backed volume without shell tracing or output, and the main container
 can access only those synthesized files. The raw Secret volume is not mounted
 in the Latchkey container.
 
-## Image prerequisite
+## Image provenance
 
-Latchkey PR #47 and the OCI/publisher PR #50 are merged. The smoke-gated
-publisher is currently running for latchkey master SHA
-`33643144f286a74d5431d641109f6e3ad5116532`. The deployment remains
-intentionally blocked by the marker in `image-prerequisite.yaml` until the
-publisher provides its exact immutable digest.
-
-Once the digest is available, replace the marker in `deployment.yaml` with the
-exact `ghcr.io/blogle/latchkey@sha256:...` value. Do not invent or guess a
-digest, and do not change the Nexus deployment or hostname.
+The Deployment is pinned to the immutable image published from Latchkey source
+commit `f71a346195b0ef355b1391a32078ee575c5c831b`. Publisher evidence includes
+the standalone search-to-exec smoke test, `nix build .#oci`, and the immutable
+GHCR push. Do not change the Nexus deployment or hostname during pilot
+validation.
 
 ## Pilot validation
 
