@@ -6,8 +6,15 @@ no credential values are stored here. Nexus and its existing tunnel remain
 unchanged and available for rollback.
 
 The additive private endpoint is `latchkey.thejeffer.net`, using the existing
-Traefik and certificate pattern. The Nexus tunnel is intentionally not
-repointed or duplicated during the pilot.
+Traefik, certificate, and SSO middleware pattern. This preserves an
+authenticated private boundary for `/mcp`; the Nexus tunnel is intentionally
+not repointed or duplicated during the pilot.
+
+The existing Nexus credentials are treated as bare tokens. An init container
+can read the raw Secret files, writes `Bearer `-prefixed header files into a
+memory-backed volume without shell tracing or output, and the main container
+can access only those synthesized files. The raw Secret volume is not mounted
+in the Latchkey container.
 
 ## Image prerequisite
 

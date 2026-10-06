@@ -24,7 +24,7 @@ data:
 
     [[services.headers]]
     name = "Authorization"
-    value_file = "../credentials/github-pat"
+    value_file = "../credentials/github-authorization"
 
     [[services]]
     id = "lific"
@@ -35,7 +35,7 @@ data:
 
     [[services.headers]]
     name = "Authorization"
-    value_file = "../credentials/lific-api-key"
+    value_file = "../credentials/lific-authorization"
 
     [[services.headers]]
     name = "Host"

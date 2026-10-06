@@ -23,6 +23,33 @@ spec:
         fsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: synthesize-headers
+          image: alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              umask 077
+              test -s /run/latchkey/raw/github-pat
+              test -s /run/latchkey/raw/lific-api-key
+              printf 'Bearer %s' "$(cat /run/latchkey/raw/github-pat)" > /run/latchkey/headers/github-authorization
+              printf 'Bearer %s' "$(cat /run/latchkey/raw/lific-api-key)" > /run/latchkey/headers/lific-authorization
+              cp /run/latchkey/raw/lific-host /run/latchkey/headers/lific-host
+              chmod 600 /run/latchkey/headers/*
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: raw-credentials
+              mountPath: /run/latchkey/raw
+              readOnly: true
+            - name: synthesized-headers
+              mountPath: /run/latchkey/headers
       containers:
         - name: latchkey
           image: ghcr.io/blogle/latchkey:__LATCHKEY_IMAGE_PUBLICATION_REQUIRED__
@@ -76,14 +103,14 @@ spec:
             - name: config
               mountPath: /etc/latchkey/config
               readOnly: true
-            - name: credentials
+            - name: synthesized-headers
               mountPath: /etc/latchkey/credentials
               readOnly: true
       volumes:
         - name: config
           configMap:
             name: latchkey-config
-        - name: credentials
+        - name: raw-credentials
           projected:
             sources:
               - secret:
@@ -101,3 +128,7 @@ spec:
                   items:
                     - key: LIFIC_HOST
                       path: lific-host
+        - name: synthesized-headers
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
