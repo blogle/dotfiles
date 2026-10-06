@@ -26,7 +26,11 @@ validation.
 
 ## Pilot validation
 
-After the image prerequisite is satisfied:
+This LATCH-44 preparation branch intentionally retains the currently deployed
+image digest. Do not merge or deploy it until Latchkey PR #53 merges and the
+master smoke-gated publisher provides the replacement immutable digest.
+
+After that digest is substituted:
 
 ```bash
 kubectl apply -k addrspace/apps/latchkey

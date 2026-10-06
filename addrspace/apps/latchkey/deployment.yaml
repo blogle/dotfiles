@@ -63,6 +63,16 @@ spec:
             - /etc/latchkey/config/standalone.toml
             - --listen
             - 0.0.0.0:8080
+            - --allowed-host
+            - latchkey
+            - --allowed-host
+            - latchkey.nexus
+            - --allowed-host
+            - latchkey.nexus.svc
+            - --allowed-host
+            - latchkey.nexus.svc.cluster.local
+            - --allowed-host
+            - latchkey.thejeffer.net
           ports:
             - name: http
               containerPort: 8080
