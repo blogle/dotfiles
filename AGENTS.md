@@ -12,6 +12,10 @@
   contains node OS configuration only.
 
 ## Build, Test, and Development Commands
+- This repository follows the shared SDLC contract; consult the installed SDLC skill for workflow and integration protocol.
+- `nix develop` provides the SDLC CLI, skills CLI, `just`, and `nix-eval-jobs`.
+- `just check`, `just ci-fast`, and `just ci-candidate`: Run repository checks and the corresponding SDLC derivation stage.
+- `just skills`: Install the canonical SDLC skill with Vercel's official `skills` CLI; `just skills-update` updates installed skills.
 - `nix flake check`: Run flake and deploy checks.
 - `home-manager switch --flake .#home`: Apply Home Manager config.
 - `deploy .#<host>` or `nix run github:serokell/deploy-rs -- .#<host>`: Deploy NixOS config to a remote host via deploy-rs (primary method for remote hosts like nandstorm).
