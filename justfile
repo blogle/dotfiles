@@ -10,7 +10,7 @@ ci-candidate:
   nix build .#hydraJobs.x86_64-linux.ci-candidate.home-activation .#hydraJobs.x86_64-linux.ci-candidate.modulus-toplevel .#hydraJobs.x86_64-linux.ci-candidate.nandstorm-toplevel --no-link
 
 skills:
-  skills add blogle/sdlc --skill sdlc --agent opencode -y
+  skills add https://github.com/blogle/sdlc/tree/v1/skills/sdlc --skill sdlc --agent opencode --yes
 
 skills-update:
-  skills update -y
+  skills update -p -y
