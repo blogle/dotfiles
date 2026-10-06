@@ -19,14 +19,13 @@ in the Latchkey container.
 ## Image provenance
 
 The Deployment is pinned to the immutable image published from Latchkey source
-commit `f71a346195b0ef355b1391a32078ee575c5c831b`. Publisher evidence includes
-the standalone search-to-exec smoke test, `nix build .#oci`, and the immutable
-GHCR push. Do not change the Nexus deployment or hostname during pilot
-validation.
+commit `5812435b40cd1d65209e83d2595251f71ffe715e`. The smoke-gated publisher
+passed the standalone search-to-exec smoke test before the immutable GHCR push.
+Do not change the Nexus deployment or hostname during pilot validation.
 
 ## Pilot validation
 
-After the image prerequisite is satisfied:
+The LATCH-44 image replacement is now prepared for deployment:
 
 ```bash
 kubectl apply -k addrspace/apps/latchkey
