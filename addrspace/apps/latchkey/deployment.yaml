@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: latchkey
+  labels:
+    app: latchkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: latchkey
+  template:
+    metadata:
+      labels:
+        app: latchkey
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: latchkey
+          image: ghcr.io/blogle/latchkey:__LATCHKEY_IMAGE_PUBLICATION_REQUIRED__
+          command:
+            - latchkey
+          args:
+            - serve
+            - --mode
+            - standalone
+            - --config
+            - /etc/latchkey/config/standalone.toml
+            - --listen
+            - 0.0.0.0:8080
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/latchkey/config
+              readOnly: true
+            - name: credentials
+              mountPath: /etc/latchkey/credentials
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: latchkey-config
+        - name: credentials
+          projected:
+            sources:
+              - secret:
+                  name: github-mcp-credentials
+                  items:
+                    - key: GITHUB_PAT
+                      path: github-pat
+              - secret:
+                  name: nexus-lific-credentials
+                  items:
+                    - key: LIFIC_API_KEY
+                      path: lific-api-key
+              - configMap:
+                  name: latchkey-credential-metadata
+                  items:
+                    - key: LIFIC_HOST
+                      path: lific-host

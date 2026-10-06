@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: latchkey-config
+  labels:
+    app: latchkey
+data:
+  standalone.toml: |
+    version = 1
+
+    [[services]]
+    id = "anvil"
+    prefix = "anvil"
+    endpoint = "http://anvil-mcp.anvil.svc.cluster.local:8081/mcp"
+    timeout = "30s"
+    refresh_interval = "5m"
+
+    [[services]]
+    id = "github"
+    prefix = "github"
+    endpoint = "https://api.githubcopilot.com/mcp/x/all"
+    timeout = "30s"
+    refresh_interval = "5m"
+
+    [[services.headers]]
+    name = "Authorization"
+    value_file = "../credentials/github-pat"
+
+    [[services]]
+    id = "lific"
+    prefix = "lific"
+    endpoint = "http://lific.lific.svc.cluster.local:3456/mcp"
+    timeout = "30s"
+    refresh_interval = "5m"
+
+    [[services.headers]]
+    name = "Authorization"
+    value_file = "../credentials/lific-api-key"
+
+    [[services.headers]]
+    name = "Host"
+    value_file = "../credentials/lific-host"
