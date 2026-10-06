@@ -15,6 +15,8 @@ images:
     newTag: sha-277d83b10c01e7464cb14331d995ba3c568be23f
   - name: ghcr.io/blogle/anvil-sandbox
     newTag: sha-277d83b10c01e7464cb14331d995ba3c568be23f
+  - name: ghcr.io/blogle/anvil-nix-daemon
+    newTag: sha-d750064c2f96d64e7d3ffc271631a710b1ad6167
 
 patches:
   - path: runtime-config.patch.yaml
