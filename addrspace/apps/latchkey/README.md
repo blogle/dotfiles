@@ -11,14 +11,15 @@ repointed or duplicated during the pilot.
 
 ## Image prerequisite
 
-Latchkey PR #47 is currently open and the application repository has no
-published OCI image. The deployment is therefore intentionally blocked by the
-marker in `image-prerequisite.yaml`. After PR #47 merges and the first
-publication succeeds, replace the marker in `deployment.yaml` with the exact
-published immutable digest from `ghcr.io/blogle/latchkey`.
+Latchkey PR #47 and the OCI/publisher PR #50 are merged. The smoke-gated
+publisher is currently running for latchkey master SHA
+`33643144f286a74d5431d641109f6e3ad5116532`. The deployment remains
+intentionally blocked by the marker in `image-prerequisite.yaml` until the
+publisher provides its exact immutable digest.
 
-Do not point Flux at `master` or invent a tag before that application-repository
-change is complete.
+Once the digest is available, replace the marker in `deployment.yaml` with the
+exact `ghcr.io/blogle/latchkey@sha256:...` value. Do not invent or guess a
+digest, and do not change the Nexus deployment or hostname.
 
 ## Pilot validation
 

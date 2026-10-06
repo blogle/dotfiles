@@ -1,6 +1,7 @@
-# Latchkey #47 is not merged and no OCI image has been published yet.
-# Replace this marker with the exact immutable digest from the first release
-# after the runtime PR merges and its publication workflow succeeds.
+# Latchkey #47 and publisher #50 are merged; the smoke-gated publication for
+# master SHA 33643144f286a74d5431d641109f6e3ad5116532 is still running.
+# Replace this marker only after the publisher supplies the exact immutable
+# digest. Do not invent or guess an image reference.
 apiVersion: v1
 kind: ConfigMap
 metadata:
