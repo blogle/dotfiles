@@ -49,7 +49,7 @@ jobs:
       - uses: azure/setup-kubectl@v4
         if: steps.changes.outputs.relevant == 'true'
         with:
-          version: v1.35.0
+          version: v1.37.1
       - name: Install Flux CLI
         if: steps.changes.outputs.relevant == 'true'
         shell: bash
