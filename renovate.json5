@@ -1,7 +1,7 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  extends: ['config:recommended'],
-  enabledManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
+  extends: ['config:recommended', 'github>blogle/sdlc#v1'],
+  enabledManagers: ['nix', 'github-actions', 'kubernetes', 'kustomize', 'flux', 'custom.regex'],
   dependencyDashboard: true,
   prConcurrentLimit: 2,
   branchConcurrentLimit: 2,

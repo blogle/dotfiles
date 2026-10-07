@@ -2,48 +2,52 @@
   description = "NixOS system configurations";
 
   inputs = {
-    nixpkgs-home.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-modulus.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
-    nixpkgs-nandstorm.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
-    nixpkgs-tools.url = "github:NixOS/nixpkgs/d0fcbf27c60bc66cf1f6236cfc3c5e9ac782786d";
+    sdlc.url = "github:blogle/sdlc/v1.0.0";
+    nixpkgs.follows = "sdlc/nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
     agenix = {
       url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs-tools";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     bubblebox = {
       url = "github:blogle/bubblebox";
-      inputs.nixpkgs.follows = "nixpkgs-home";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs-tools";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     hm = {
       url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs-home";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     impermanence = {
       url = "github:nix-community/impermanence";
     };
 
-    llm-agents.url = "github:numtide/llm-agents.nix";
-    opencode.url = "github:anomalyco/opencode/v1.18.30";
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    opencode = {
+      url = "github:anomalyco/opencode/v1.18.30";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs-home";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     
   };
 
-  outputs = { self, nixpkgs-home, nixpkgs-modulus, nixpkgs-nandstorm, agenix, hm, impermanence, nixos-hardware, ... }@inputs:
+  outputs = { self, nixpkgs, agenix, hm, impermanence, nixos-hardware, sdlc, ... }@inputs:
     let
       system = "x86_64-linux";
 
@@ -74,7 +78,7 @@
         })
       ];
 
-      homePkgs = import nixpkgs-home {
+      homePkgs = import nixpkgs {
         inherit system;
         config = {
           inherit (commonConfig) allowUnfree allowBroken;
@@ -120,7 +124,7 @@
 
     nixosConfigurations = {
 
-      modulus = nixpkgs-modulus.lib.nixosSystem {
+      modulus = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -130,7 +134,7 @@
         ];
       };
 
-      nandstorm = nixpkgs-nandstorm.lib.nixosSystem {
+      nandstorm = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -158,6 +162,42 @@
     # Avoid evaluating deploy-rs checks for unsupported Darwin package sets.
     checks = {
       "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
+    };
+
+    hydraJobs.${system} = (sdlc.lib.mkConsumer {
+      contract = import ./ci.nix { inherit self system; };
+    }).hydraJobs;
+
+    packages.${system} = {
+      nix-eval-jobs = nixpkgs.legacyPackages.${system}.nix-eval-jobs;
+      mergify-cli = sdlc.packages.${system}.mergify-cli;
+      sdlc = sdlc.packages.${system}.sdlc;
+    };
+
+    apps.${system} = {
+      sdlc = {
+        type = "app";
+        program = "${sdlc.packages.${system}.sdlc}/bin/sdlc";
+      };
+      nix-eval-jobs = {
+        type = "app";
+        program = "${nixpkgs.legacyPackages.${system}.nix-eval-jobs}/bin/nix-eval-jobs";
+      };
+      mergify-cli = {
+        type = "app";
+        program = "${sdlc.packages.${system}.mergify-cli}/bin/mergify";
+      };
+    };
+
+    devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
+      packages = sdlc.lib.devTools {
+        pkgs = nixpkgs.legacyPackages.${system};
+        sdlcCli = sdlc.packages.${system}.sdlc;
+      } ++ [
+        nixpkgs.legacyPackages.${system}.just
+        nixpkgs.legacyPackages.${system}.jq
+        nixpkgs.legacyPackages.${system}.nix-eval-jobs
+      ];
     };
 
   };
