@@ -89,12 +89,17 @@ def main():
     anvil_tags = {
         image["name"]: image.get("newTag")
         for image in anvil.get("images", [])
-        if image["name"] in ("ghcr.io/blogle/anvil", "ghcr.io/blogle/anvil-sandbox")
+        if image["name"] in (
+            "ghcr.io/blogle/anvil",
+            "ghcr.io/blogle/anvil-sandbox",
+            "ghcr.io/blogle/anvil-nix-daemon",
+        )
     }
     expected_anvil_tag = f"sha-{anvil_sha}"
     if anvil_tags != {
         "ghcr.io/blogle/anvil": expected_anvil_tag,
         "ghcr.io/blogle/anvil-sandbox": expected_anvil_tag,
+        "ghcr.io/blogle/anvil-nix-daemon": expected_anvil_tag,
     }:
         raise RuntimeError("Anvil base and both immutable image tags must use the same commit SHA")
 
@@ -112,7 +117,11 @@ def main():
 
     anvil_token = token_for("blogle/anvil")
     dojo_token = token_for("blogle/dojo2")
-    for image in ("ghcr.io/blogle/anvil", "ghcr.io/blogle/anvil-sandbox"):
+    for image in (
+        "ghcr.io/blogle/anvil",
+        "ghcr.io/blogle/anvil-sandbox",
+        "ghcr.io/blogle/anvil-nix-daemon",
+    ):
         repository = image.removeprefix("ghcr.io/")
         digest = wait_for_manifest(repository, expected_anvil_tag, anvil_token)
         print(f"Verified {image}:{expected_anvil_tag} ({digest})")
