@@ -16,12 +16,15 @@ in
           ];
         in
         builtins.deepSeq evaluatedTargets (pkgs.runCommand "dotfiles-flake-evaluation" { } "touch $out");
-    } // deployChecks;
+    } // {
+      deploy-schema = deployChecks.deploy-schema;
+    };
 
     candidate = {
       home-activation = self.homeConfigurations.home.activationPackage;
       modulus-toplevel = self.nixosConfigurations.modulus.config.system.build.toplevel;
       nandstorm-toplevel = self.nixosConfigurations.nandstorm.config.system.build.toplevel;
+      deploy-activate = deployChecks.deploy-activate;
     };
   };
 }
