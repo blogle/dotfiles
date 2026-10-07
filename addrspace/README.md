@@ -45,6 +45,12 @@ resource, since PVCs, jobs, suspended resources, and Rancher `HelmChart` objects
 do not all represent provider readiness. Pruning is disabled in every layer
 while Flux ownership is being adopted; updates and drift correction are active.
 
+`addrspace-apps` is not Ready until the Anvil Deployments `anvil-nix-daemon`,
+`anvild`, `anvil-router`, `anvil-mcp`, and `anvil-profile` report native
+Deployment readiness in the `anvil` namespace. Core Flux reports a failed
+rollout by marking reconciliation unhealthy and emitting events; it does not
+automatically revert Git or roll workloads back to an earlier revision.
+
 Direct `kubectl` changes are break-glass only. Flux is authoritative and may
 revert a direct mutation at its next reconciliation. Commit the durable fix to
 Git. Inspect any adoption or upgrade before proceeding:
