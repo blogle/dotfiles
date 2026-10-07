@@ -122,8 +122,8 @@ deployable main revision.
 ### Anvil: automatic delivery from passing main builds
 
 Every successful Anvil `main` build publishes immutable `sha-<commit>` images
-for both Anvil and its sandbox. One Renovate dependency advances the Kustomize
-base and both image tags to that same commit. Kubernetes CI verifies both exact
+for Anvil, its sandbox, and its Nix daemon. One Renovate dependency advances the
+Kustomize base and all three image tags to that same commit. Kubernetes CI verifies all exact
 GHCR artifacts exist; a passing, current Renovate PR can then automerge and
 Flux deploys it. The vendor-provided Agent Sandbox controller pin remains a
 separate dependency.

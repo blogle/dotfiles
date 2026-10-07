@@ -16,12 +16,34 @@ import json5
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ANVIL_IMAGES = {"ghcr.io/blogle/anvil", "ghcr.io/blogle/anvil-sandbox"}
+ANVIL_IMAGES = {"ghcr.io/blogle/anvil", "ghcr.io/blogle/anvil-sandbox", "ghcr.io/blogle/anvil-nix-daemon"}
 DOJO_IMAGE = "ghcr.io/blogle/dojo2"
 DOJO_PROD_FILES = (
     "addrspace/apps/dojo/overlays/prod/kustomization.yaml",
     "addrspace/apps/dojo/overlays/prod/pod-spec.patch.yaml",
 )
+
+
+def anvil_manager(config):
+    return next(
+        manager
+        for manager in config["customManagers"]
+        if manager.get("description", "").startswith("Anvil main base")
+    )
+
+
+def anvil_match(manager, content):
+    pattern = manager["matchStrings"][0].replace("(?<", "(?P<")
+    return re.search(pattern, content)
+
+
+def render_anvil_replacement(manager, match, new_digest):
+    values = {**match.groupdict(), "newDigest": new_digest}
+    return re.sub(
+        r"\{\{\{(\w+)\}\}\}",
+        lambda placeholder: values[placeholder.group(1)],
+        manager["autoReplaceStringTemplate"],
+    )
 
 
 def extracted_files(log):
@@ -135,13 +157,23 @@ def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
         )
         manifest = checkout / "addrspace/apps/anvil/kustomization.yaml"
         content, count = re.subn(
-            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}",
+            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}|(?<=newTag: \"sha-)[a-f0-9]{40}",
             fixture_sha,
             manifest.read_text(),
         )
-        if count != 3:
-            raise AssertionError(f"Expected three Anvil SHA fields in fixture, found {count}")
+        if count != 4:
+            raise AssertionError(f"Expected four Anvil SHA fields in fixture, found {count}")
         manifest.write_text(content)
+        manager = anvil_manager(json5.loads((ROOT / "renovate.json5").read_text()))
+        match = anvil_match(manager, content)
+        if not match:
+            raise AssertionError("Anvil regex did not span the complete four-SHA fixture")
+        revisions = re.findall(r"(?:ref=|newTag:\s*[\"]?sha-)([a-f0-9]{40})", match.group(0))
+        if revisions != [fixture_sha] * 4:
+            raise AssertionError("Anvil regex did not capture all four coupled SHA fields")
+        replacement = render_anvil_replacement(manager, match, "b" * 40)
+        if re.findall(r"(?:ref=|newTag:\s*[\"]?sha-)([a-f0-9]{40})", replacement) != ["b" * 40] * 4:
+            raise AssertionError("Anvil replacement template did not preserve four-way SHA coupling")
         subprocess.run(["git", "add", str(manifest.relative_to(checkout))], cwd=checkout, check=True)
         subprocess.run(
             [
@@ -189,13 +221,7 @@ def assert_anvil_accepts_arbitrary_sha_fixture(current_sha):
         )
         if len(fixture_dep) != 1 or fixture_dep[0].get("currentDigest") != fixture_sha:
             raise AssertionError("Anvil extractor rejected an arbitrary valid SHA fixture")
-        fixture_revisions = re.findall(
-            r"(?:ref=|newTag: sha-)([a-f0-9]{40})",
-            fixture_dep[0].get("replaceString", ""),
-        )
-        if fixture_revisions != [fixture_sha] * 3:
-            raise AssertionError("Anvil fixture did not preserve the base/image SHA coupling")
-    print("Anvil extraction accepts an arbitrary 40-character SHA and keeps all three values coupled.")
+    print("Anvil extraction accepts an arbitrary 40-character SHA and keeps all four values coupled.")
 
 
 def assert_renovate_proposes_one_anvil_update():
@@ -213,22 +239,17 @@ def assert_renovate_proposes_one_anvil_update():
         )
         manifest = checkout / "addrspace/apps/anvil/kustomization.yaml"
         content, count = re.subn(
-            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}",
+            r"(?<=ref=)[a-f0-9]{40}|(?<=newTag: sha-)[a-f0-9]{40}|(?<=newTag: \"sha-)[a-f0-9]{40}",
             fixture_sha,
             manifest.read_text(),
         )
-        if count != 3:
-            raise AssertionError(f"Expected three Anvil SHA fields in fixture, found {count}")
+        if count != 4:
+            raise AssertionError(f"Expected four Anvil SHA fields in fixture, found {count}")
         manifest.write_text(content)
         shutil.copy(ROOT / "renovate.json5", checkout / "renovate.json5")
         config = json5.loads((checkout / "renovate.json5").read_text())
-        anvil_manager = next(
-            manager
-            for manager in config["customManagers"]
-            if manager.get("description", "").startswith("Anvil main base")
-        )
-        match_string = anvil_manager["matchStrings"][0].replace("(?<", "(?P<")
-        if not re.search(match_string, content):
+        manager = anvil_manager(config)
+        if not anvil_match(manager, content):
             raise AssertionError("Anvil update fixture does not match its configured regex")
         subprocess.run(
             ["git", "add", str(manifest.relative_to(checkout)), "renovate.json5"],
@@ -287,14 +308,13 @@ def assert_renovate_proposes_one_anvil_update():
         if not target_matches or target_matches[0] == fixture_sha:
             raise AssertionError(f"Renovate did not resolve a new Anvil main SHA:\n{output[-10000:]}")
         target_sha = target_matches[0]
-        match = re.search(match_string, content)
+        match = anvil_match(manager, content)
         if not match:
             raise AssertionError("Anvil update fixture does not match its configured regex")
 
-        rendered = anvil_manager["autoReplaceStringTemplate"].replace("{{{newDigest}}}", target_sha)
-        updated_content = content.replace(match.group(0), rendered)
-        if re.findall(r"(?:ref=|newTag: sha-)([a-f0-9]{40})", updated_content) != [target_sha] * 3:
-            raise AssertionError("Renovate update did not preserve the three-way Anvil SHA coupling")
+        updated_content = content.replace(match.group(0), render_anvil_replacement(manager, match, target_sha))
+        if re.findall(r"(?:ref=|newTag:\s*[\"]?sha-)([a-f0-9]{40})", updated_content) != [target_sha] * 4:
+            raise AssertionError("Renovate update did not preserve the four-way Anvil SHA coupling")
         print(f"Renovate full dry-run and rendered replacement preserve Anvil coupling: {fixture_sha} -> {target_sha}")
 
 
@@ -452,7 +472,7 @@ def main():
     rules = config["packageRules"]
     anvil_file = "addrspace/apps/anvil/kustomization.yaml"
 
-    # Anvil: a single custom git-refs dependency couples a valid SHA to all three
+    # Anvil: a single custom git-refs dependency couples a valid SHA to all four
     # desired-state values. Generic image managers may extract, but cannot update.
     anvil = require_dep(files, "regex", anvil_file, "blogle/anvil", "git-refs")
     assert len(anvil) == 1, f"Expected one coupled Anvil dependency, got {len(anvil)}"
@@ -460,10 +480,13 @@ def main():
     assert re.fullmatch(r"[a-f0-9]{40}", anvil_sha), "Anvil main revision must be a full Git SHA"
     anvil_record = records(files, "regex", anvil_file)
     assert len(anvil_record) == 1
-    anvil_replace = anvil[0].get("replaceString", "")
-    revisions = re.findall(r"(?:ref=|newTag: sha-)([a-f0-9]{40})", anvil_replace)
-    assert len(revisions) == 3 and revisions == [anvil_sha] * 3
-    assert anvil_record[0].get("autoReplaceStringTemplate", "").count("{{{newDigest}}}") == 3
+    manager = anvil_manager(config)
+    match = anvil_match(manager, (ROOT / anvil_file).read_text())
+    assert match, "Anvil regex must span the complete base and four image SHA fields"
+    revisions = re.findall(r"(?:ref=|newTag:\s*[\"]?sha-)([a-f0-9]{40})", match.group(0))
+    assert len(revisions) == 4 and revisions == [anvil_sha] * 4
+    replacement = render_anvil_replacement(manager, match, "b" * 40)
+    assert re.findall(r"(?:ref=|newTag:\s*[\"]?sha-)([a-f0-9]{40})", replacement) == ["b" * 40] * 4
     assert anvil[0].get("currentValue") == "main"
     assert_anvil_accepts_arbitrary_sha_fixture(anvil_sha)
     assert_renovate_proposes_one_anvil_update()
