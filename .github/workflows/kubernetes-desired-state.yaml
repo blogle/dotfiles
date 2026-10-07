@@ -103,6 +103,13 @@ jobs:
               if expr.get("current") and expr.get("failed")
           }
           assert actual_exprs == expected_exprs
+          apps = yaml.safe_load((root / "apps.yaml").read_text())["spec"]
+          expected_anvil_health = [
+              {"apiVersion": "apps/v1", "kind": "Deployment", "name": name, "namespace": "anvil"}
+              for name in ("anvil-nix-daemon", "anvild", "anvil-router", "anvil-mcp", "anvil-profile")
+          ]
+          assert apps["healthChecks"] == expected_anvil_health
+          assert apps.get("wait", False) is not True
           PY
       - name: Validate Kustomize layers
         if: steps.changes.outputs.relevant == 'true'

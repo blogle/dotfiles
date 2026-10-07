@@ -13,3 +13,24 @@ spec:
   dependsOn:
     - name: addrspace-platform
   timeout: 15m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: anvil-nix-daemon
+      namespace: anvil
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: anvild
+      namespace: anvil
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: anvil-router
+      namespace: anvil
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: anvil-mcp
+      namespace: anvil
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: anvil-profile
+      namespace: anvil
