@@ -510,16 +510,16 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1791355103,
-        "narHash": "sha256-+1kpbx6Sf8sjfZM8WCXxOBfx9TLpaIHvMula2Le9d6Q=",
+        "lastModified": 1791356684,
+        "narHash": "sha256-8mr562bsNKJkgJxOj6/p5/76Ix3U0PGfoJ3HMpLxHjc=",
         "owner": "blogle",
         "repo": "sdlc",
-        "rev": "fce787c1a4507d400d2297585f58cdba26879b4b",
+        "rev": "517216b32898ce5bcb43091fdc547169c767075e",
         "type": "github"
       },
       "original": {
         "owner": "blogle",
-        "ref": "v1.1.0",
+        "ref": "v1.1.1",
         "repo": "sdlc",
         "type": "github"
       }
