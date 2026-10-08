@@ -38,6 +38,16 @@ def run_embedded(block, *args):
 def main():
     add_resource, prepare_mcp = helper_python_blocks()
     helper = HELPER.read_text()
+    clickstack_values = yaml.safe_load(
+        (ROOT / "addrspace/platform/observability/clickstack/helmchart.yaml").read_text()
+    )["spec"]["valuesContent"]
+    clickstack = yaml.safe_load(clickstack_values)["clickhouse"]
+    assert clickstack["cluster"]["spec"]["containerTemplate"]["image"]["tag"] == "25.7-alpine"
+    keeper = clickstack["keeper"]["spec"]
+    assert keeper["containerTemplate"]["image"]["tag"] == "25.7-alpine"
+    assert keeper["containerTemplate"]["env"] == [
+        {"name": "CLICKHOUSE_CONFIG", "value": "/etc/clickhouse-keeper/config.yaml"}
+    ]
     assert "clickstack-values" in helper and "secret_namespace=kube-system" in helper
     assert "CLICKHOUSE_PASSWORD" in helper and "CLICKHOUSE_APP_PASSWORD" in helper
     assert "MONGODB_PASSWORD" in helper and "HYPERDX_API_KEY" in helper
