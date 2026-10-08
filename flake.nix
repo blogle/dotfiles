@@ -68,7 +68,12 @@
           agenix = agenix.packages.${final.system}.default;
           chatgpt = inputs.llm-agents.packages.${final.system}.chatgpt;
           home-manager = inputs.hm.packages.${final.system}.home-manager;
-          opencode = inputs.opencode.packages.${system}.default;
+          # Temporary upstream hash correction for OpenCode v1.18.30.
+          opencode = inputs.opencode.packages.${system}.default.override {
+            node_modules = inputs.opencode.packages.${system}.node_modules_updater.override {
+              hash = "sha256-F1ygMH30D/a/T8SaUuY69+LjBGnkHNLmQTvvrsz6NQA=";
+            };
+          };
         })
       ];
 
