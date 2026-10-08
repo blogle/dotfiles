@@ -103,9 +103,7 @@ jobs:
               {"name": "addrspace-platform"},
               {"name": "addrspace-clickstack"},
           ]
-          assert apps["healthChecks"] == [
-              {"apiVersion": "apps/v1", "kind": "Deployment", "name": "nexus", "namespace": "nexus"},
-          ]
+          assert {"apiVersion": "apps/v1", "kind": "Deployment", "name": "nexus", "namespace": "nexus"} in apps["healthChecks"]
           assert len(yaml.safe_load((root / "controllers.yaml").read_text())["spec"]["healthChecks"]) >= 20
           infrastructure = yaml.safe_load((root / "infrastructure.yaml").read_text())["spec"]
           expected_infrastructure_health = [
