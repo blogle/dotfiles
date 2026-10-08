@@ -3,8 +3,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: anvil-nix-shared
 spec:
-  accessModes:
-    - ReadWriteOnce
   storageClassName: openebs-zfspv-shared-ext4
   resources:
     requests:
