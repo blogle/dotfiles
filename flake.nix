@@ -12,6 +12,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    anvil = {
+      url = "github:blogle/anvil";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     bubblebox = {
       url = "github:blogle/bubblebox";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -66,6 +71,7 @@
         inputs.rust-overlay.overlays.default
         (final: prev: {
           agenix = agenix.packages.${final.system}.default;
+          anvilctl = inputs.anvil.packages.${final.system}.anvilctl;
           chatgpt = inputs.llm-agents.packages.${final.system}.chatgpt;
           home-manager = inputs.hm.packages.${final.system}.home-manager;
           # Temporary upstream hash correction for OpenCode v1.18.30.
