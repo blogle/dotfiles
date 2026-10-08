@@ -122,7 +122,9 @@ jobs:
           kubectl kustomize addrspace/clusters/addrspace >/dev/null
       - name: Validate rendered Anvil production PVCs
         if: steps.changes.outputs.relevant == 'true'
-        run: python addrspace/tests/check-anvil-manifest.py
+        run: |
+          python addrspace/tests/check-anvil-manifest.py
+          python addrspace/tests/check-anvil-canonical-nix.py
       - name: Validate Flux reconciliation objects
         if: steps.changes.outputs.relevant == 'true'
         run: |
