@@ -352,6 +352,14 @@ spec:
             resources:
               requests:
                 storage: 5Gi
+          settings:
+            extraConfig:
+              tmp_path: /var/lib/clickhouse/tmp/
+              user_files_path: /var/lib/clickhouse/user_files/
+              format_schema_path: /var/lib/clickhouse/format_schemas/
+              user_directories:
+                users_xml:
+                  path: /etc/clickhouse-server/users.xml
 
     mongodb:
       enabled: true

@@ -48,6 +48,14 @@ def main():
     assert keeper["containerTemplate"]["env"] == [
         {"name": "CLICKHOUSE_CONFIG", "value": "/etc/clickhouse-keeper/config.yaml"}
     ]
+    assert keeper["settings"]["extraConfig"] == {
+        "tmp_path": "/var/lib/clickhouse/tmp/",
+        "user_files_path": "/var/lib/clickhouse/user_files/",
+        "format_schema_path": "/var/lib/clickhouse/format_schemas/",
+        "user_directories": {
+            "users_xml": {"path": "/etc/clickhouse-server/users.xml"},
+        },
+    }
     assert "clickstack-values" in helper and "secret_namespace=kube-system" in helper
     assert "CLICKHOUSE_PASSWORD" in helper and "CLICKHOUSE_APP_PASSWORD" in helper
     assert "MONGODB_PASSWORD" in helper and "HYPERDX_API_KEY" in helper
