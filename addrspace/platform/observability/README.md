@@ -166,9 +166,7 @@ ordering intentionally handles this in two phases:
    active Nexus configuration before that follow-up has no reference to the
    absent MCP Secret; the sealed key and its consumer wiring arrive together.
 
-The API key is not an OTel ingestion token. This workspace has no cluster
-context, so the helper cannot fetch the public certificate here and live
-bootstrap has not been performed. The only pre-deploy credential is
+The API key is not an OTel ingestion token. The only pre-deploy credential is
 `clickstack-values`; the MCP key is generated after ClickStack starts. Keep the
 PR draft until both encrypted credentials exist and OTLP ingestion, UI access,
 MCP tools, and Nexus's tool catalog are verified.

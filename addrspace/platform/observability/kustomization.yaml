@@ -1,5 +1,6 @@
 # ClickStack app resources reconcile in the dedicated post-platform Flux layer;
 # this base layer owns the namespace and its migration-overlap storage quota.
 resources:
+  - clickstack-values.sealed.yaml
   - namespace.yaml
   - grafana-oidc-v3.sealed.yaml

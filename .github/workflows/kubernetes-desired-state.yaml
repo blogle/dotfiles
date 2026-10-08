@@ -141,14 +141,11 @@ jobs:
           kubectl kustomize addrspace/platform >/dev/null
           kubectl kustomize addrspace/apps >/dev/null
           kubectl kustomize addrspace/clusters/addrspace >/dev/null
-<<<<<<< HEAD
+          kubectl kustomize addrspace/platform/observability/clickstack-operators >/dev/null
+          kubectl kustomize addrspace/platform/observability/clickstack >/dev/null
       - name: Validate rendered Anvil production PVCs
         if: steps.changes.outputs.relevant == 'true'
         run: python addrspace/tests/check-anvil-manifest.py
-=======
-          kubectl kustomize addrspace/platform/observability/clickstack-operators >/dev/null
-          kubectl kustomize addrspace/platform/observability/clickstack >/dev/null
->>>>>>> 2220ee3 (Deploy ClickStack observability stack)
       - name: Validate Flux reconciliation objects
         if: steps.changes.outputs.relevant == 'true'
         run: |
