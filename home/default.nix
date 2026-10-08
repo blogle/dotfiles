@@ -90,6 +90,7 @@ in
     chatgptExportNow
     pkgs.agenix
     pkgs.alsa-utils
+    pkgs.anvilctl
     pkgs.arandr
     pkgs.codex
     pkgs.brightnessctl
