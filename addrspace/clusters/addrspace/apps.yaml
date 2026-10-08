@@ -12,6 +12,7 @@ spec:
     name: flux-system
   dependsOn:
     - name: addrspace-platform
+    - name: addrspace-clickstack
   timeout: 15m
   healthChecks:
     - apiVersion: apps/v1
@@ -34,3 +35,7 @@ spec:
       kind: Deployment
       name: anvil-profile
       namespace: anvil
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: nexus
+      namespace: nexus

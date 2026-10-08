@@ -1,21 +1,6 @@
-# Observability stack: Grafana single-pane UI backed by Prometheus (metrics),
-# Loki (logs), Tempo (traces), Grafana Alloy (collector/router), and
-# blackbox-exporter (synthetic probes). All platform components live in the
-# `observability` namespace; per-app ServiceMonitor/PodMonitor/Probe/collection
-# intent stays next to the workloads it observes (see apps/media/exportarr.yaml
-# for an example).
-#
-# Helm releases use the rancher HelmChart CRD (helm.cattle.io/v1) declared in
-# the kube-system namespace with targetNamespace: observability, matching the
-# existing repo convention used by cert-manager, external-dns, and keel.
+# ClickStack app resources reconcile in the dedicated post-platform Flux layer;
+# this base layer owns the namespace and its migration-overlap storage quota.
 resources:
+  - clickstack-values.sealed.yaml
   - namespace.yaml
-  - storage-claims.yaml
   - grafana-oidc-v3.sealed.yaml
-  - alert-rules.yaml
-  - grafana.yaml
-  - loki.yaml
-  - tempo.yaml
-  - alloy.yaml
-  - blackbox-exporter.yaml
-  - probes.yaml

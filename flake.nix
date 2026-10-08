@@ -208,6 +208,18 @@
         nixpkgs.legacyPackages.${system}.just
         nixpkgs.legacyPackages.${system}.jq
         nixpkgs.legacyPackages.${system}.nix-eval-jobs
+        nixpkgs.legacyPackages.${system}.helm
+        nixpkgs.legacyPackages.${system}.kubectl
+        nixpkgs.legacyPackages.${system}.kubeseal
+        nixpkgs.legacyPackages.${system}.kustomize
+        nixpkgs.legacyPackages.${system}.openssl
+        (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [
+          pythonPackages.json5
+          pythonPackages.pyyaml
+        ]))
+        nixpkgs.legacyPackages.${system}.docker-compose
+        nixpkgs.legacyPackages.${system}.bun
+        nixpkgs.legacyPackages.${system}.nodejs
       ];
     };
 

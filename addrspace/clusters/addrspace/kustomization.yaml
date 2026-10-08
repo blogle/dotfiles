@@ -6,4 +6,6 @@ resources:
   - controllers.yaml
   - infrastructure.yaml
   - platform.yaml
+  - clickstack-operators.yaml
+  - clickstack.yaml
   - apps.yaml

@@ -21,6 +21,15 @@ spec:
       containers:
         - name: kubernetes-mcp
           image: quay.io/containers/kubernetes_mcp_server@sha256:a07a07d2a31d1cf612e4fbe689ff30ef07f4ffe4d3b9447a8b6ac3b4b11e8c7b
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://clickstack-otel-collector.observability.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: grpc
+            - name: OTEL_SERVICE_NAME
+              value: kubernetes-mcp-server
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: k8s.cluster.name=nandstorm,deployment.environment.name=homelab
           args:
             - --port
             - "8080"
