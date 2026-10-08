@@ -332,6 +332,9 @@ spec:
         spec:
           replicas: 1
           containerTemplate:
+            env:
+              - name: CLICKHOUSE_CONFIG
+                value: /etc/clickhouse-keeper/config.yaml
             image:
               repository: clickhouse/clickhouse-server
               tag: 25.7-alpine
