@@ -36,6 +36,7 @@
 ## Commit & Pull Request Guidelines
 - Commits: short, imperative subjects (e.g., "Fix k8s media volumes"). Optional scope prefixes like `hosts/nandstorm:` or `k8s:` help.
 - PRs: include summary, affected hosts, validation steps/commands, k8s impact, and note any secrets added/rotated (with key updates in `secrets.nix`).
+- Every PR targeting `master` must carry exactly one of `integration:auto` or `integration:review`; `integration:review` waits for approval of the exact PR head before Mergify automatically queues it.
 
 ## Declarative State & Impermanence
 - `nandstorm` uses impermanence: all non-persisted state is wiped on reboot.
