@@ -62,13 +62,30 @@ def main():
     assert "--fetch-cert" in helper and "--scope strict" in helper
     active_toml = yaml.safe_load((ROOT / "addrspace/apps/nexus/configmap.yaml").read_text())["data"]["nexus.toml"]
     active_nexus = yaml.safe_load((ROOT / "addrspace/apps/nexus/deployment.yaml").read_text())
-    assert "[mcp.servers.clickstack]" not in active_toml
-    assert all(
-        env["name"] != "CLICKSTACK_MCP_API_KEY"
+    active_kustomization = yaml.safe_load((ROOT / "addrspace/apps/nexus/kustomization.yaml").read_text())
+    token_envs = [
+        env
         for env in active_nexus["spec"]["template"]["spec"]["containers"][0]["env"]
-    )
+        if env["name"] == "CLICKSTACK_MCP_API_KEY"
+    ]
+    mcp_enabled = "[mcp.servers.clickstack]" in active_toml
     current_checksum = hashlib.sha256(active_toml.encode()).hexdigest()
     assert active_nexus["spec"]["template"]["metadata"]["annotations"]["checksum/config"] == current_checksum
+    if mcp_enabled:
+        assert len(token_envs) == 1
+        assert token_envs[0]["valueFrom"]["secretKeyRef"] == {
+            "name": "clickstack-mcp-credentials",
+            "key": "api-key",
+            "optional": False,
+        }
+        sealed = yaml.safe_load(
+            (ROOT / "addrspace/apps/nexus/clickstack-mcp-credentials.sealed.yaml").read_text()
+        )
+        assert sealed["metadata"] == {"name": "clickstack-mcp-credentials", "namespace": "nexus"}
+        assert set(sealed["spec"]["encryptedData"]) == {"api-key"}
+        assert "clickstack-mcp-credentials.sealed.yaml" in active_kustomization["resources"]
+    else:
+        assert not token_envs
 
     with tempfile.TemporaryDirectory(prefix="clickstack-bootstrap-test-") as temp:
         root = Path(temp)
@@ -81,24 +98,33 @@ def main():
             shutil.copy(ROOT / "addrspace/apps/nexus" / name, app / name)
         shutil.copy(ROOT / "addrspace/platform/observability/kustomization.yaml", obs / "kustomization.yaml")
 
-        run_embedded(prepare_mcp, root, root / "tmp", "clickstack-mcp-credentials.sealed.yaml")
-        configmap = yaml.safe_load((root / "tmp/nexus-configmap.yaml").read_text())
-        deployment = yaml.safe_load((root / "tmp/nexus-deployment.yaml").read_text())
-        kustomization = yaml.safe_load((root / "tmp/nexus-kustomization.yaml").read_text())
-        toml = configmap["data"]["nexus.toml"]
-        assert "[mcp.servers.clickstack]" in toml
-        assert "http://clickstack-app.observability.svc.cluster.local:3000/api/mcp" in toml
-        assert 'auth.token = "{{ env.CLICKSTACK_MCP_API_KEY }}"' in toml
-        container = deployment["spec"]["template"]["spec"]["containers"][0]
-        token_env = next(env for env in container["env"] if env["name"] == "CLICKSTACK_MCP_API_KEY")
-        assert token_env["valueFrom"]["secretKeyRef"] == {
-            "name": "clickstack-mcp-credentials",
-            "key": "api-key",
-            "optional": False,
-        }
-        expected_checksum = hashlib.sha256(toml.encode()).hexdigest()
-        assert deployment["spec"]["template"]["metadata"]["annotations"]["checksum/config"] == expected_checksum
-        assert "clickstack-mcp-credentials.sealed.yaml" in kustomization["resources"]
+        if mcp_enabled:
+            result = subprocess.run(
+                [sys.executable, "-", str(root), str(root / "tmp"), "clickstack-mcp-credentials.sealed.yaml"],
+                input=prepare_mcp,
+                text=True,
+                capture_output=True,
+            )
+            assert result.returncode != 0 and "already present" in result.stderr
+        else:
+            run_embedded(prepare_mcp, root, root / "tmp", "clickstack-mcp-credentials.sealed.yaml")
+            configmap = yaml.safe_load((root / "tmp/nexus-configmap.yaml").read_text())
+            deployment = yaml.safe_load((root / "tmp/nexus-deployment.yaml").read_text())
+            kustomization = yaml.safe_load((root / "tmp/nexus-kustomization.yaml").read_text())
+            toml = configmap["data"]["nexus.toml"]
+            assert "[mcp.servers.clickstack]" in toml
+            assert "http://clickstack-app.observability.svc.cluster.local:3000/api/mcp" in toml
+            assert 'auth.token = "{{ env.CLICKSTACK_MCP_API_KEY }}"' in toml
+            container = deployment["spec"]["template"]["spec"]["containers"][0]
+            token_env = next(env for env in container["env"] if env["name"] == "CLICKSTACK_MCP_API_KEY")
+            assert token_env["valueFrom"]["secretKeyRef"] == {
+                "name": "clickstack-mcp-credentials",
+                "key": "api-key",
+                "optional": False,
+            }
+            expected_checksum = hashlib.sha256(toml.encode()).hexdigest()
+            assert deployment["spec"]["template"]["metadata"]["annotations"]["checksum/config"] == expected_checksum
+            assert "clickstack-mcp-credentials.sealed.yaml" in kustomization["resources"]
 
         run_embedded(add_resource, obs / "kustomization.yaml", "clickstack-values.sealed.yaml")
         obs_kustomization = yaml.safe_load((obs / "kustomization.yaml").read_text())
