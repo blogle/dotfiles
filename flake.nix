@@ -41,8 +41,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     opencode = {
-      url = "github:anomalyco/opencode/v1.18.30";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:anomalyco/opencode/v1.18.35";
     };
 
     rust-overlay = {
@@ -74,12 +73,7 @@
           anvilctl = inputs.anvil.packages.${final.system}.anvilctl;
           chatgpt = inputs.llm-agents.packages.${final.system}.chatgpt;
           home-manager = inputs.hm.packages.${final.system}.home-manager;
-          # Temporary upstream hash correction for OpenCode v1.18.30.
-          opencode = inputs.opencode.packages.${system}.default.override {
-            node_modules = inputs.opencode.packages.${system}.node_modules_updater.override {
-              hash = "sha256-F1ygMH30D/a/T8SaUuY69+LjBGnkHNLmQTvvrsz6NQA=";
-            };
-          };
+          opencode = inputs.opencode.packages.${final.system}.opencode;
         })
       ];
 
