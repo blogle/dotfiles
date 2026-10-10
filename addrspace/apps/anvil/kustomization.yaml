@@ -22,4 +22,5 @@ patches:
   - path: profile-pvc.patch.yaml
   - path: profile-deployment.patch.yaml
   - path: nix-shared-pvc.patch.yaml
+  - path: history-pvc.patch.yaml
   - path: anvild-rollout.patch.yaml
