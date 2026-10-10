@@ -24,3 +24,15 @@ patches:
   - path: nix-shared-pvc.patch.yaml
   - path: history-pvc.patch.yaml
   - path: anvild-rollout.patch.yaml
+
+replacements:
+  - source:
+      kind: Deployment
+      name: anvil-profile
+      fieldPath: spec.template.spec.containers.0.image
+    targets:
+      - select:
+          kind: ConfigMap
+          name: anvil-runtime
+        fieldPaths:
+          - data.ANVIL_SANDBOX_IMAGE
