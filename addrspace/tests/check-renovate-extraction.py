@@ -341,7 +341,20 @@ def assert_renovate_proposes_one_staging_release():
         if (base_count, tag_count, digest_count) != (1, 1, 1):
             raise AssertionError("Could not construct the old semantic release fixture")
         manifest.write_text(content)
-        subprocess.run(["git", "add", str(manifest.relative_to(checkout))], cwd=checkout, check=True)
+        fixture_config_path = checkout / "renovate.json5"
+        fixture_config = json5.loads(fixture_config_path.read_text())
+        fixture_config["packageRules"].append(
+            {
+                "matchPackageNames": [DOJO_IMAGE],
+                "allowedVersions": target_tag,
+            }
+        )
+        fixture_config_path.write_text(json.dumps(fixture_config, indent=2) + "\n")
+        subprocess.run(
+            ["git", "add", str(manifest.relative_to(checkout)), str(fixture_config_path.relative_to(checkout))],
+            cwd=checkout,
+            check=True,
+        )
         subprocess.run(
             [
                 "git",
