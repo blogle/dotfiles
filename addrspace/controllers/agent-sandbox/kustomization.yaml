@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Anvil vendors upstream Agent Sandbox v1.0.2 at its pinned commit.
 resources:
-  - https://raw.githubusercontent.com/blogle/anvil/13334d5709a6a9f1f1c8894da33b8ef09565a3df/k8s/vendor/agent-sandbox/v1.0.2/sandbox.yaml
+  - https://raw.githubusercontent.com/blogle/anvil/9fdd0b9f5a72236c63770d0e95e89b784c9cadda/k8s/vendor/agent-sandbox/v1.0.2/sandbox.yaml
 
 # Preserve the existing addrspace controller configuration while adopting the
 # pinned upstream release (enabled extensions and optional config mount).
