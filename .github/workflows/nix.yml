@@ -11,7 +11,7 @@ permissions:
 jobs:
   pr-fast:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    uses: blogle/sdlc/.github/workflows/pr-fast.yml@v1.1.1
+    uses: blogle/sdlc/.github/workflows/pr-fast.yml@v1.2.2
 
   pr-fast-gate:
     name: sdlc / pr-fast
@@ -26,7 +26,7 @@ jobs:
 
   candidate:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'mergify/merge-queue/')
-    uses: blogle/sdlc/.github/workflows/candidate.yml@v1.1.1
+    uses: blogle/sdlc/.github/workflows/candidate.yml@v1.2.2
 
   candidate-gate:
     name: sdlc / candidate
