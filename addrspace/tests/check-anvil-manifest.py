@@ -36,6 +36,9 @@ sandbox_image = selected[("ConfigMap", "anvil-runtime")]["data"]["ANVIL_SANDBOX_
 controller = selected[("Deployment", "anvild")]
 controller_template = controller["spec"]["template"]
 controller_annotations = controller_template["metadata"]["annotations"]
+assert controller["spec"]["strategy"]["type"] == "Recreate", (
+    "anvild must not overlap controller processes while sharing the RWO history PVC"
+)
 assert sandbox_image == profile_image, "runtime sandbox image must match the post-transform profile image"
 controller_match = re.fullmatch(r"ghcr\.io/blogle/anvil:sha-([0-9a-f]{40})", controller_image)
 profile_match = re.fullmatch(r"ghcr\.io/blogle/anvil-sandbox:sha-([0-9a-f]{40})", profile_image)

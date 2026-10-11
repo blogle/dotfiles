@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: anvild
 spec:
+  # Keep the singleton controller from overlapping on its ReadWriteOnce history PVC;
+  # API requests may see a brief interruption while the new pod starts and rehydrates.
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
