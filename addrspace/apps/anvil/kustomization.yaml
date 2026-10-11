@@ -27,6 +27,76 @@ patches:
 
 replacements:
   - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_PREVIEW_DOMAIN
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-preview-domain]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_ANNOTATION_PREFIX
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-annotation-prefix]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_GIT_COMMITTER_NAME
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-git-committer-name]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_GIT_COMMITTER_EMAIL
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-git-committer-email]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_CONCURRENCY
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-concurrency]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.BASE_DOMAIN
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-base-domain]
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.AGENT_SANDBOX_ROUTER_URL
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-sandbox-router-url]
+  - source:
       kind: Deployment
       name: anvil-profile
       fieldPath: spec.template.spec.containers.0.image
@@ -36,3 +106,13 @@ replacements:
           name: anvil-runtime
         fieldPaths:
           - data.ANVIL_SANDBOX_IMAGE
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_SANDBOX_IMAGE
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil.thejeffer.net/runtime-config-sandbox-image]

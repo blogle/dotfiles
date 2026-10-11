@@ -6,4 +6,11 @@ spec:
   template:
     metadata:
       annotations:
-        anvil.thejeffer.net/runtime-config-revision: shared-nix-zvol-2026-09-29
+        anvil.thejeffer.net/runtime-config-preview-domain: ""
+        anvil.thejeffer.net/runtime-config-annotation-prefix: ""
+        anvil.thejeffer.net/runtime-config-git-committer-name: ""
+        anvil.thejeffer.net/runtime-config-git-committer-email: ""
+        anvil.thejeffer.net/runtime-config-concurrency: ""
+        anvil.thejeffer.net/runtime-config-base-domain: ""
+        anvil.thejeffer.net/runtime-config-sandbox-router-url: ""
+        anvil.thejeffer.net/runtime-config-sandbox-image: ""
