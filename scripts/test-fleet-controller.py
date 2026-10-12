@@ -1,4 +1,6 @@
 import importlib.util
+import base64
+import json
 import os
 import unittest
 from pathlib import Path
@@ -40,7 +42,7 @@ class FleetControllerTests(unittest.TestCase):
                 if path == "users/blogle":
                     return {"login": "blogle", "id": 4959802}
                 name = path.rsplit("/", 1)[-1]
-                return {"name": name, "id": values[name], "owner": {"id": 4959802}}
+                return {"name": name, "id": values[name], "owner": {"id": 4959802}, "default_branch": "main"}
 
         self.assertTrue(controller.verify_live_identities(manifest, FakeAPI()))
 
@@ -57,12 +59,13 @@ class FleetControllerTests(unittest.TestCase):
         floor = dict(controller.load_security_floor())
         floor["human_bypass_actor_id"] = 4959802
         completed = type("Completed", (), {"returncode": 0})()
+        consumer_revision = "1" * 40
         with patch.dict(os.environ, {"SDLC_CLI": "/trusted/sdlc"}), patch.object(
             Path, "is_file", return_value=True
         ), patch("subprocess.run", return_value=completed) as run:
             result = controller.sdlc_adapter(
                 "reconcile", controller.MANIFEST, controller.POLICY,
-                controller.POLICY, controller.load_controller()["revision"], floor
+                controller.POLICY, consumer_revision, floor
             )
         self.assertEqual(result["state"], "prepared")
         command = run.call_args.args[0]
@@ -71,6 +74,7 @@ class FleetControllerTests(unittest.TestCase):
         self.assertIn("--policy", command)
         self.assertIn("--attestation", command)
         self.assertIn("--consumer-pin", command)
+        self.assertEqual(command[command.index("--consumer-pin") + 1], consumer_revision)
         self.assertIn("--trusted-bypass-user-id", command)
         self.assertNotIn("--apply", command)
 
@@ -81,14 +85,75 @@ class FleetControllerTests(unittest.TestCase):
                     return {"id": 1402311485, "default_branch": "main"}
                 if "/commits/" in path:
                     return {"sha": controller.load_controller()["revision"]}
-                return {
-                    "base": {"ref": "main"},
-                    "head": {"sha": controller.load_controller()["revision"]},
-                    "merged_at": None,
-                }
+                return {"status": "diverged", "behind_by": 0}
 
-        with self.assertRaisesRegex(ValueError, "not merged"):
+        with self.assertRaisesRegex(ValueError, "ancestor"):
             controller.verify_controller_pin(FakeAPI())
+
+    def test_controller_pin_rejects_squash_head_even_if_pr_says_merged(self):
+        class FakeAPI:
+            def get(self, path):
+                if path == "repos/blogle/sdlc":
+                    return {"id": 1402311485, "default_branch": "main"}
+                if "/commits/" in path:
+                    return {"sha": controller.load_controller()["revision"]}
+                return {"status": "diverged", "behind_by": 0}
+
+        with self.assertRaisesRegex(ValueError, "ancestor"):
+            controller.verify_controller_pin(FakeAPI())
+
+    def test_controller_pin_rejects_moved_main_and_divergence(self):
+        class FakeAPI:
+            def __init__(self, status, behind_by):
+                self.status = status
+                self.behind_by = behind_by
+
+            def get(self, path):
+                if path == "repos/blogle/sdlc":
+                    return {"id": 1402311485, "default_branch": "main"}
+                if "/commits/" in path:
+                    return {"sha": controller.load_controller()["revision"]}
+                return {"status": self.status, "behind_by": self.behind_by}
+
+        for status, behind_by in (("behind", 1), ("diverged", 2)):
+            with self.subTest(status=status):
+                with self.assertRaisesRegex(ValueError, "repin"):
+                    controller.verify_controller_pin(FakeAPI(status, behind_by))
+
+    def test_controller_pin_accepts_only_compare_proven_ancestor(self):
+        class FakeAPI:
+            def get(self, path):
+                if path == "repos/blogle/sdlc":
+                    return {"id": 1402311485, "default_branch": "main"}
+                if "/commits/" in path:
+                    return {"sha": controller.load_controller()["revision"]}
+                return {"status": "ahead", "behind_by": 0}
+
+        self.assertTrue(controller.verify_controller_pin(FakeAPI())["reachable_from_protected"])
+
+    def test_consumers_resolve_independent_pins_and_rollback(self):
+        pins = {"anvil": "1" * 40, "dotfiles": "2" * 40}
+        refs = {"anvil": "v1.2.0", "dotfiles": "v1.1.1"}
+
+        class FakeAPI:
+            def get(self, path):
+                name = path.split("/")[2] if "/contents/" in path else None
+                if name in pins:
+                    lock = {"nodes": {"root": {"inputs": {"sdlc": "sdlc"}}, "sdlc": {
+                        "locked": {"type": "github", "owner": "blogle", "repo": "sdlc", "rev": pins[name]},
+                        "original": {"type": "github", "owner": "blogle", "repo": "sdlc", "ref": refs[name]},
+                    }}}
+                    return {"encoding": "base64", "content": base64.b64encode(json.dumps(lock).encode()).decode()}
+                if "/commits/" in path:
+                    return {"sha": path.rsplit("/", 1)[-1]}
+                if "/compare/" in path:
+                    return {"status": "ahead", "behind_by": 0}
+                raise AssertionError(path)
+
+        anvil = controller.resolve_consumer_pin({"name": "anvil"}, {"default_branch": "main"}, FakeAPI())
+        dotfiles = controller.resolve_consumer_pin({"name": "dotfiles"}, {"default_branch": "main"}, FakeAPI())
+        self.assertNotEqual(anvil["revision"], dotfiles["revision"])
+        self.assertEqual(dotfiles["ref"], "v1.1.1")
 
     def test_repo_states_are_isolated_and_idempotent(self):
         manifest = controller.load_manifest()

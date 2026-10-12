@@ -63,7 +63,7 @@ jobs:
           bash scripts/test-fleet-review.sh
       - name: Verify and install pinned SDLC prepare CLI
         env:
-          SDLC_FLEET_CONTROLLER_SHA: a7d973501d03cb430e7b174ebb2b02ba101b6557
+          SDLC_FLEET_CONTROLLER_SHA: c91e13d80ec8b3fd60690fd555006d34e8d9978b
         run: |
           test "$SDLC_FLEET_CONTROLLER_SHA" = "$(jq -r .revision fleet/controller.json)"
           nix profile install "github:blogle/sdlc?rev=$SDLC_FLEET_CONTROLLER_SHA#packages.x86_64-linux.sdlc"
@@ -104,7 +104,7 @@ jobs:
           fi
       - name: Installation preflight and diagnostics
         env:
-          SDLC_FLEET_CONTROLLER_SHA: a7d973501d03cb430e7b174ebb2b02ba101b6557
+          SDLC_FLEET_CONTROLLER_SHA: c91e13d80ec8b3fd60690fd555006d34e8d9978b
         run: |
           test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
           test "$SDLC_FLEET_CONTROLLER_SHA" = "$(jq -r .revision fleet/controller.json)"

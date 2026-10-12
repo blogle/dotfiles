@@ -10,11 +10,13 @@ forbids destructive changes and App/agent bypasses. Its null human bypass is a
 safe unconfigured value; reconciliation refuses to proceed until an operator
 supplies exactly one real personal GitHub user ID.
 
-`controller.json` pins SDLC prepare-only PR #80's immutable head. The
-controller verifies that this exact revision is merged into protected SDLC
-history before creating an attestation. While PR #80 is open, reconciliation
-is unknown and cannot proceed. `policy.json` is the worker input template; its
-null bypass is filled only from the operator floor at runtime.
+`controller.json` pins the current SDLC prepare-only PR #80 head. The
+controller verifies the immutable commit and GitHub compare result proving it
+is an ancestor of protected SDLC `main`; a merged PR head or squash metadata
+alone is never accepted. While PR #80 is open or diverged from `main`,
+reconciliation is unknown and reports an explicit repin requirement.
+`policy.json` is the worker input template; its null bypass is filled only from
+the operator floor at runtime.
 
 The workflow is prepare-only. Pull requests run a read-only plan and invoke
 the real pinned SDLC CLI contract. Protected
@@ -32,6 +34,12 @@ protections or secrets. Enabled repositories remain `unknown` until policy,
 installation, checks, and release credentials are verified; unsafe results
 disable activation, while transient unknown results retain current activation.
 Consumer check names and ruleset policy remain owned by SDLC.
+
+Each active consumer is resolved independently from its immutable default-branch
+`flake.lock`. The controller validates the `blogle/sdlc` owner/repository,
+revision, immutable release ref, commit existence, and protected-main ancestry,
+then passes that consumer-specific revision to SDLC. Different releases and a
+rollback are not replaced by a uniform fleet pin.
 
 Release App propagation is environment-scoped only. Bootstrap must explicitly
 grant and verify `Environments: write` in addition to the agreed Actions

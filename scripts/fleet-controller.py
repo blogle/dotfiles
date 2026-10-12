@@ -2,8 +2,10 @@
 """Fail-closed fleet adapter; policy and mutation remain owned by SDLC."""
 
 import argparse
+import base64
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -22,6 +24,7 @@ REQUIRED_CREDENTIALS = (
     "SDLC_RELEASE_APP_ID",
     "SDLC_RELEASE_APP_PRIVATE_KEY",
 )
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 ALLOWED_EVENTS = {"push", "schedule", "workflow_dispatch"}
 
 
@@ -85,33 +88,33 @@ def load_controller():
     if controller != {
         "schema": 1,
         "source": "github:blogle/sdlc",
-        "revision": "a7d973501d03cb430e7b174ebb2b02ba101b6557",
+        "revision": "c91e13d80ec8b3fd60690fd555006d34e8d9978b",
         "derivation": "packages.x86_64-linux.sdlc",
         "interface": "fleet-v1",
         "policy_flag": "--policy",
         "trusted_bypass_flag": "--trusted-bypass-user-id",
-        "pull_request": 80,
     }:
         raise ValueError("trusted controller pin is invalid")
     return controller
 
 
 def verify_controller_pin(api):
-    """Return an attestation only after the pinned SDLC PR is protected."""
+    """Return an attestation only after the pin is ancestor of protected main."""
     controller = load_controller()
     source = api.get("repos/blogle/sdlc")
     commit = api.get(f"repos/blogle/sdlc/commits/{controller['revision']}")
-    pull_request = api.get(f"repos/blogle/sdlc/pulls/{controller['pull_request']}")
     if source.get("id") != 1402311485 or source.get("default_branch") != "main":
         raise ValueError("trusted SDLC source identity or branch is unexpected")
     if commit.get("sha") != controller["revision"]:
         raise ValueError("trusted SDLC revision is unavailable")
-    if (
-        pull_request.get("base", {}).get("ref") != "main"
-        or pull_request.get("head", {}).get("sha") != controller["revision"]
-        or not pull_request.get("merged_at")
-    ):
-        raise ValueError("trusted SDLC controller revision is not merged into protected history")
+    compare = api.get(
+        f"repos/blogle/sdlc/compare/{controller['revision']}...{source['default_branch']}"
+    )
+    if compare.get("status") not in ("ahead", "identical") or compare.get("behind_by") != 0:
+        raise ValueError(
+            "trusted SDLC revision is not an ancestor of protected main; "
+            "repin to a protected-main SDLC release after the controller revision lands"
+        )
     return {
         "source": "blogle/sdlc",
         "repository_id": source["id"],
@@ -153,6 +156,7 @@ def verify_live_identities(manifest, api):
     live_owner = api.get(f"users/{owner['login']}")
     if live_owner.get("login") != owner["login"] or live_owner.get("id") != owner["id"]:
         raise ValueError("live owner identity does not match immutable manifest identity")
+    observed = {}
     for repository in manifest["repositories"]:
         live = api.get(f"repos/{owner['login']}/{repository['name']}")
         if (
@@ -161,7 +165,48 @@ def verify_live_identities(manifest, api):
             or live.get("owner", {}).get("id") != owner["id"]
         ):
             raise ValueError(f"live identity mismatch for {repository['name']}")
-    return True
+        if not live.get("default_branch"):
+            raise ValueError(f"default branch is missing for {repository['name']}")
+        observed[repository["name"]] = live
+    return observed
+
+
+def resolve_consumer_pin(repository, observed, api):
+    """Read, never execute, one consumer's default-branch SDLC flake pin."""
+    branch = observed["default_branch"]
+    lock = api.get(
+        f"repos/blogle/{repository['name']}/contents/flake.lock?ref={branch}"
+    )
+    if lock.get("encoding") != "base64" or not isinstance(lock.get("content"), str):
+        raise ValueError(f"{repository['name']}: default-branch flake.lock is unavailable")
+    try:
+        document = json.loads(base64.b64decode(lock["content"]).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{repository['name']}: default-branch flake.lock is invalid") from error
+    try:
+        input_name = document["nodes"]["root"]["inputs"]["sdlc"]
+        node = document["nodes"][input_name]
+        locked = node["locked"]
+        original = node.get("original", {})
+    except (KeyError, TypeError):
+        raise ValueError(f"{repository['name']}: flake.lock has no sdlc input")
+    if (
+        locked.get("type") != "github"
+        or locked.get("owner") != "blogle"
+        or locked.get("repo") != "sdlc"
+        or not SHA_RE.fullmatch(str(locked.get("rev", "")))
+    ):
+        raise ValueError(f"{repository['name']}: sdlc lock identity is not trusted")
+    ref = original.get("ref", "")
+    if ref and not (SHA_RE.fullmatch(str(ref)) or re.fullmatch(r"v\d+\.\d+\.\d+", str(ref))):
+        raise ValueError(f"{repository['name']}: sdlc lock ref is not immutable")
+    commit = api.get(f"repos/blogle/sdlc/commits/{locked['rev']}")
+    if commit.get("sha") != locked["rev"]:
+        raise ValueError(f"{repository['name']}: sdlc revision is unavailable")
+    compare = api.get(f"repos/blogle/sdlc/compare/{locked['rev']}...main")
+    if compare.get("status") not in ("ahead", "identical") or compare.get("behind_by") != 0:
+        raise ValueError(f"{repository['name']}: sdlc pin is not an ancestor of protected main")
+    return {"revision": locked["rev"], "ref": ref or None}
 
 
 def repository_plan(repository):
@@ -319,28 +364,47 @@ def main():
             print("fleet: credentials absent; safe no-op")
             return 0
         try:
-            verify_live_identities(manifest, GitHubAPI())
+            observed = verify_live_identities(manifest, GitHubAPI())
         except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
             return fail(f"live identity preflight failed: {error}")
         with tempfile.TemporaryDirectory(prefix="fleet-prepare-") as directory:
-            policy = json.loads(POLICY.read_text(encoding="utf-8"))
-            policy["bypass"]["user_id"] = floor["human_bypass_actor_id"]
-            policy["bypass"]["actors"] = [floor["human_bypass_actor_id"]]
-            policy["bypass"]["count"] = 1
-            policy_path = Path(directory) / "policy.json"
-            attestation_path = Path(directory) / "attestation.json"
-            policy_path.write_text(json.dumps(policy), encoding="utf-8")
             try:
-                attestation = verify_controller_pin(GitHubAPI())
+                verify_controller_pin(GitHubAPI())
             except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
                 return fail(f"trusted controller preflight failed: {error}")
-            attestation_path.write_text(json.dumps(attestation), encoding="utf-8")
-            result = sdlc_adapter(
-                "reconcile", MANIFEST, policy_path, attestation_path,
-                load_controller()["revision"], floor
-            )
-        print(json.dumps(result))
-        return 0 if result["state"] == "prepared" else 1
+            results = {}
+            for repository in manifest["repositories"]:
+                if not repository["enabled"] or repository.get("state") == "suspended":
+                    results[repository["name"]] = repository_plan(repository)
+                    continue
+                try:
+                    consumer = resolve_consumer_pin(repository, observed[repository["name"]], GitHubAPI())
+                    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+                    policy["provenance"]["revision"] = consumer["revision"]
+                    policy["bypass"]["user_id"] = floor["human_bypass_actor_id"]
+                    policy["bypass"]["actors"] = [floor["human_bypass_actor_id"]]
+                    policy["bypass"]["count"] = 1
+                    policy_path = Path(directory) / f"{repository['name']}-policy.json"
+                    manifest_path = Path(directory) / f"{repository['name']}-manifest.json"
+                    attestation_path = Path(directory) / f"{repository['name']}-attestation.json"
+                    policy_path.write_text(json.dumps(policy), encoding="utf-8")
+                    manifest_path.write_text(json.dumps({**manifest, "repositories": [repository]}), encoding="utf-8")
+                    attestation_path.write_text(json.dumps({
+                        "source": "blogle/sdlc",
+                        "repository_id": 1402311485,
+                        "commit_sha": consumer["revision"],
+                        "reachable_from_protected": True,
+                        "immutable": True,
+                        "verified_by": "dotfiles-trusted-controller",
+                    }), encoding="utf-8")
+                    results[repository["name"]] = sdlc_adapter(
+                        "reconcile", manifest_path, policy_path, attestation_path,
+                        consumer["revision"], floor
+                    ) | {"consumer_pin": consumer}
+                except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+                    results[repository["name"]] = {"state": "unknown", "reason": str(error)}
+            print(json.dumps({"state": "prepared", "ready": False, "repositories": results}, sort_keys=True))
+            return 0 if all(item.get("state") in ("prepared", "suspended", "disabled") for item in results.values()) else 1
 
     result = {"state": "prepare-only", "repositories": [repository_plan(item) for item in manifest["repositories"]]}
     print(json.dumps(result, sort_keys=True))
