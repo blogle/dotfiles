@@ -80,7 +80,6 @@ jobs:
           owner: blogle
           repositories: anvil
           permission-administration: write
-          permission-contents: read
           permission-secrets: write
           permission-variables: write
       - name: Select protected Anvil target
