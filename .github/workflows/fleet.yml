@@ -1,0 +1,55 @@
+name: SDLC fleet
+
+on:
+  pull_request:
+    paths:
+      - fleet/**
+      - scripts/fleet-controller.py
+      - .github/workflows/fleet.yml
+  push:
+    branches: [master]
+    paths:
+      - fleet/**
+      - scripts/fleet-controller.py
+      - .github/workflows/fleet.yml
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: fleet / read-only plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Validate and plan
+        run: |
+          python3 -m unittest scripts/test-fleet-controller.py
+          python3 scripts/fleet-controller.py validate
+          python3 scripts/fleet-controller.py plan
+
+  reconcile:
+    name: fleet / protected reconcile
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: fleet-reconcile
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Installation preflight and diagnostics
+        env:
+          SDLC_FLEET_APP_ID: ${{ secrets.SDLC_FLEET_APP_ID }}
+          SDLC_FLEET_APP_PRIVATE_KEY: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
+          SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
+          SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
+          SDLC_FLEET_APPLY: ${{ vars.SDLC_FLEET_APPLY }}
+        run: |
+          python3 --version
+          python3 scripts/fleet-controller.py validate
+          python3 scripts/fleet-controller.py status
+          python3 scripts/fleet-controller.py reconcile

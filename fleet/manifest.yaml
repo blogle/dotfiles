@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "owner": {"login": "blogle", "id": 4959802},
+  "repositories": [
+    {"name": "sdlc", "id": 1402311485, "enabled": true},
+    {"name": "dotfiles", "id": 332889752, "enabled": true},
+    {"name": "anvil", "id": 1372267957, "enabled": true}
+  ]
+}

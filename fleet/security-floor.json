@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "protected_default_branch": true,
+  "allow_force_push": false,
+  "allow_deletions": false,
+  "agent_bypass": false,
+  "app_bypass": false,
+  "human_bypass_actor_id": null
+}
