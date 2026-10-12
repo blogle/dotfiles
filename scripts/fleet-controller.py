@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "fleet" / "manifest.yaml"
 SECURITY_FLOOR = ROOT / "fleet" / "security-floor.json"
 CONTROLLER = ROOT / "fleet" / "controller.json"
+POLICY = ROOT / "fleet" / "policy.json"
 REQUIRED_CREDENTIALS = (
     "SDLC_FLEET_APP_ID",
     "SDLC_FLEET_APP_PRIVATE_KEY",
@@ -52,8 +54,8 @@ def load_manifest():
         names.add(repository["name"])
         if not isinstance(repository.get("enabled"), bool):
             raise ValueError(f"{repository['name']}: enabled must be boolean")
-        if repository.get("suspended", False) not in (True, False):
-            raise ValueError(f"{repository['name']}: suspended must be boolean")
+        if repository.get("state", "active") not in ("active", "suspended"):
+            raise ValueError(f"{repository['name']}: state must be active or suspended")
     return manifest
 
 
@@ -82,14 +84,41 @@ def load_controller():
     if controller != {
         "schema": 1,
         "source": "github:blogle/sdlc",
-        "revision": "517216b32898ce5bcb43091fdc547169c767075e",
+        "revision": "a7d973501d03cb430e7b174ebb2b02ba101b6557",
         "derivation": "packages.x86_64-linux.sdlc",
         "interface": "fleet-v1",
         "policy_flag": "--policy",
         "trusted_bypass_flag": "--trusted-bypass-user-id",
+        "pull_request": 80,
     }:
         raise ValueError("trusted controller pin is invalid")
     return controller
+
+
+def verify_controller_pin(api):
+    """Return an attestation only after the pinned SDLC PR is protected."""
+    controller = load_controller()
+    source = api.get("repos/blogle/sdlc")
+    commit = api.get(f"repos/blogle/sdlc/commits/{controller['revision']}")
+    pull_request = api.get(f"repos/blogle/sdlc/pulls/{controller['pull_request']}")
+    if source.get("id") != 1402311485 or source.get("default_branch") != "main":
+        raise ValueError("trusted SDLC source identity or branch is unexpected")
+    if commit.get("sha") != controller["revision"]:
+        raise ValueError("trusted SDLC revision is unavailable")
+    if (
+        pull_request.get("base", {}).get("ref") != "main"
+        or pull_request.get("head", {}).get("sha") != controller["revision"]
+        or not pull_request.get("merged_at")
+    ):
+        raise ValueError("trusted SDLC controller revision is not merged into protected history")
+    return {
+        "source": "blogle/sdlc",
+        "repository_id": source["id"],
+        "commit_sha": controller["revision"],
+        "reachable_from_protected": True,
+        "immutable": True,
+        "verified_by": "dotfiles-trusted-controller",
+    }
 
 
 def protected_context():
@@ -136,7 +165,7 @@ def verify_live_identities(manifest, api):
 
 def repository_plan(repository):
     identity_key = f"{repository['name']}:{repository['id']}"
-    if repository.get("suspended", False):
+    if repository.get("suspended", False) or repository.get("state") == "suspended":
         return {"name": repository["name"], "idempotency_key": identity_key,
                 "state": "suspended", "actions": []}
     if not repository["enabled"]:
@@ -189,7 +218,7 @@ def reconcile_repository(repository, worker):
     return {"name": repository["name"], "state": "unknown", "activation": "retain"}
 
 
-def sdlc_adapter(mode, manifest_path, floor):
+def sdlc_adapter(mode, manifest_path, policy_path, attestation_path, consumer_pin, floor):
     """Invoke only the pinned worker contract; consumer code is never loaded."""
     controller = load_controller()
     bypass_id = floor.get("human_bypass_actor_id")
@@ -202,13 +231,21 @@ def sdlc_adapter(mode, manifest_path, floor):
         sdlc,
         "fleet",
         mode,
-        controller["policy_flag"],
+        "--manifest",
         str(manifest_path),
+        controller["policy_flag"],
+        str(policy_path),
+        "--attestation",
+        str(attestation_path),
+        "--consumer-pin",
+        consumer_pin,
         controller["trusted_bypass_flag"],
         str(bypass_id),
     ]
     result = subprocess.run(command, text=True)
-    return {"state": "success" if result.returncode == 0 else "unsafe", "exit": result.returncode}
+    if result.returncode == 0:
+        return {"state": "prepared", "ready": False, "activation": "unchanged", "exit": 0}
+    return {"state": "unsafe", "ready": False, "exit": result.returncode}
 
 
 def main():
@@ -252,9 +289,25 @@ def main():
             verify_live_identities(manifest, GitHubAPI())
         except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
             return fail(f"live identity preflight failed: {error}")
-        result = sdlc_adapter("reconcile", MANIFEST, floor)
+        with tempfile.TemporaryDirectory(prefix="fleet-prepare-") as directory:
+            policy = json.loads(POLICY.read_text(encoding="utf-8"))
+            policy["bypass"]["user_id"] = floor["human_bypass_actor_id"]
+            policy["bypass"]["actors"] = [floor["human_bypass_actor_id"]]
+            policy["bypass"]["count"] = 1
+            policy_path = Path(directory) / "policy.json"
+            attestation_path = Path(directory) / "attestation.json"
+            policy_path.write_text(json.dumps(policy), encoding="utf-8")
+            try:
+                attestation = verify_controller_pin(GitHubAPI())
+            except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+                return fail(f"trusted controller preflight failed: {error}")
+            attestation_path.write_text(json.dumps(attestation), encoding="utf-8")
+            result = sdlc_adapter(
+                "reconcile", MANIFEST, policy_path, attestation_path,
+                load_controller()["revision"], floor
+            )
         print(json.dumps(result))
-        return 0 if result["state"] == "success" else 1
+        return 0 if result["state"] == "prepared" else 1
 
     result = {"state": "prepare-only", "repositories": [repository_plan(item) for item in manifest["repositories"]]}
     print(json.dumps(result, sort_keys=True))

@@ -1,9 +1,10 @@
 {
   "schema": 1,
   "source": "github:blogle/sdlc",
-  "revision": "517216b32898ce5bcb43091fdc547169c767075e",
+  "revision": "a7d973501d03cb430e7b174ebb2b02ba101b6557",
   "derivation": "packages.x86_64-linux.sdlc",
   "interface": "fleet-v1",
   "policy_flag": "--policy",
-  "trusted_bypass_flag": "--trusted-bypass-user-id"
+  "trusted_bypass_flag": "--trusted-bypass-user-id",
+  "pull_request": 80
 }

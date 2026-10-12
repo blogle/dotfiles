@@ -10,16 +10,30 @@ forbids destructive changes and App/agent bypasses. Its null human bypass is a
 safe unconfigured value; reconciliation refuses to proceed until an operator
 supplies exactly one real personal GitHub user ID.
 
-The workflow is prepare-only. Pull requests run a read-only plan. Protected
+`controller.json` pins SDLC prepare-only PR #80's immutable head. The
+controller verifies that this exact revision is merged into protected SDLC
+history before creating an attestation. While PR #80 is open, reconciliation
+is unknown and cannot proceed. `policy.json` is the worker input template; its
+null bypass is filled only from the operator floor at runtime.
+
+The workflow is prepare-only. Pull requests run a read-only plan and invoke
+the real pinned SDLC CLI contract. Protected
 `master` runs diagnostics and remains a no-op until an operator configures the
 four App credentials and intentionally sets `SDLC_FLEET_APPLY=1` in the
 protected environment. The controller delegates policy and GitHub mutation to
-the SDLC CLI `fleet` public interface; an older CLI is reported as unsupported,
-never treated as success or executed with credentials.
+the SDLC CLI `fleet` public interface with separate manifest, policy,
+attestation, consumer-pin, and human-bypass inputs. A successful worker call
+means only `prepared`; it never means activation readiness or a completed
+mutation.
 
-`enabled: false` is an intentional pause for activation, while `suspended:
-true` pauses all automated mutation. Neither state removes existing GitHub
+`enabled: false` is an intentional pause for activation, while `state:
+suspended` pauses all automated mutation. Neither state removes existing GitHub
 protections or secrets. Enabled repositories remain `unknown` until policy,
 installation, checks, and release credentials are verified; unsafe results
 disable activation, while transient unknown results retain current activation.
 Consumer check names and ruleset policy remain owned by SDLC.
+
+The security-review check is expected to be red on this draft until a human
+approves its exact head. CODEOWNERS and this check are only prerequisites;
+operators must separately require them in GitHub rulesets. They are not
+currently proven external protection and cannot authorize automatic queueing.

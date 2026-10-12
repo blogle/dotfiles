@@ -47,23 +47,48 @@ class FleetControllerTests(unittest.TestCase):
     def test_security_floor_requires_operator_bypass_before_worker(self):
         floor = controller.load_security_floor()
         self.assertIsNone(floor["human_bypass_actor_id"])
-        result = controller.sdlc_adapter("reconcile", controller.MANIFEST, floor)
+        result = controller.sdlc_adapter(
+            "reconcile", controller.MANIFEST, controller.POLICY,
+            controller.POLICY, controller.load_controller()["revision"], floor
+        )
         self.assertEqual(result["state"], "unknown")
 
-    def test_worker_contract_has_no_legacy_apply_flag(self):
+    def test_worker_contract_has_manifest_policy_and_no_legacy_apply_flag(self):
         floor = dict(controller.load_security_floor())
         floor["human_bypass_actor_id"] = 4959802
         completed = type("Completed", (), {"returncode": 0})()
         with patch.dict(os.environ, {"SDLC_CLI": "/trusted/sdlc"}), patch.object(
             Path, "is_file", return_value=True
         ), patch("subprocess.run", return_value=completed) as run:
-            result = controller.sdlc_adapter("reconcile", controller.MANIFEST, floor)
-        self.assertEqual(result["state"], "success")
+            result = controller.sdlc_adapter(
+                "reconcile", controller.MANIFEST, controller.POLICY,
+                controller.POLICY, controller.load_controller()["revision"], floor
+            )
+        self.assertEqual(result["state"], "prepared")
         command = run.call_args.args[0]
         self.assertEqual(command[:3], ["/trusted/sdlc", "fleet", "reconcile"])
+        self.assertIn("--manifest", command)
         self.assertIn("--policy", command)
+        self.assertIn("--attestation", command)
+        self.assertIn("--consumer-pin", command)
         self.assertIn("--trusted-bypass-user-id", command)
         self.assertNotIn("--apply", command)
+
+    def test_controller_pin_is_not_ready_while_sdlc_pr_is_open(self):
+        class FakeAPI:
+            def get(self, path):
+                if path == "repos/blogle/sdlc":
+                    return {"id": 1402311485, "default_branch": "main"}
+                if "/commits/" in path:
+                    return {"sha": controller.load_controller()["revision"]}
+                return {
+                    "base": {"ref": "main"},
+                    "head": {"sha": controller.load_controller()["revision"]},
+                    "merged_at": None,
+                }
+
+        with self.assertRaisesRegex(ValueError, "not merged"):
+            controller.verify_controller_pin(FakeAPI())
 
     def test_repo_states_are_isolated_and_idempotent(self):
         manifest = controller.load_manifest()

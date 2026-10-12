@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "provenance": {
+    "source": "blogle/sdlc",
+    "revision": "a7d973501d03cb430e7b174ebb2b02ba101b6557"
+  },
+  "security_floor": {
+    "required_checks": ["sdlc-check", "sdlc-policy"],
+    "protected_default_branch": true,
+    "protected_release_tags": true,
+    "no_force_push": true,
+    "no_destructive_changes": true,
+    "require_pull_requests": true,
+    "squash_only": true,
+    "dismiss_stale_reviews": true,
+    "integration_path": "merge_queue",
+    "trusted_publishers": {
+      "sdlc-check": "blogle/sdlc",
+      "sdlc-policy": "blogle/sdlc",
+      "sdlc-verify": "blogle/sdlc"
+    }
+  },
+  "bypass": {
+    "kind": "personal_user",
+    "user_id": null,
+    "actors": [],
+    "count": 0
+  }
+}

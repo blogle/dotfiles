@@ -2,8 +2,8 @@
   "schema": 1,
   "owner": {"login": "blogle", "id": 4959802},
   "repositories": [
-    {"name": "sdlc", "id": 1402311485, "enabled": false, "suspended": true},
-    {"name": "dotfiles", "id": 332889752, "enabled": false, "suspended": true},
+    {"name": "sdlc", "id": 1402311485, "enabled": false, "state": "suspended"},
+    {"name": "dotfiles", "id": 332889752, "enabled": false, "state": "suspended"},
     {"name": "anvil", "id": 1372267957, "enabled": true}
   ]
 }
