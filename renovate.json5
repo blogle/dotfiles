@@ -3,10 +3,17 @@
   extends: ['config:recommended', 'github>blogle/sdlc#v1'],
   enabledManagers: ['nix', 'github-actions', 'kubernetes', 'kustomize', 'flux', 'custom.regex'],
   dependencyDashboard: true,
-  prConcurrentLimit: 2,
-  branchConcurrentLimit: 2,
+  // Keep unrelated Renovate PRs from starving production deployment updates.
+  prConcurrentLimit: 10,
+  branchConcurrentLimit: 10,
   labels: ['dependencies', 'kubernetes'],
   packageRules: [
+    {
+      // Anvil rollouts are higher priority than routine dependency updates.
+      matchManagers: ['custom.regex'],
+      matchDepNames: ['blogle/anvil', 'blogle/anvil-agent-sandbox'],
+      prPriority: 100,
+    },
     {
       matchManagers: ['kustomize'],
       matchPackageNames: ['blogle/dojo2', 'blogle/anvil'],
