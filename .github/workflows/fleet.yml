@@ -46,25 +46,25 @@ jobs:
         id: anvil-ref
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
-          test -n "$ref"
-          printf 'ref=%s\n' "$ref" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          repository: blogle/anvil
-          ref: ${{ steps.anvil-ref.outputs.ref }}
-          path: anvil
-          persist-credentials: false
-      - name: Run the consumer's Nix-native read-only policy plan
+          if test "$EVENT" = pull_request; then
+            sha="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
+            test -n "$sha"
+            flake="github:blogle/anvil/$sha#sdlc"
+          else
+            flake='github:blogle/anvil#sdlc'
+          fi
+          printf 'flake=%s\n' "$flake" >> "$GITHUB_OUTPUT"
+      - name: Run the consumer's Nix-native read-only ruleset plan
         env:
-          ANVIL_DIR: ${{ github.workspace }}/anvil
+          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/test-fleet-cli-contract.sh
 
   reconcile:
-    name: fleet / Anvil policy and release
+    name: fleet / Anvil ruleset and release
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -91,34 +91,28 @@ jobs:
         run: |
           set -euo pipefail
           if test "$BOOTSTRAP_PR90" = true; then
-            ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
+            sha="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
+            test -n "$sha"
+            flake="github:blogle/anvil/$sha#sdlc"
           else
             test "$GITHUB_EVENT_NAME" != workflow_dispatch || test "$BOOTSTRAP_PR90" = false
-            ref=main
+            flake='github:blogle/anvil#sdlc'
           fi
-          test -n "$ref"
-          printf 'ref=%s\n' "$ref" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          repository: blogle/anvil
-          ref: ${{ steps.anvil-ref.outputs.ref }}
-          path: anvil
-          token: ${{ steps.fleet-app.outputs.token || github.token }}
-          persist-credentials: false
-      - name: Plan Anvil policy from its checked-out flake
-        working-directory: anvil
+          printf 'flake=%s\n' "$flake" >> "$GITHUB_OUTPUT"
+      - name: Plan Anvil ruleset from its flake
         env:
+          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
           GH_TOKEN: ${{ steps.fleet-app.outputs.token || github.token }}
-        run: nix run .#sdlc -- policy plan --repo blogle/anvil
-      - name: Apply and verify Anvil policy
+        run: bash scripts/test-fleet-cli-contract.sh
+      - name: Apply and verify Anvil ruleset
         if: vars.SDLC_FLEET_APPLY == '1'
-        working-directory: anvil
         env:
+          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
           GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
         run: |
           set -euo pipefail
-          nix run .#sdlc -- policy apply --repo blogle/anvil
-          nix run .#sdlc -- policy check --repo blogle/anvil
+          nix run "$ANVIL_FLAKE" -- ruleset apply --repo blogle/anvil
+          nix run "$ANVIL_FLAKE" -- ruleset check --repo blogle/anvil
       - name: Install release credentials in Anvil repository secrets
         if: vars.SDLC_FLEET_APPLY == '1' && vars.SDLC_FLEET_RELEASE_ENABLE == '1'
         env:
