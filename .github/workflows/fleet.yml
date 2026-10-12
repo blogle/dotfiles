@@ -5,6 +5,8 @@ on:
     paths:
       - fleet/**
       - scripts/fleet-controller.py
+      - scripts/test-fleet-review.sh
+      - scripts/test-fleet-cli-contract.sh
       - .github/workflows/fleet.yml
       - .github/CODEOWNERS
       - .mergify.yml
@@ -13,6 +15,8 @@ on:
     paths:
       - fleet/**
       - scripts/fleet-controller.py
+      - scripts/test-fleet-review.sh
+      - scripts/test-fleet-cli-contract.sh
       - .github/workflows/fleet.yml
       - .github/CODEOWNERS
       - .mergify.yml
@@ -39,8 +43,11 @@ jobs:
           REVIEWER: blogle
         run: |
           set -eu
-          sensitive="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files" --jq ".[] | .filename | select(. == \".mergify.yml\" or . == \".github/CODEOWNERS\" or . == \".github/workflows/fleet.yml\" or startswith(\"fleet/\") or . == \"scripts/fleet-controller.py\" or . == \"scripts/test-fleet-controller.py\")")"
-          test -z "$sensitive" || gh api "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews" --jq --arg reviewer "$REVIEWER" --arg head "$HEAD_SHA" "[.[] | select(.user.login == \$reviewer and .commit_id == \$head and .state == \"APPROVED\")] | length" | grep -q '^[1-9]'
+          sensitive="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files" --jq ".[] | .filename | select(. == \".mergify.yml\" or . == \".github/CODEOWNERS\" or . == \".github/workflows/fleet.yml\" or startswith(\"fleet/\") or . == \"scripts/fleet-controller.py\" or . == \"scripts/test-fleet-controller.py\" or . == \"scripts/test-fleet-review.sh\" or . == \"scripts/test-fleet-cli-contract.sh\")")"
+          if test -n "$sensitive"; then
+            reviews="$(gh api "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews")"
+            printf '%s' "$reviews" | jq -e --arg reviewer "$REVIEWER" --arg head "$HEAD_SHA" '[.[] | select(.user.login == $reviewer and .commit_id == $head and .state == "APPROVED")] | length > 0' >/dev/null
+          fi
 
   plan:
     name: fleet / read-only plan
@@ -53,6 +60,7 @@ jobs:
           python3 -m unittest scripts/test-fleet-controller.py
           python3 scripts/fleet-controller.py validate
           python3 scripts/fleet-controller.py plan
+          bash scripts/test-fleet-review.sh
       - name: Verify and install pinned SDLC prepare CLI
         env:
           SDLC_FLEET_CONTROLLER_SHA: a7d973501d03cb430e7b174ebb2b02ba101b6557
@@ -84,14 +92,15 @@ jobs:
           set -eu
           sensitive="$(git diff --name-only HEAD^ HEAD | while IFS= read -r path; do
             case "$path" in
-              .mergify.yml|.github/CODEOWNERS|.github/workflows/fleet.yml|fleet/*|scripts/fleet-controller.py|scripts/test-fleet-controller.py) printf '%s\n' "$path" ;;
+              .mergify.yml|.github/CODEOWNERS|.github/workflows/fleet.yml|fleet/*|scripts/fleet-controller.py|scripts/test-fleet-controller.py|scripts/test-fleet-review.sh|scripts/test-fleet-cli-contract.sh) printf '%s\n' "$path" ;;
             esac
           done)"
           if test -n "$sensitive"; then
             pr="$(gh api "repos/$REPOSITORY/commits/$COMMIT/pulls" --jq ".[0].number // empty")"
             test -n "$pr"
             head="$(gh api "repos/$REPOSITORY/pulls/$pr" --jq .head.sha)"
-            gh api "repos/$REPOSITORY/pulls/$pr/reviews" --jq --arg reviewer "$REVIEWER" --arg head "$head" "[.[] | select(.commit_id == \$head and .user.login == \$reviewer and .state == \"APPROVED\")] | length" | grep -q '^[1-9]'
+            reviews="$(gh api "repos/$REPOSITORY/pulls/$pr/reviews")"
+            printf '%s' "$reviews" | jq -e --arg reviewer "$REVIEWER" --arg head "$head" '[.[] | select(.commit_id == $head and .user.login == $reviewer and .state == "APPROVED")] | length > 0' >/dev/null
           fi
       - name: Installation preflight and diagnostics
         env:

@@ -15,6 +15,7 @@ MANIFEST = ROOT / "fleet" / "manifest.yaml"
 SECURITY_FLOOR = ROOT / "fleet" / "security-floor.json"
 CONTROLLER = ROOT / "fleet" / "controller.json"
 POLICY = ROOT / "fleet" / "policy.json"
+RELEASE_CREDENTIALS = ROOT / "fleet" / "release-credentials.json"
 REQUIRED_CREDENTIALS = (
     "SDLC_FLEET_APP_ID",
     "SDLC_FLEET_APP_PRIVATE_KEY",
@@ -189,15 +190,47 @@ def repository_plan(repository):
 
 
 def prepare_release_app_distribution(repository, api):
-    """Prepare metadata only; secret values never cross this adapter."""
+    """Prepare environment-secret metadata only; never fall back to repo secrets."""
+    with RELEASE_CREDENTIALS.open(encoding="utf-8") as stream:
+        contract = json.load(stream)
+    return prepare_release_app_distribution_for_contract(repository, api, contract)
+
+
+def prepare_release_app_distribution_for_contract(repository, api, contract):
+    """Select a safe credential path from observed permission/wiring metadata."""
     owner = "blogle"
-    current = api.get(f"repos/{owner}/{repository['name']}/actions/secrets")
+    permissions = contract.get("observed_permissions", {})
+    workflow = contract.get("observed_workflow", {})
+    if permissions.get("environments") != "write":
+        return {
+            "name": repository["name"],
+            "state": "unknown",
+            "reason": "Environments: write is required for environment secret propagation",
+            "repository_secret_fallback": False,
+            "write": False,
+        }
+    if (
+        workflow.get("called_job_environment") != contract.get("environment")
+        or workflow.get("reads_environment_secrets") is not True
+    ):
+        return {
+            "name": repository["name"],
+            "state": "unsafe",
+            "reason": "release workflow does not explicitly wire environment secrets",
+            "repository_secret_fallback": False,
+            "write": False,
+        }
+    current = api.get(
+        f"repos/{owner}/{repository['name']}/environments/{contract['environment']}/secrets"
+    )
     names = sorted(item.get("name", "") for item in current.get("secrets", []))
     return {
         "name": repository["name"],
+        "state": "prepared",
         "operation": "upsert-protected-release-environment-secrets",
         "required_names": ["SDLC_RELEASE_APP_ID", "SDLC_RELEASE_APP_PRIVATE_KEY"],
         "existing_names": names,
+        "repository_secret_fallback": False,
         "write": False,
     }
 

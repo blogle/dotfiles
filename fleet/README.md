@@ -33,6 +33,19 @@ installation, checks, and release credentials are verified; unsafe results
 disable activation, while transient unknown results retain current activation.
 Consumer check names and ruleset policy remain owned by SDLC.
 
+Release App propagation is environment-scoped only. Bootstrap must explicitly
+grant and verify `Environments: write` in addition to the agreed Actions
+Secrets/Variables and Administration permissions, and the called release job
+must declare `environment: sdlc-release` and read its environment secrets.
+`secrets: inherit` does not provide that wiring. Missing or unknown
+`Environments: write`, or missing workflow wiring, blocks readiness; the
+controller never falls back to repository-wide secrets.
+
+The current SDLC release reusable workflow does not yet prove this environment
+contract. The canonical SDLC fleet specification should document the required
+permission and caller/called-workflow wiring before bootstrap. No App
+permission has been changed here.
+
 The security-review check is expected to be red on this draft until a human
 approves its exact head. CODEOWNERS and this check are only prerequisites;
 operators must separately require them in GitHub rulesets. They are not

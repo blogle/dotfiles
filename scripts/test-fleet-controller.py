@@ -114,10 +114,48 @@ class FleetControllerTests(unittest.TestCase):
                 return {"secrets": [{"name": "OLD"}]}
 
         api = FakeAPI()
-        result = controller.prepare_release_app_distribution(repository, api)
+        result = controller.prepare_release_app_distribution_for_contract(repository, api, {
+            "environment": "sdlc-release",
+            "observed_permissions": {"environments": "write"},
+            "observed_workflow": {
+                "called_job_environment": "sdlc-release",
+                "reads_environment_secrets": True,
+            },
+        })
         self.assertFalse(result["write"])
         self.assertEqual(result["existing_names"], ["OLD"])
         self.assertEqual(result["required_names"], ["SDLC_RELEASE_APP_ID", "SDLC_RELEASE_APP_PRIVATE_KEY"])
+        self.assertIn("environments/sdlc-release/secrets", api.path)
+
+    def test_release_distribution_blocks_missing_environment_permission_without_fallback(self):
+        repository = controller.load_manifest()["repositories"][-1]
+
+        class FakeAPI:
+            def get(self, path):
+                raise AssertionError("must not read or write a repository-secret endpoint")
+
+        result = controller.prepare_release_app_distribution_for_contract(repository, FakeAPI(), {
+            "environment": "sdlc-release",
+            "observed_permissions": {"actions_secrets": "write", "secrets": "write"},
+            "observed_workflow": {},
+        })
+        self.assertEqual(result["state"], "unknown")
+        self.assertFalse(result["repository_secret_fallback"])
+
+    def test_release_distribution_blocks_missing_environment_wiring(self):
+        repository = controller.load_manifest()["repositories"][-1]
+
+        class FakeAPI:
+            def get(self, path):
+                raise AssertionError("must not read secrets without workflow wiring")
+
+        result = controller.prepare_release_app_distribution_for_contract(repository, FakeAPI(), {
+            "environment": "sdlc-release",
+            "observed_permissions": {"environments": "write"},
+            "observed_workflow": {"reads_environment_secrets": False},
+        })
+        self.assertEqual(result["state"], "unsafe")
+        self.assertFalse(result["repository_secret_fallback"])
 
     def test_reconcile_is_noop_without_protected_context(self):
         with patch.dict(os.environ, {}, clear=True):
