@@ -3,136 +3,126 @@ name: SDLC fleet
 on:
   pull_request:
     paths:
-      - fleet/**
+      - fleet/manifest.yaml
       - scripts/fleet-controller.py
-      - scripts/test-fleet-review.sh
+      - scripts/test-fleet-controller.py
       - scripts/test-fleet-cli-contract.sh
       - .github/workflows/fleet.yml
-      - .github/CODEOWNERS
-      - .mergify.yml
   push:
     branches: [master]
     paths:
-      - fleet/**
+      - fleet/manifest.yaml
       - scripts/fleet-controller.py
-      - scripts/test-fleet-review.sh
+      - scripts/test-fleet-controller.py
       - scripts/test-fleet-cli-contract.sh
       - .github/workflows/fleet.yml
-      - .github/CODEOWNERS
-      - .mergify.yml
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      anvil_ref:
+        description: Anvil commit or branch to plan (blank uses draft PR 90 head)
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-  security-review:
-    name: fleet / security review
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require current human review for security-sensitive edits
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          REVIEWER: blogle
-        run: |
-          set -eu
-          sensitive="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files" --jq ".[] | .filename | select(. == \".mergify.yml\" or . == \".github/CODEOWNERS\" or . == \".github/workflows/fleet.yml\" or startswith(\"fleet/\") or . == \"scripts/fleet-controller.py\" or . == \"scripts/test-fleet-controller.py\" or . == \"scripts/test-fleet-review.sh\" or . == \"scripts/test-fleet-cli-contract.sh\")")"
-          if test -n "$sensitive"; then
-            reviews="$(gh api "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews")"
-            printf '%s' "$reviews" | jq -e --arg reviewer "$REVIEWER" --arg head "$HEAD_SHA" '[.[] | select(.user.login == $reviewer and .commit_id == $head and .state == "APPROVED")] | length > 0' >/dev/null
-          fi
-
   plan:
-    name: fleet / read-only plan
+    name: fleet / read-only Anvil plan
     runs-on: ubuntu-latest
     steps:
       - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Validate and plan
+      - name: Validate inventory
         run: |
           python3 -m unittest scripts/test-fleet-controller.py
           python3 scripts/fleet-controller.py validate
           python3 scripts/fleet-controller.py plan
-          bash scripts/test-fleet-review.sh
-      - name: Verify and install pinned SDLC prepare CLI
+      - name: Select Anvil read-only target
+        id: anvil-ref
         env:
-          SDLC_FLEET_CONTROLLER_SHA: c91e13d80ec8b3fd60690fd555006d34e8d9978b
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ inputs.anvil_ref }}
         run: |
-          test "$SDLC_FLEET_CONTROLLER_SHA" = "$(jq -r .revision fleet/controller.json)"
-          nix profile install "github:blogle/sdlc?rev=$SDLC_FLEET_CONTROLLER_SHA#packages.x86_64-linux.sdlc"
-          echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
-          bash scripts/test-fleet-cli-contract.sh
+          set -euo pipefail
+          if test -n "$INPUT_REF"; then
+            ref="$INPUT_REF"
+          else
+            ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
+          fi
+          test -n "$ref"
+          printf 'ref=%s\n' "$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: blogle/anvil
+          ref: ${{ steps.anvil-ref.outputs.ref }}
+          path: anvil
+          persist-credentials: false
+      - name: Run the consumer's Nix-native read-only policy plan
+        env:
+          ANVIL_DIR: ${{ github.workspace }}/anvil
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/test-fleet-cli-contract.sh
 
   reconcile:
-    name: fleet / protected reconcile
+    name: fleet / Anvil policy and release
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    environment: fleet-reconcile
     steps:
       - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ github.sha }}
-          fetch-depth: 2
-          persist-credentials: false
-      - name: Require approved PR for sensitive commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
-          COMMIT: ${{ github.sha }}
-          REVIEWER: blogle
-        run: |
-          set -eu
-          sensitive="$(git diff --name-only HEAD^ HEAD | while IFS= read -r path; do
-            case "$path" in
-              .mergify.yml|.github/CODEOWNERS|.github/workflows/fleet.yml|fleet/*|scripts/fleet-controller.py|scripts/test-fleet-controller.py|scripts/test-fleet-review.sh|scripts/test-fleet-cli-contract.sh) printf '%s\n' "$path" ;;
-            esac
-          done)"
-          if test -n "$sensitive"; then
-            pr="$(gh api "repos/$REPOSITORY/commits/$COMMIT/pulls" --jq ".[0].number // empty")"
-            test -n "$pr"
-            head="$(gh api "repos/$REPOSITORY/pulls/$pr" --jq .head.sha)"
-            reviews="$(gh api "repos/$REPOSITORY/pulls/$pr/reviews")"
-            printf '%s' "$reviews" | jq -e --arg reviewer "$REVIEWER" --arg head "$head" '[.[] | select(.commit_id == $head and .user.login == $reviewer and .state == "APPROVED")] | length > 0' >/dev/null
-          fi
-      - name: Create scoped fleet App token
+      - name: Create the explicitly enabled Anvil-only App token
         if: vars.SDLC_FLEET_APPLY == '1'
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         id: fleet-app
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ secrets.SDLC_FLEET_APP_ID }}
           private-key: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
+          owner: blogle
+          repositories: anvil
           permission-administration: write
-          permission-actions-secrets: write
-          permission-actions-variables: write
-          permission-environments: write
           permission-contents: read
-      - name: Installation preflight and diagnostics
+          permission-secrets: write
+          permission-variables: write
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: blogle/anvil
+          ref: main
+          path: anvil
+          token: ${{ steps.fleet-app.outputs.token || github.token }}
+          persist-credentials: false
+      - name: Plan Anvil policy from its checked-out flake
+        working-directory: anvil
         env:
-          SDLC_FLEET_CONTROLLER_SHA: c91e13d80ec8b3fd60690fd555006d34e8d9978b
-        run: |
-          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
-          test "$SDLC_FLEET_CONTROLLER_SHA" = "$(jq -r .revision fleet/controller.json)"
-          nix profile install "github:blogle/sdlc?rev=$SDLC_FLEET_CONTROLLER_SHA#packages.x86_64-linux.sdlc"
-          echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
-      - name: Installation preflight and diagnostics
+          GH_TOKEN: ${{ steps.fleet-app.outputs.token || github.token }}
+        run: nix run .#sdlc -- policy plan --repo blogle/anvil
+      - name: Apply and verify Anvil policy
+        if: vars.SDLC_FLEET_APPLY == '1'
+        working-directory: anvil
         env:
-          SDLC_FLEET_APP_ID: ${{ secrets.SDLC_FLEET_APP_ID }}
-          SDLC_FLEET_APP_PRIVATE_KEY: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
-          SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
-          SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
-          SDLC_FLEET_APPLY: ${{ vars.SDLC_FLEET_APPLY }}
-          SDLC_CLI: /home/runner/.nix-profile/bin/sdlc
           GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
         run: |
-          python3 --version
-          python3 scripts/fleet-controller.py validate
-          python3 scripts/fleet-controller.py status
-          python3 scripts/fleet-controller.py reconcile
+          set -euo pipefail
+          nix run .#sdlc -- policy apply --repo blogle/anvil
+          nix run .#sdlc -- policy check --repo blogle/anvil
+      - name: Install release credentials in Anvil repository secrets
+        if: vars.SDLC_FLEET_APPLY == '1'
+        env:
+          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
+          SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
+          SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SDLC_RELEASE_APP_ID"
+          test -n "$SDLC_RELEASE_APP_PRIVATE_KEY"
+          gh secret set SDLC_RELEASE_APP_ID --repo blogle/anvil --body "$SDLC_RELEASE_APP_ID"
+          gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo blogle/anvil --body "$SDLC_RELEASE_APP_PRIVATE_KEY"
+      - name: Enable Anvil release last
+        if: vars.SDLC_FLEET_APPLY == '1'
+        env:
+          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
+        run: gh variable set SDLC_RELEASE_ACTIVATE --repo blogle/anvil --body true
