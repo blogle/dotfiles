@@ -7,7 +7,8 @@ repository.
 
 `security-floor.json` is intentionally smaller than SDLC policy: it only
 forbids destructive changes and App/agent bypasses. Its null human bypass is a
-safe unconfigured value, so no automated actor can become a break-glass actor.
+safe unconfigured value; reconciliation refuses to proceed until an operator
+supplies exactly one real personal GitHub user ID.
 
 The workflow is prepare-only. Pull requests run a read-only plan. Protected
 `master` runs diagnostics and remains a no-op until an operator configures the
@@ -18,5 +19,7 @@ never treated as success or executed with credentials.
 
 `enabled: false` is an intentional pause for activation, while `suspended:
 true` pauses all automated mutation. Neither state removes existing GitHub
-protections or secrets. Consumer check names and ruleset policy remain owned by
-SDLC.
+protections or secrets. Enabled repositories remain `unknown` until policy,
+installation, checks, and release credentials are verified; unsafe results
+disable activation, while transient unknown results retain current activation.
+Consumer check names and ruleset policy remain owned by SDLC.

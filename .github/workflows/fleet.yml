@@ -6,20 +6,43 @@ on:
       - fleet/**
       - scripts/fleet-controller.py
       - .github/workflows/fleet.yml
+      - .github/CODEOWNERS
+      - .mergify.yml
   push:
     branches: [master]
     paths:
       - fleet/**
       - scripts/fleet-controller.py
       - .github/workflows/fleet.yml
+      - .github/CODEOWNERS
+      - .mergify.yml
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  security-review:
+    name: fleet / security review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require current human review for security-sensitive edits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEWER: blogle
+        run: |
+          set -eu
+          sensitive="$(gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[] | .filename' | awk '
+            $0 == ".mergify.yml" || $0 == ".github/CODEOWNERS" || $0 == ".github/workflows/fleet.yml" || $0 ~ /^fleet\// || $0 == "scripts/fleet-controller.py" || $0 == "scripts/test-fleet-controller.py" { print; found=1 }
+            END { if (found) exit 0; exit 1 }' || true)"
+          test -z "$sensitive" || gh api "repos/$REPOSITORY/pulls/$PR_NUMBER/reviews" --jq '[.[] | select(.user.login == env.REVIEWER and .state == "APPROVED")] | length' | grep -q '^[1-9]'
+
   plan:
     name: fleet / read-only plan
     runs-on: ubuntu-latest
@@ -40,7 +63,32 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 2
           persist-credentials: false
+      - name: Require approved PR for sensitive commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+          REVIEWER: blogle
+        run: |
+          set -eu
+          sensitive="$(git diff --name-only HEAD^ HEAD | awk '
+            $0 == ".mergify.yml" || $0 == ".github/CODEOWNERS" || $0 == ".github/workflows/fleet.yml" || $0 ~ /^fleet\// || $0 == "scripts/fleet-controller.py" || $0 == "scripts/test-fleet-controller.py" { print; found=1 }
+            END { if (found) exit 0; exit 1 }' || true)"
+          if test -n "$sensitive"; then
+            pr="$(gh api "repos/$REPOSITORY/commits/$COMMIT/pulls" --jq '.[0].number // empty')"
+            test -n "$pr"
+            gh api "repos/$REPOSITORY/pulls/$pr/reviews" --jq '[.[] | select(.commit_id == env.COMMIT and .user.login == env.REVIEWER and .state == "APPROVED")] | length' | grep -q '^[1-9]'
+          fi
+      - name: Installation preflight and diagnostics
+        env:
+          SDLC_FLEET_CONTROLLER_SHA: 517216b32898ce5bcb43091fdc547169c767075e
+        run: |
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
+          test "$SDLC_FLEET_CONTROLLER_SHA" = "$(jq -r .revision fleet/controller.json)"
+          nix profile install "github:blogle/sdlc?rev=$SDLC_FLEET_CONTROLLER_SHA#packages.x86_64-linux.sdlc"
+          echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
       - name: Installation preflight and diagnostics
         env:
           SDLC_FLEET_APP_ID: ${{ secrets.SDLC_FLEET_APP_ID }}
@@ -48,6 +96,7 @@ jobs:
           SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
           SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
           SDLC_FLEET_APPLY: ${{ vars.SDLC_FLEET_APPLY }}
+          SDLC_CLI: /home/runner/.nix-profile/bin/sdlc
         run: |
           python3 --version
           python3 scripts/fleet-controller.py validate
