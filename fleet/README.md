@@ -54,6 +54,16 @@ contract. The canonical SDLC fleet specification should document the required
 permission and caller/called-workflow wiring before bootstrap. No App
 permission has been changed here.
 
+Operator bootstrap checklist, deferred until the source pin is protected:
+create/install the fleet App only for Anvil with Administration: write, Actions
+Secrets: write, Actions Variables: write, Environments: write, and Contents:
+read; provide its ID/private key plus the separate release App ID/private key
+as protected secrets in the fleet-reconcile environment; set the protected
+environment variable `SDLC_FLEET_APPLY=1`; and configure `sdlc-release` as a
+protected environment restricted to the release branch/workflow. The release
+App itself must not receive Administration, Secrets, Variables, or Environments
+write. None of these bootstrap actions has been performed.
+
 The security-review check is expected to be red on this draft until a human
 approves its exact head. CODEOWNERS and this check are only prerequisites;
 operators must separately require them in GitHub rulesets. They are not

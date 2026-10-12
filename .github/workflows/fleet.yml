@@ -102,6 +102,18 @@ jobs:
             reviews="$(gh api "repos/$REPOSITORY/pulls/$pr/reviews")"
             printf '%s' "$reviews" | jq -e --arg reviewer "$REVIEWER" --arg head "$head" '[.[] | select(.commit_id == $head and .user.login == $reviewer and .state == "APPROVED")] | length > 0' >/dev/null
           fi
+      - name: Create scoped fleet App token
+        if: vars.SDLC_FLEET_APPLY == '1'
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        id: fleet-app
+        with:
+          app-id: ${{ secrets.SDLC_FLEET_APP_ID }}
+          private-key: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
+          permission-administration: write
+          permission-actions-secrets: write
+          permission-actions-variables: write
+          permission-environments: write
+          permission-contents: read
       - name: Installation preflight and diagnostics
         env:
           SDLC_FLEET_CONTROLLER_SHA: c91e13d80ec8b3fd60690fd555006d34e8d9978b
@@ -118,6 +130,7 @@ jobs:
           SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
           SDLC_FLEET_APPLY: ${{ vars.SDLC_FLEET_APPLY }}
           SDLC_CLI: /home/runner/.nix-profile/bin/sdlc
+          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
         run: |
           python3 --version
           python3 scripts/fleet-controller.py validate

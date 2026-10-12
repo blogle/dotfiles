@@ -209,6 +209,136 @@ def resolve_consumer_pin(repository, observed, api):
     return {"revision": locked["rev"], "ref": ref or None}
 
 
+def verify_anvil_installation(observed):
+    permissions = observed.get("permissions", {})
+    required = {
+        "administration": "write",
+        "actions_secrets": "write",
+        "actions_variables": "write",
+        "environments": "write",
+    }
+    if not observed.get("installation_verified") or any(
+        permissions.get(name) != value for name, value in required.items()
+    ):
+        raise ValueError("Anvil fleet installation or required App permissions are not ready")
+
+
+def reconcile_anvil(manifest, api, worker, *, apply=False):
+    """Converge only Anvil; all policy logic remains in the SDLC worker."""
+    anvil = next((item for item in manifest["repositories"] if item["name"] == "anvil"), None)
+    if anvil is None or not anvil["enabled"] or anvil.get("state") == "suspended":
+        return {"state": "suspended", "ready": False, "writes": []}
+    try:
+        observed = verify_live_identities({**manifest, "repositories": [anvil]}, api)["anvil"]
+        installation = api.get("repos/blogle/anvil/installation")
+        verify_anvil_installation(installation)
+        consumer = resolve_consumer_pin(anvil, observed, api)
+        workflow = api.get(f"repos/blogle/anvil/contents/.github/workflows/sdlc.yml?ref={observed['default_branch']}")
+    except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+        return {"state": "unknown", "ready": False, "reason": str(error), "writes": []}
+    if workflow.get("encoding") != "base64":
+        return {"state": "unknown", "ready": False, "reason": "generated caller workflow is unavailable", "writes": []}
+    caller = base64.b64decode(workflow["content"]).decode("utf-8")
+    caller_result = worker.verify_callers(caller, consumer["revision"])
+    if caller_result.get("state") != "ready":
+        return {"state": caller_result.get("state", "unknown"), "ready": False, "writes": []}
+    release_workflow = api.get(f"repos/blogle/anvil/contents/.github/workflows/release.yml?ref={observed['default_branch']}")
+    if release_workflow.get("encoding") != "base64":
+        return {"state": "unknown", "ready": False, "reason": "release caller workflow is unavailable", "writes": []}
+    release_text = base64.b64decode(release_workflow["content"]).decode("utf-8")
+    if "environment: sdlc-release" not in release_text or "secrets: inherit" not in release_text:
+        return {"state": "unsafe", "ready": False, "reason": "release caller does not wire the protected environment", "writes": []}
+    if not apply:
+        return {"state": "unknown", "ready": False, "consumer_pin": consumer, "writes": []}
+    policy_result = worker.apply_and_verify_policy("blogle/anvil", observed["default_branch"], consumer["revision"])
+    if policy_result.get("state") != "ready":
+        return {"state": "unsafe", "ready": False, "reason": "upstream SDLC policy apply/check did not verify", "writes": []}
+    environment = "sdlc-release"
+    environment_state = api.get(f"repos/blogle/anvil/environments/{environment}")
+    if environment_state.get("deployment_branch_policy") != {"protected_branches": True, "custom_branch_policies": False}:
+        return {"state": "unsafe", "ready": False, "reason": "release environment branch policy is not protected-only", "writes": []}
+    writes = []
+    for name in ("SDLC_RELEASE_APP_ID", "SDLC_RELEASE_APP_PRIVATE_KEY"):
+        value = os.environ.get(name)
+        if not value:
+            return {"state": "unknown", "ready": False, "reason": f"missing protected credential {name}", "writes": writes}
+        if api.put_environment_secret("blogle/anvil", environment, name, value):
+            writes.append(f"environment-secret:{name}")
+    if not api.verify_environment_secrets("blogle/anvil", environment, ["SDLC_RELEASE_APP_ID", "SDLC_RELEASE_APP_PRIVATE_KEY"]):
+        return {"state": "unsafe", "ready": False, "reason": "environment secret readback failed", "writes": writes}
+    if api.put_environment_variable("blogle/anvil", environment, "SDLC_RELEASE_ACTIVATE", "true"):
+        writes.append("environment-variable:SDLC_RELEASE_ACTIVATE")
+    if not api.verify_environment_variable("blogle/anvil", environment, "SDLC_RELEASE_ACTIVATE", "true"):
+        return {"state": "unsafe", "ready": False, "reason": "release activation variable readback failed", "writes": writes}
+    return {"state": "ready", "ready": True, "consumer_pin": consumer, "writes": writes}
+
+
+class GitHubMutationAPI(GitHubAPI):
+    """Small trusted workflow write adapter; no repository-secret fallback exists."""
+
+    def put_environment_secret(self, repository, environment, name, value):
+        result = subprocess.run(
+            ["gh", "secret", "set", name, "--env", environment, "--repo", repository],
+            input=value, text=True, capture_output=True,
+        )
+        if result.returncode != 0:
+            raise ValueError(f"environment secret write failed for {name}: {result.stderr.strip()}")
+        return True
+
+    def put_environment_variable(self, repository, environment, name, value):
+        result = subprocess.run(
+            ["gh", "variable", "set", name, "--env", environment, "--repo", repository, "--body", value],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise ValueError(f"environment variable write failed for {name}: {result.stderr.strip()}")
+        return True
+
+    def verify_environment_secrets(self, repository, environment, names):
+        observed = self.get(f"repos/{repository}/environments/{environment}/secrets")
+        return sorted(item.get("name") for item in observed.get("secrets", [])) == sorted(names)
+
+    def verify_environment_variable(self, repository, environment, name, value):
+        observed = self.get(f"repos/{repository}/environments/{environment}/variables/{name}")
+        return observed.get("name") == name and observed.get("value") == value
+
+
+class SDLCPolicyWorker:
+    """Trusted pinned SDLC policy adapter; consumer files are treated as data."""
+
+    def __init__(self, executable, api):
+        self.executable = executable
+        self.api = api
+
+    def verify_callers(self, workflow, consumer_pin):
+        required = ("sdlc-check", "sdlc-verify", "sdlc-policy")
+        if any(name not in workflow for name in required):
+            return {"state": "unknown", "reason": "generated SDLC callers/checks are incomplete"}
+        if consumer_pin not in workflow:
+            return {"state": "unsafe", "reason": "caller does not use the committed consumer SDLC pin"}
+        return {"state": "ready"}
+
+    def apply_and_verify_policy(self, repository, default_branch, consumer_pin):
+        # The upstream command renders/applies and then reads back its canonical ruleset.
+        with tempfile.TemporaryDirectory(prefix="sdlc-policy-") as directory:
+            policy_dir = Path(directory) / ".github"
+            policy_dir.mkdir()
+            config = self.api.get(
+                f"repos/{repository}/contents/.github/repository-policy.json?ref={default_branch}"
+            )
+            if config.get("encoding") != "base64":
+                return {"state": "unknown"}
+            (policy_dir / "repository-policy.json").write_bytes(base64.b64decode(config["content"]))
+            for action in ("apply", "check"):
+                result = subprocess.run(
+                    [self.executable, "policy", action, "--repo", repository],
+                    cwd=directory, capture_output=True, text=True,
+                )
+                if result.returncode != 0:
+                    return {"state": "unsafe", "action": action}
+        return {"state": "ready"}
+
+
 def repository_plan(repository):
     identity_key = f"{repository['name']}:{repository['id']}"
     if repository.get("suspended", False) or repository.get("state") == "suspended":
@@ -296,36 +426,6 @@ def reconcile_repository(repository, worker):
     return {"name": repository["name"], "state": "unknown", "activation": "retain"}
 
 
-def sdlc_adapter(mode, manifest_path, policy_path, attestation_path, consumer_pin, floor):
-    """Invoke only the pinned worker contract; consumer code is never loaded."""
-    controller = load_controller()
-    bypass_id = floor.get("human_bypass_actor_id")
-    if not bypass_id:
-        return {"state": "unknown", "reason": "human bypass ID is not configured"}
-    sdlc = os.environ.get("SDLC_CLI")
-    if not sdlc or not Path(sdlc).is_file():
-        return {"state": "unknown", "reason": "pinned SDLC CLI executable is unavailable"}
-    command = [
-        sdlc,
-        "fleet",
-        mode,
-        "--manifest",
-        str(manifest_path),
-        controller["policy_flag"],
-        str(policy_path),
-        "--attestation",
-        str(attestation_path),
-        "--consumer-pin",
-        consumer_pin,
-        controller["trusted_bypass_flag"],
-        str(bypass_id),
-    ]
-    result = subprocess.run(command, text=True)
-    if result.returncode == 0:
-        return {"state": "prepared", "ready": False, "activation": "unchanged", "exit": 0}
-    return {"state": "unsafe", "ready": False, "exit": result.returncode}
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("validate", "plan", "status", "reconcile"))
@@ -367,44 +467,17 @@ def main():
             observed = verify_live_identities(manifest, GitHubAPI())
         except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
             return fail(f"live identity preflight failed: {error}")
-        with tempfile.TemporaryDirectory(prefix="fleet-prepare-") as directory:
-            try:
-                verify_controller_pin(GitHubAPI())
-            except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
-                return fail(f"trusted controller preflight failed: {error}")
-            results = {}
-            for repository in manifest["repositories"]:
-                if not repository["enabled"] or repository.get("state") == "suspended":
-                    results[repository["name"]] = repository_plan(repository)
-                    continue
-                try:
-                    consumer = resolve_consumer_pin(repository, observed[repository["name"]], GitHubAPI())
-                    policy = json.loads(POLICY.read_text(encoding="utf-8"))
-                    policy["provenance"]["revision"] = consumer["revision"]
-                    policy["bypass"]["user_id"] = floor["human_bypass_actor_id"]
-                    policy["bypass"]["actors"] = [floor["human_bypass_actor_id"]]
-                    policy["bypass"]["count"] = 1
-                    policy_path = Path(directory) / f"{repository['name']}-policy.json"
-                    manifest_path = Path(directory) / f"{repository['name']}-manifest.json"
-                    attestation_path = Path(directory) / f"{repository['name']}-attestation.json"
-                    policy_path.write_text(json.dumps(policy), encoding="utf-8")
-                    manifest_path.write_text(json.dumps({**manifest, "repositories": [repository]}), encoding="utf-8")
-                    attestation_path.write_text(json.dumps({
-                        "source": "blogle/sdlc",
-                        "repository_id": 1402311485,
-                        "commit_sha": consumer["revision"],
-                        "reachable_from_protected": True,
-                        "immutable": True,
-                        "verified_by": "dotfiles-trusted-controller",
-                    }), encoding="utf-8")
-                    results[repository["name"]] = sdlc_adapter(
-                        "reconcile", manifest_path, policy_path, attestation_path,
-                        consumer["revision"], floor
-                    ) | {"consumer_pin": consumer}
-                except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
-                    results[repository["name"]] = {"state": "unknown", "reason": str(error)}
-            print(json.dumps({"state": "prepared", "ready": False, "repositories": results}, sort_keys=True))
-            return 0 if all(item.get("state") in ("prepared", "suspended", "disabled") for item in results.values()) else 1
+        try:
+            verify_controller_pin(GitHubAPI())
+            result = reconcile_anvil(
+                manifest, GitHubMutationAPI(),
+                SDLCPolicyWorker(os.environ["SDLC_CLI"], GitHubMutationAPI()),
+                apply=True,
+            )
+        except (KeyError, OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+            return fail(f"Anvil reconciliation failed closed: {error}")
+        print(json.dumps(result, sort_keys=True))
+        return 0 if result.get("state") == "ready" else 1
 
     result = {"state": "prepare-only", "repositories": [repository_plan(item) for item in manifest["repositories"]]}
     print(json.dumps(result, sort_keys=True))
