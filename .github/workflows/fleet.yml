@@ -67,7 +67,8 @@ jobs:
     name: fleet / Anvil policy and release
     if: >-
       github.event_name != 'pull_request' &&
-      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
+      (github.ref == 'refs/heads/master' && github.event_name != 'workflow_dispatch' ||
+      github.event_name == 'workflow_dispatch' && inputs.bootstrap_pr90 == true)
     runs-on: ubuntu-latest
     steps:
       - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
