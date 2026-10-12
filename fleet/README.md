@@ -11,29 +11,32 @@ flake:
 nix run .#sdlc -- policy plan --repo blogle/anvil
 ```
 
-The pull-request plan targets the current head of Anvil PR #90 by default, so
-it does not attempt to plan the nonexistent policy file on Anvil `main`.
-`workflow_dispatch` accepts `anvil_ref` for another read-only target.
+The read-only plan targets the current head of Anvil PR #90, so it does not
+attempt to plan the nonexistent policy file on Anvil `main`.
 
-Protected reconciliation always runs `policy plan`. It runs `policy apply` and
-`policy check` only when the operator sets the dotfiles repository variable
+Protected reconciliation uses Anvil `main` after merge. For the first canary,
+an operator may manually dispatch with `bootstrap_pr90=true`; the workflow
+queries PR #90 and checks out its exact current head, not an arbitrary ref.
+Policy apply and check require the dotfiles repository variable
 `SDLC_FLEET_APPLY=1`. The App token is scoped to `blogle/anvil` and has only
 Administration, Contents read, Secrets write, and Variables write.
 
-After policy verification, the workflow copies the two release App values into
-Anvil repository secrets and sets `SDLC_RELEASE_ACTIVATE=true` last. Repository
-secrets are used for this MVP because the existing Anvil v1.3 release caller
-uses `secrets: inherit`; environment-secret migration is deferred.
+Release setup is a separate explicit step. Only when both
+`SDLC_FLEET_APPLY=1` and `SDLC_FLEET_RELEASE_ENABLE=1` are set does the
+workflow copy the two release App values into Anvil repository secrets and set
+`SDLC_RELEASE_ACTIVATE=true` last. Repository secrets are used for this MVP
+because the existing Anvil v1.3 release caller uses `secrets: inherit`;
+environment-secret migration is deferred.
 
 ## Operator Steps
 
 1. Review Anvil PR #90 and its policy/release workflows.
-2. Dispatch this workflow with `anvil_ref` set to the exact approved Anvil
-   commit for a read-only plan.
-3. After Anvil is merged and release credentials are confirmed, set
-   `SDLC_FLEET_APPLY=1` and run the protected workflow once.
-4. Remove or unset `SDLC_FLEET_APPLY` after convergence if ongoing scheduled
-   reconciliation is not desired.
+2. Set `SDLC_FLEET_APPLY=1` and manually dispatch with `bootstrap_pr90=true`
+   to apply/check the policy from PR #90’s verified current head.
+3. After Anvil is merged, unset `SDLC_FLEET_APPLY` or run the protected
+   workflow against `main` to confirm the same policy.
+4. Later, set `SDLC_FLEET_RELEASE_ENABLE=1` for a separate explicit release
+   credential/activation run; activation remains off by default.
 
 No App installation, repository policy, secret, variable, merge, or queue
 changes are performed by this PR.

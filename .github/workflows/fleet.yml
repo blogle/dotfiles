@@ -20,11 +20,11 @@ on:
     - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
-      anvil_ref:
-        description: Anvil commit or branch to plan (blank uses draft PR 90 head)
+      bootstrap_pr90:
+        description: Use the current exact head of Anvil PR 90 for first-canary bootstrap
         required: false
-        type: string
-        default: ''
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,14 +46,9 @@ jobs:
         id: anvil-ref
         env:
           GH_TOKEN: ${{ github.token }}
-          INPUT_REF: ${{ inputs.anvil_ref }}
         run: |
           set -euo pipefail
-          if test -n "$INPUT_REF"; then
-            ref="$INPUT_REF"
-          else
-            ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
-          fi
+          ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
           test -n "$ref"
           printf 'ref=%s\n' "$ref" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -70,7 +65,9 @@ jobs:
 
   reconcile:
     name: fleet / Anvil policy and release
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
@@ -88,10 +85,25 @@ jobs:
           permission-contents: read
           permission-secrets: write
           permission-variables: write
+      - name: Select protected Anvil target
+        id: anvil-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOOTSTRAP_PR90: ${{ inputs.bootstrap_pr90 }}
+        run: |
+          set -euo pipefail
+          if test "$BOOTSTRAP_PR90" = true; then
+            ref="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
+          else
+            test "$GITHUB_EVENT_NAME" != workflow_dispatch || test "$BOOTSTRAP_PR90" = false
+            ref=main
+          fi
+          test -n "$ref"
+          printf 'ref=%s\n' "$ref" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: blogle/anvil
-          ref: main
+          ref: ${{ steps.anvil-ref.outputs.ref }}
           path: anvil
           token: ${{ steps.fleet-app.outputs.token || github.token }}
           persist-credentials: false
@@ -110,7 +122,7 @@ jobs:
           nix run .#sdlc -- policy apply --repo blogle/anvil
           nix run .#sdlc -- policy check --repo blogle/anvil
       - name: Install release credentials in Anvil repository secrets
-        if: vars.SDLC_FLEET_APPLY == '1'
+        if: vars.SDLC_FLEET_APPLY == '1' && vars.SDLC_FLEET_RELEASE_ENABLE == '1'
         env:
           GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
           SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
@@ -122,7 +134,7 @@ jobs:
           gh secret set SDLC_RELEASE_APP_ID --repo blogle/anvil --body "$SDLC_RELEASE_APP_ID"
           gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo blogle/anvil --body "$SDLC_RELEASE_APP_PRIVATE_KEY"
       - name: Enable Anvil release last
-        if: vars.SDLC_FLEET_APPLY == '1'
+        if: vars.SDLC_FLEET_APPLY == '1' && vars.SDLC_FLEET_RELEASE_ENABLE == '1'
         env:
           GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
         run: gh variable set SDLC_RELEASE_ACTIVATE --repo blogle/anvil --body true
