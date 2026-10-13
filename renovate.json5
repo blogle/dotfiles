@@ -50,10 +50,22 @@
       enabled: false,
     },
     {
+      // Never let unrelated registry lookup or branch-update errors block Dojo staging CD.
       matchDatasources: ['docker'],
+      matchPackageNames: ['!ghcr.io/blogle/dojo2'],
       matchUpdateTypes: ['minor', 'patch', 'pin', 'digest'],
       groupName: 'container image updates',
       groupSlug: 'container-images',
+    },
+    {
+      // The custom manager updates the Dojo base, image tag and digest atomically.
+      // Give it a dedicated branch rather than the shared container image update branch.
+      matchManagers: ['custom.regex'],
+      matchDepNames: ['ghcr.io/blogle/dojo2'],
+      matchFileNames: ['addrspace/apps/dojo/overlays/staging/kustomization.yaml'],
+      groupName: 'Dojo staging releases',
+      groupSlug: 'dojo-staging-releases',
+      prPriority: 90,
     },
     {
       matchDatasources: ['helm'],
@@ -123,7 +135,10 @@
       matchStrings: [
         '(?<prefix>github\\.com/blogle/dojo2//deploy/k8s/base\\?ref=)(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)(?<middle>\\s*\\n\\s*-\\s*namespace\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*dojo-google-oauth-sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/dojo2\\s*\\n\\s*newName:\\s*ghcr\\.io/blogle/dojo2\\s*\\n\\s*newTag:\\s*)v[0-9]+\\.[0-9]+\\.[0-9]+(?<digestPrefix>\\s*\\n\\s*digest:\\s*)(?<currentDigest>sha256:[a-f0-9]{64})',
       ],
-      autoReplaceStringTemplate: '{{{prefix}}}{{{newValue}}}{{{middle}}}{{{newValue}}}{{{digestPrefix}}}{{{newDigest}}}',
+      // Use a literal replacement: regex capture groups are not available to
+      // Renovate's branch-update template (the same issue fixed for Anvil in PR #125).
+      // A new release always advances all three values together.
+      autoReplaceStringTemplate: 'github.com/blogle/dojo2//deploy/k8s/base?ref={{{newValue}}}\n- namespace.yaml\n- ingress.yaml\n- dojo-google-oauth-sealed.yaml\n\nimages:\n- name: ghcr.io/blogle/dojo2\n  newName: ghcr.io/blogle/dojo2\n  newTag: {{{newValue}}}\n  digest: {{{newDigest}}}',
       depNameTemplate: 'ghcr.io/blogle/dojo2',
       datasourceTemplate: 'docker',
       versioningTemplate: 'semver',
