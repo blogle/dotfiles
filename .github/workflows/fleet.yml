@@ -1,131 +1,84 @@
 name: SDLC fleet
-
 on:
   pull_request:
     paths:
-      - fleet/manifest.yaml
-      - scripts/fleet-controller.py
-      - scripts/test-fleet-controller.py
-      - scripts/test-fleet-cli-contract.sh
+      - fleet.yml
       - .github/workflows/fleet.yml
   push:
     branches: [master]
-    paths:
-      - fleet/manifest.yaml
-      - scripts/fleet-controller.py
-      - scripts/test-fleet-controller.py
-      - scripts/test-fleet-cli-contract.sh
-      - .github/workflows/fleet.yml
   schedule:
-    - cron: '17 * * * *'
-  workflow_dispatch:
-    inputs:
-      bootstrap_pr90:
-        description: Use the current exact head of Anvil PR 90 for first-canary bootstrap
-        required: false
-        type: boolean
-        default: false
-
+    - cron: '31 * * * *'
 permissions:
   contents: read
-  pull-requests: read
-
 jobs:
-  plan:
-    name: fleet / read-only Anvil plan
+  manifest:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.value }}
     steps:
-      - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Validate inventory
-        run: |
-          python3 -m unittest scripts/test-fleet-controller.py
-          python3 scripts/fleet-controller.py validate
-          python3 scripts/fleet-controller.py plan
-      - name: Select Anvil read-only target
-        id: anvil-ref
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EVENT: ${{ github.event_name }}
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - id: matrix
         run: |
           set -euo pipefail
-          if test "$EVENT" = pull_request; then
-            sha="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
-            test -n "$sha"
-            flake="github:blogle/anvil/$sha#sdlc"
-          else
-            flake='github:blogle/anvil#sdlc'
-          fi
-          printf 'flake=%s\n' "$flake" >> "$GITHUB_OUTPUT"
-      - name: Run the consumer's Nix-native read-only ruleset plan
-        env:
-          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
-          GH_TOKEN: ${{ github.token }}
-        run: bash scripts/test-fleet-cli-contract.sh
-
-  reconcile:
-    name: fleet / Anvil ruleset and release
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+          repos="$(nix run nixpkgs#yq-go -- -o=json fleet.yml | jq -c '[. as $fleet | .repos[] | select(.enabled == true) | {owner: $fleet.owner, repo: .name}]')"
+          echo "value=$repos" >> "$GITHUB_OUTPUT"
+  validate:
+    if: github.event_name == 'pull_request'
+    needs: manifest
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.manifest.outputs.matrix) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: DeterminateSystems/nix-installer-action@786fff0690178f1234e4e1fe9b536e94f5433196 # v20
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Create the explicitly enabled Anvil-only App token
-        if: vars.SDLC_FLEET_APPLY == '1'
-        id: fleet-app
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - name: Check consumer entry without credentials
+        env:
+          REPOSITORY: ${{ matrix.repo.owner }}/${{ matrix.repo.repo }}
+        run: |
+          nix run "github:$REPOSITORY#sdlc" -- enable --repo "$REPOSITORY" --dry-run
+  reconcile:
+    if: github.event_name != 'pull_request'
+    needs: manifest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.manifest.outputs.matrix) }}
+    steps:
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/create-github-app-token@v2
+        id: fleet
         with:
           app-id: ${{ secrets.SDLC_FLEET_APP_ID }}
           private-key: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
-          owner: blogle
-          repositories: anvil
+          owner: ${{ matrix.repo.owner }}
+          repositories: ${{ matrix.repo.repo }}
           permission-administration: write
-          permission-secrets: write
-          permission-variables: write
-      - name: Select protected Anvil target
-        id: anvil-ref
+          permission-actions: write
+      - name: Apply consumer-pinned ruleset and distribute release credentials
         env:
-          GH_TOKEN: ${{ github.token }}
-          BOOTSTRAP_PR90: ${{ inputs.bootstrap_pr90 }}
+          GH_TOKEN: ${{ steps.fleet.outputs.token }}
+          REPOSITORY: ${{ matrix.repo.owner }}/${{ matrix.repo.repo }}
+          RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
+          RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
+          RELEASE_CREDENTIAL_VERSION: ${{ vars.SDLC_RELEASE_CREDENTIAL_VERSION }}
         run: |
           set -euo pipefail
-          if test "$BOOTSTRAP_PR90" = true; then
-            sha="$(gh api repos/blogle/anvil/pulls/90 --jq .head.sha)"
-            test -n "$sha"
-            flake="github:blogle/anvil/$sha#sdlc"
-          else
-            test "$GITHUB_EVENT_NAME" != workflow_dispatch || test "$BOOTSTRAP_PR90" = false
-            flake='github:blogle/anvil#sdlc'
+          nix run "github:$REPOSITORY#sdlc" -- enable --repo "$REPOSITORY"
+          credential_version="${RELEASE_CREDENTIAL_VERSION:-1}"
+          installed_version="$(gh variable get SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" 2>/dev/null || true)"
+          if [[ "$installed_version" != "$credential_version" ]]; then
+            printf '%s' "$RELEASE_APP_ID" | gh secret set SDLC_RELEASE_APP_ID --repo "$REPOSITORY"
+            printf '%s' "$RELEASE_APP_PRIVATE_KEY" | gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo "$REPOSITORY"
+            gh variable set SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" --body "$credential_version"
           fi
-          printf 'flake=%s\n' "$flake" >> "$GITHUB_OUTPUT"
-      - name: Plan Anvil ruleset from its flake
-        env:
-          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
-          GH_TOKEN: ${{ steps.fleet-app.outputs.token || github.token }}
-        run: bash scripts/test-fleet-cli-contract.sh
-      - name: Apply and verify Anvil ruleset
-        if: vars.SDLC_FLEET_APPLY == '1'
-        env:
-          ANVIL_FLAKE: ${{ steps.anvil-ref.outputs.flake }}
-          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
-        run: |
-          set -euo pipefail
-          nix run "$ANVIL_FLAKE" -- ruleset apply --repo blogle/anvil
-          nix run "$ANVIL_FLAKE" -- ruleset check --repo blogle/anvil
-      - name: Install release credentials in Anvil repository secrets
-        if: vars.SDLC_FLEET_APPLY == '1' && vars.SDLC_FLEET_RELEASE_ENABLE == '1'
-        env:
-          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
-          SDLC_RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
-          SDLC_RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          test -n "$SDLC_RELEASE_APP_ID"
-          test -n "$SDLC_RELEASE_APP_PRIVATE_KEY"
-          gh secret set SDLC_RELEASE_APP_ID --repo blogle/anvil --body "$SDLC_RELEASE_APP_ID"
-          gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo blogle/anvil --body "$SDLC_RELEASE_APP_PRIVATE_KEY"
-      - name: Enable Anvil release last
-        if: vars.SDLC_FLEET_APPLY == '1' && vars.SDLC_FLEET_RELEASE_ENABLE == '1'
-        env:
-          GH_TOKEN: ${{ steps.fleet-app.outputs.token }}
-        run: gh variable set SDLC_RELEASE_ACTIVATE --repo blogle/anvil --body true
+          if ! gh variable get SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh variable set SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" --body false
+          fi
+          if [[ "$(gh variable get SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY" 2>/dev/null || true)" != 'sdlc-release[bot]' ]]; then
+            gh variable set SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY" --body 'sdlc-release[bot]'
+          fi

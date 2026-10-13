@@ -1,0 +1,8 @@
+owner: blogle
+repos:
+  - name: anvil
+    enabled: true
+  - name: sdlc
+    enabled: false
+  - name: dotfiles
+    enabled: false

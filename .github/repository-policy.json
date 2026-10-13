@@ -1,5 +1,0 @@
-{
-  "extra_required_status_checks": [
-    "Kubernetes desired state"
-  ]
-}

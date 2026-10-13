@@ -1,7 +1,0 @@
-# GitHub branch rules must require this owner for these paths before merge.
-/.github/workflows/fleet.yml @blogle
-/.github/CODEOWNERS @blogle
-/.mergify.yml @blogle
-/fleet/ @blogle
-/scripts/fleet-controller.py @blogle
-/scripts/test-fleet-controller.py @blogle

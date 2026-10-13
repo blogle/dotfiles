@@ -3,10 +3,17 @@
   extends: ['config:recommended', 'github>blogle/sdlc#v1'],
   enabledManagers: ['nix', 'github-actions', 'kubernetes', 'kustomize', 'flux', 'custom.regex'],
   dependencyDashboard: true,
-  prConcurrentLimit: 2,
-  branchConcurrentLimit: 2,
+  // Keep unrelated Renovate PRs from starving production deployment updates.
+  prConcurrentLimit: 10,
+  branchConcurrentLimit: 10,
   labels: ['dependencies', 'kubernetes'],
   packageRules: [
+    {
+      // Anvil rollouts are higher priority than routine dependency updates.
+      matchManagers: ['custom.regex'],
+      matchDepNames: ['blogle/anvil', 'blogle/anvil-agent-sandbox'],
+      prPriority: 100,
+    },
     {
       matchManagers: ['kustomize'],
       matchPackageNames: ['blogle/dojo2', 'blogle/anvil'],
@@ -101,7 +108,9 @@
       matchStrings: [
          '(?<prefix>github\\.com/blogle/anvil//k8s/base\\?ref=)(?<currentDigest>[a-f0-9]{40})(?<afterBase>\\s*\\n\\s*-\\s*certificate\\.yaml\\s*\\n\\s*-\\s*ingress\\.yaml\\s*\\n\\s*-\\s*github-app-credentials-anvil\\.sealed\\.yaml\\s*\\n\\s*\\nimages:\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<afterApp>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-sandbox\\s*\\n\\s*newTag:\\s*sha-)[a-f0-9]{40}(?<afterSandbox>\\s*\\n\\s*-\\s*name:\\s*ghcr\\.io/blogle/anvil-nix-daemon\\s*\\n\\s*newTag:\\s*)(?<daemonQuote>\\\"?)sha-[a-f0-9]{40}(?<suffix>\\\"?\\s*)',
       ],
-      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{afterBase}}}{{{newDigest}}}{{{afterApp}}}{{{newDigest}}}{{{afterSandbox}}}{{{daemonQuote}}}sha-{{{newDigest}}}{{{suffix}}}',
+      // A canonical literal replacement is intentional. Reconstructing this from
+      // the regex capture groups caused Renovate branch update failures (PR #22).
+      autoReplaceStringTemplate: 'github.com/blogle/anvil//k8s/base?ref={{{newDigest}}}\n  - certificate.yaml\n  - ingress.yaml\n  - github-app-credentials-anvil.sealed.yaml\n\nimages:\n  - name: ghcr.io/blogle/anvil\n    newTag: sha-{{{newDigest}}}\n  - name: ghcr.io/blogle/anvil-sandbox\n    newTag: sha-{{{newDigest}}}\n  - name: ghcr.io/blogle/anvil-nix-daemon\n    newTag: sha-{{{newDigest}}}\n\n',
       depNameTemplate: 'blogle/anvil',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
@@ -126,7 +135,7 @@
       matchStrings: [
         '(?<prefix>raw\\.githubusercontent\\.com/blogle/anvil/)(?<currentDigest>[a-f0-9]{40})(?<suffix>\\/k8s/vendor/agent-sandbox/)',
       ],
-      autoReplaceStringTemplate: '{{{prefix}}}{{{newDigest}}}{{{suffix}}}',
+      autoReplaceStringTemplate: 'raw.githubusercontent.com/blogle/anvil/{{{newDigest}}}/k8s/vendor/agent-sandbox/',
       depNameTemplate: 'blogle/anvil-agent-sandbox',
       packageNameTemplate: 'https://github.com/blogle/anvil',
       currentValueTemplate: 'main',
