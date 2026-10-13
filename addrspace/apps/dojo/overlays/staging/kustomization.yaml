@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: dojo-staging
 
 resources:
-- github.com/blogle/dojo2//deploy/k8s/base?ref=v0.0.12
+- github.com/blogle/dojo2//deploy/k8s/base?ref=v0.0.14
 - namespace.yaml
 - ingress.yaml
 - dojo-google-oauth-sealed.yaml
@@ -12,8 +12,8 @@ resources:
 images:
 - name: ghcr.io/blogle/dojo2
   newName: ghcr.io/blogle/dojo2
-  newTag: v0.0.12
-  digest: sha256:12d58fae60cc02780765fcb11882bd69f13c0c3f49b02d4ac97887913457b58f
+  newTag: v0.0.14
+  digest: sha256:4a4b8ca4f80cf66f6b290b3fe0f7f61cdf507631dafae07c5f99362b604b80d2
 
 patches:
 - path: pod-spec.patch.yaml
