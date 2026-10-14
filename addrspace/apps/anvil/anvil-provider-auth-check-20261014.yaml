@@ -1,0 +1,95 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: anvil-provider-auth-check-20261014
+  namespace: anvil
+  labels:
+    app.kubernetes.io/name: anvil-diagnostics
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: anvil-diagnostics
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: inspect
+          image: python:3.13-alpine
+          imagePullPolicy: IfNotPresent
+          command: [python, -c]
+          args:
+            - |
+              import base64, collections, json, os, urllib.error, urllib.request
+              secret = os.environ['ANVIL_OPENCODE_SERVER_PASSWORD']
+              authorization = base64.b64encode(('opencode:' + secret).encode()).decode()
+              targets = {
+                'profile':'http://anvil-profile.anvil.svc.cluster.local:4096',
+                'disposable-worker':'http://anvil-anvil-47-turn-recovery-default-eee76609.anvil.svc.cluster.local:4096',
+              }
+              def fetch(base,path):
+                  req = urllib.request.Request(base + path,headers={'Authorization':'Basic ' + authorization})
+                  try:
+                      with urllib.request.urlopen(req, timeout=15) as res:
+                          return json.load(res)
+                  except urllib.error.HTTPError as error:
+                      print(json.dumps({'endpoint':path,'http_status':error.code}),flush=True)
+                  except Exception as error:
+                      print(json.dumps({'endpoint':path,'exception_type':type(error).__name__}),flush=True)
+                  return {}
+              def array(value):
+                  if isinstance(value,dict):
+                      value = value.get('data',[])
+                  return value if isinstance(value,list) else []
+              for target,base in targets.items():
+                  print(json.dumps({'target':target,'begin':True}),flush=True)
+                  m = fetch(base,'/api/model')
+                  models = array(m)
+                  print(json.dumps({'target':target,'endpoint':'model','keys':sorted(m.keys()),
+                    'models':len(models),'enabled':sum(x.get('enabled') is True for x in models),
+                    'providers':dict(collections.Counter(str(x.get('providerID')) for x in models)),
+                    'luna':[str(x.get('modelID')) for x in models if 'luna' in str(x.get('modelID','')).lower()]}),flush=True)
+                  p = fetch(base,'/api/provider')
+                  print(json.dumps({'target':target,'endpoint':'provider','keys':sorted(p.keys()),
+                    'providers':[{'id':str(x.get('id')),'enabled':x.get('enabled')} for x in array(p)]}),flush=True)
+                  a = fetch(base,'/api/auth')
+                  accounts = array(a)
+                  data = a.get('data') if isinstance(a,dict) else None
+                  print(json.dumps({'target':target,'endpoint':'auth','keys':sorted(a.keys()),
+                    'data_type':type(data).__name__,'account_count':len(accounts),
+                    'service_counts':dict(collections.Counter(str(x.get('serviceID',x.get('providerID','unknown'))) for x in accounts)),
+                    'types':dict(collections.Counter(str(x.get('type','unknown')) for x in accounts))}),flush=True)
+                  i = fetch(base,'/api/integration')
+                  print(json.dumps({'target':target,'endpoint':'integration','keys':sorted(i.keys()),
+                    'integrations':[str(x.get('id')) for x in array(i)]}),flush=True)
+                  d = fetch(base,'/api/model/default')
+                  dv = d.get('data') if isinstance(d,dict) else None
+                  print(json.dumps({'target':target,'endpoint':'default','keys':sorted(d.keys()),
+                    'data_type':type(dv).__name__,
+                    'model_id':dv.get('modelID') if isinstance(dv,dict) else None}),flush=True)
+                  c = fetch(base,'/api/config')
+                  cv = c.get('data',{}) if isinstance(c,dict) else {}
+                  print(json.dumps({'target':target,'endpoint':'config','keys':sorted(c.keys()),
+                    'data_keys':sorted(cv.keys()) if isinstance(cv,dict) else [],
+                    'has_provider_config':bool(cv.get('providers')) if isinstance(cv,dict) else False,
+                    'has_legacy_provider_allowlist':'enabled_providers' in cv if isinstance(cv,dict) else False,
+                    'has_legacy_provider_denylist':'disabled_providers' in cv if isinstance(cv,dict) else False}),flush=True)
+          env:
+            - name: ANVIL_OPENCODE_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: github-app-credentials
+                  key: ANVIL_OPENCODE_SERVER_PASSWORD
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
