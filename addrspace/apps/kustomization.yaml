@@ -1,6 +1,7 @@
 resources:
   - ai
   - anvil
+  - anvil/anvil-provider-catalog-check-20261014.yaml
   - auth
   - bitmagnet
   - browser-mcp
