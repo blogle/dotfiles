@@ -255,7 +255,7 @@ def assert_renovate_proposes_one_anvil_update():
             "matchDepNames": ["blogle/anvil", "blogle/anvil-agent-sandbox"],
             "enabled": True,
         })
-        fixture_config_path.write_text(json.dumps(config, indent=2) + "\n")
+        (checkout / "renovate.json5").write_text(json.dumps(config, indent=2) + "\n")
         manager = anvil_manager(config)
         if not anvil_match(manager, content):
             raise AssertionError("Anvil update fixture does not match its configured regex")
