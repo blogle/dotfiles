@@ -248,6 +248,14 @@ def assert_renovate_proposes_one_anvil_update():
         manifest.write_text(content)
         shutil.copy(ROOT / "renovate.json5", checkout / "renovate.json5")
         config = json5.loads((checkout / "renovate.json5").read_text())
+        # The incident hold disables production rollouts, not the update contract.
+        # Enable only this disposable fixture so coupled SHA upgrades remain tested.
+        config["packageRules"].append({
+            "matchManagers": ["custom.regex"],
+            "matchDepNames": ["blogle/anvil", "blogle/anvil-agent-sandbox"],
+            "enabled": True,
+        })
+        (checkout / "renovate.json5").write_text(json.dumps(config, indent=2) + "\n")
         manager = anvil_manager(config)
         if not anvil_match(manager, content):
             raise AssertionError("Anvil update fixture does not match its configured regex")

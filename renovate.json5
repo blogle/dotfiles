@@ -9,6 +9,12 @@
   labels: ['dependencies', 'kubernetes'],
   packageRules: [
     {
+      // SEV-1: hold Anvil rollouts at the restored pre-V2 release until Kind E2E proves V2 recovery.
+      matchManagers: ['custom.regex'],
+      matchDepNames: ['blogle/anvil', 'blogle/anvil-agent-sandbox'],
+      enabled: false,
+    },
+    {
       // Anvil rollouts are higher priority than routine dependency updates.
       matchManagers: ['custom.regex'],
       matchDepNames: ['blogle/anvil', 'blogle/anvil-agent-sandbox'],
