@@ -29,11 +29,14 @@ spec:
               import base64, collections, json, os, urllib.error, urllib.request
               secret = os.environ['ANVIL_OPENCODE_SERVER_PASSWORD']
               authorization = base64.b64encode(('opencode:' + secret).encode()).decode()
-              def fetch(path):
-                  req = urllib.request.Request('http://anvil-profile.anvil.svc.cluster.local:4096' + path,
-                      headers={'Authorization': 'Basic ' + authorization})
+              targets = {
+                'profile':'http://anvil-profile.anvil.svc.cluster.local:4096',
+                'disposable-worker':'http://anvil-anvil-47-turn-recovery-default-eee76609.anvil.svc.cluster.local:4096',
+              }
+              def fetch(base,path):
+                  req = urllib.request.Request(base + path,headers={'Authorization':'Basic ' + authorization})
                   try:
-                      with urllib.request.urlopen(req, timeout=20) as res:
+                      with urllib.request.urlopen(req, timeout=15) as res:
                           return json.load(res)
                   except urllib.error.HTTPError as error:
                       print(json.dumps({'endpoint':path,'http_status':error.code}),flush=True)
@@ -41,39 +44,42 @@ spec:
                       print(json.dumps({'endpoint':path,'exception_type':type(error).__name__}),flush=True)
                   return {}
               def array(value):
-                  if isinstance(value, dict):
+                  if isinstance(value,dict):
                       value = value.get('data',[])
                   return value if isinstance(value,list) else []
-              model_response = fetch('/api/model')
-              models = array(model_response)
-              print(json.dumps({'endpoint':'model','keys':sorted(model_response.keys()),
-                  'models':len(models),'enabled':sum(m.get('enabled') is True for m in models)}),flush=True)
-              provider_response = fetch('/api/provider')
-              providers = array(provider_response)
-              print(json.dumps({'endpoint':'provider','keys':sorted(provider_response.keys()),
-                  'providers':[{'id':str(p.get('id')),'enabled':p.get('enabled')} for p in providers]}),flush=True)
-              auth_response = fetch('/api/auth')
-              accounts = array(auth_response)
-              account_data = auth_response.get('data') if isinstance(auth_response,dict) else None
-              print(json.dumps({'endpoint':'auth','keys':sorted(auth_response.keys()),
-                  'data_type':type(account_data).__name__,'account_count':len(accounts),
-                  'service_counts':dict(collections.Counter(str(a.get('serviceID',a.get('providerID','unknown'))) for a in accounts)),
-                  'types':dict(collections.Counter(str(a.get('type','unknown')) for a in accounts))}),flush=True)
-              integration_response = fetch('/api/integration')
-              integrations = array(integration_response)
-              print(json.dumps({'endpoint':'integration','keys':sorted(integration_response.keys()),
-                  'integrations':[str(v.get('id')) for v in integrations]}),flush=True)
-              default_response = fetch('/api/model/default')
-              print(json.dumps({'endpoint':'model-default','keys':sorted(default_response.keys()),
-                  'data_type':type(default_response.get('data')).__name__,
-                  'model_id':(default_response.get('data') or {}).get('modelID') if isinstance(default_response.get('data'),dict) else None}),flush=True)
-              config_response = fetch('/api/config')
-              config_data = config_response.get('data',{})
-              print(json.dumps({'endpoint':'config','keys':sorted(config_response.keys()),
-                  'data_keys':sorted(config_data.keys()) if isinstance(config_data,dict) else [],
-                  'has_provider_config':bool(config_data.get('providers')) if isinstance(config_data,dict) else False,
-                  'has_legacy_provider_allowlist':'enabled_providers' in config_data if isinstance(config_data,dict) else False,
-                  'has_legacy_provider_denylist':'disabled_providers' in config_data if isinstance(config_data,dict) else False}),flush=True)
+              for target,base in targets.items():
+                  print(json.dumps({'target':target,'begin':True}),flush=True)
+                  m = fetch(base,'/api/model')
+                  models = array(m)
+                  print(json.dumps({'target':target,'endpoint':'model','keys':sorted(m.keys()),
+                    'models':len(models),'enabled':sum(x.get('enabled') is True for x in models),
+                    'providers':dict(collections.Counter(str(x.get('providerID')) for x in models)),
+                    'luna':[str(x.get('modelID')) for x in models if 'luna' in str(x.get('modelID','')).lower()]}),flush=True)
+                  p = fetch(base,'/api/provider')
+                  print(json.dumps({'target':target,'endpoint':'provider','keys':sorted(p.keys()),
+                    'providers':[{'id':str(x.get('id')),'enabled':x.get('enabled')} for x in array(p)]}),flush=True)
+                  a = fetch(base,'/api/auth')
+                  accounts = array(a)
+                  data = a.get('data') if isinstance(a,dict) else None
+                  print(json.dumps({'target':target,'endpoint':'auth','keys':sorted(a.keys()),
+                    'data_type':type(data).__name__,'account_count':len(accounts),
+                    'service_counts':dict(collections.Counter(str(x.get('serviceID',x.get('providerID','unknown'))) for x in accounts)),
+                    'types':dict(collections.Counter(str(x.get('type','unknown')) for x in accounts))}),flush=True)
+                  i = fetch(base,'/api/integration')
+                  print(json.dumps({'target':target,'endpoint':'integration','keys':sorted(i.keys()),
+                    'integrations':[str(x.get('id')) for x in array(i)]}),flush=True)
+                  d = fetch(base,'/api/model/default')
+                  dv = d.get('data') if isinstance(d,dict) else None
+                  print(json.dumps({'target':target,'endpoint':'default','keys':sorted(d.keys()),
+                    'data_type':type(dv).__name__,
+                    'model_id':dv.get('modelID') if isinstance(dv,dict) else None}),flush=True)
+                  c = fetch(base,'/api/config')
+                  cv = c.get('data',{}) if isinstance(c,dict) else {}
+                  print(json.dumps({'target':target,'endpoint':'config','keys':sorted(c.keys()),
+                    'data_keys':sorted(cv.keys()) if isinstance(cv,dict) else [],
+                    'has_provider_config':bool(cv.get('providers')) if isinstance(cv,dict) else False,
+                    'has_legacy_provider_allowlist':'enabled_providers' in cv if isinstance(cv,dict) else False,
+                    'has_legacy_provider_denylist':'disabled_providers' in cv if isinstance(cv,dict) else False}),flush=True)
           env:
             - name: ANVIL_OPENCODE_SERVER_PASSWORD
               valueFrom:
