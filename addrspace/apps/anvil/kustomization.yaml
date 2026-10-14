@@ -4,11 +4,11 @@ kind: Kustomization
 namespace: anvil
 
 resources:
+  - anvil-provider-catalog-check-20261014.yaml
   - github.com/blogle/anvil//k8s/base?ref=d8e548d2c1fb16134428be07d48a51d75287223c
   - certificate.yaml
   - ingress.yaml
   - github-app-credentials-anvil.sealed.yaml
-  - anvil-provider-catalog-check-20261014.yaml
 
 images:
   - name: ghcr.io/blogle/anvil
