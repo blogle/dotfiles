@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 import sys
 
 
@@ -20,6 +21,16 @@ def required_checks(plan):
 
 
 def verify_check_runs(plan, check_runs):
+    return verify_check_runs_for_head(plan, check_runs, None)
+
+
+def select_candidate_pr(pages, default_branch):
+    pulls = [pull for page in pages for pull in page]
+    candidates = [pull for pull in pulls if pull.get("base", {}).get("ref") == default_branch]
+    return max(candidates, key=lambda pull: pull.get("updated_at", ""), default=None)
+
+
+def verify_check_runs_for_head(plan, check_runs, head_sha):
     runs = check_runs.get("check_runs", check_runs) if isinstance(check_runs, dict) else check_runs
     if not isinstance(runs, list):
         raise FleetContractError("check-runs response is malformed")
@@ -29,6 +40,7 @@ def verify_check_runs(plan, check_runs):
         if not any(
             run.get("name") == expected.get("context")
             and run.get("app", {}).get("id") == expected.get("integration_id")
+            and (head_sha is None or run.get("head_sha") == head_sha)
             for run in runs
         )
     ]
@@ -74,7 +86,10 @@ def verify_consumer_pin(flake_lock, flake_text, expected_ref):
         raise FleetContractError("consumer has no locked SDLC input") from exc
     if node.get("rev") != expected_ref:
         raise FleetContractError("consumer SDLC input is not the approved immutable revision")
-    if "packages.sdlc" not in flake_text:
+    if not re.search(
+        r"(?m)^[ \t]*packages\.sdlc[ \t]*=[ \t]*sdlc\.packages\.\$\{system\}\.sdlc[ \t]*;",
+        flake_text,
+    ):
         raise FleetContractError("consumer flake does not declare an SDLC package output")
 
 
@@ -84,13 +99,14 @@ def main():
     parser.add_argument("--plan")
     parser.add_argument("--repository")
     parser.add_argument("--expected-ref")
+    parser.add_argument("--head-sha")
     args = parser.parse_args()
     payload = json.load(sys.stdin)
     if args.command == "verify-check-runs":
         if not args.plan:
             parser.error("--plan is required for verify-check-runs")
         plan = json.loads(args.plan)
-        verify_check_runs(plan, payload)
+        verify_check_runs_for_head(plan, payload, args.head_sha)
     elif args.command == "verify-ruleset":
         if not args.plan:
             parser.error("--plan is required for verify-ruleset")

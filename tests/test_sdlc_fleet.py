@@ -6,7 +6,9 @@ import unittest
 from scripts.sdlc_fleet import (
     FleetContractError,
     secret_actions,
+    select_candidate_pr,
     verify_check_runs,
+    verify_check_runs_for_head,
     verify_consumer_pin,
     verify_ruleset,
 )
@@ -24,6 +26,19 @@ class FleetContractTests(unittest.TestCase):
     def test_first_apply_plan_has_real_required_checks(self):
         self.assertEqual(PLAN["action"], "create")
         verify_check_runs(PLAN, CHECK_RUNS)
+
+    def test_latest_matching_pr_head_is_selected_across_pages(self):
+        pages = [[
+            {"base": {"ref": "main"}, "head": {"sha": "old"}, "updated_at": "2026-01-01T00:00:00Z"},
+        ], [
+            {"base": {"ref": "main"}, "head": {"sha": "new"}, "updated_at": "2026-01-02T00:00:00Z"},
+            {"base": {"ref": "other"}, "head": {"sha": "wrong"}, "updated_at": "2026-01-03T00:00:00Z"},
+        ]]
+        self.assertEqual(select_candidate_pr(pages, "main")["head"]["sha"], "new")
+
+    def test_check_runs_must_match_selected_head(self):
+        with self.assertRaises(FleetContractError):
+            verify_check_runs_for_head(PLAN, CHECK_RUNS, "current-head")
 
     def test_onboarded_noop_readback(self):
         verify_ruleset(PLAN, RULESET, "blogle/anvil")
@@ -71,6 +86,10 @@ class FleetContractTests(unittest.TestCase):
         verify_consumer_pin(LOCK, FLAKE, "de40fc00bc632b7acd0b0ba5de1242f1af827a9f")
         with self.assertRaises(FleetContractError):
             verify_consumer_pin(LOCK, FLAKE, "0000000000000000000000000000000000000000")
+
+    def test_transition_rejects_comment_only_package_claim(self):
+        with self.assertRaises(FleetContractError):
+            verify_consumer_pin(LOCK, "# packages.sdlc = sdlc.packages.${system}.sdlc;", "de40fc00bc632b7acd0b0ba5de1242f1af827a9f")
 
 
 if __name__ == "__main__":

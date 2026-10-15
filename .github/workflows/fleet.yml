@@ -81,14 +81,19 @@ jobs:
           : "${RELEASE_APP_PRIVATE_KEY:?missing SDLC release App private key}"
           [[ "$MANIFEST_SDLC_REF" == "$TRUSTED_SDLC_REF" ]]
           plan_json="$(nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset plan --repo "$REPOSITORY")"
-          pulls_json="$(gh api "repos/$REPOSITORY/pulls?state=open&per_page=20")"
-          check_runs='[]'
-          while read -r head_sha; do
-            [[ -n "$head_sha" ]] || continue
-            runs_json="$(gh api "repos/$REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
-            check_runs="$(jq -cn --argjson current "$check_runs" --argjson runs "$runs_json" '$current + $runs.check_runs')"
-          done < <(jq -r '.[].head.sha' <<<"$pulls_json")
-          printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json"
+          default_branch="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
+          pulls_json="$(gh api --paginate "repos/$REPOSITORY/pulls?state=open&base=$default_branch&sort=updated&direction=desc&per_page=100")"
+          candidate_pr="$(jq -sc --arg branch "$default_branch" '
+            add | map(select(.base.ref == $branch)) | sort_by(.updated_at) | last // null
+          ' <<<"$pulls_json")"
+          if [[ "$candidate_pr" == null ]]; then
+            printf 'no open PR head; deferring publisher observation until a PR exists\n'
+          else
+            head_sha="$(jq -er '.head.sha' <<<"$candidate_pr")"
+            runs_json="$(gh api --paginate "repos/$REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
+            check_runs="$(jq -sc 'add | map(.check_runs) | add' <<<"$runs_json")"
+            printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json" --head-sha "$head_sha"
+          fi
           nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset apply --repo "$REPOSITORY"
           nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset check --repo "$REPOSITORY"
           rulesets_json="$(gh api --paginate "repos/$REPOSITORY/rulesets")"
@@ -98,11 +103,39 @@ jobs:
           ' <<<"$rulesets_json")"
           ruleset_json="$(gh api "repos/$REPOSITORY/rulesets/$ruleset_id")"
           printf '%s' "$ruleset_json" | python3 scripts/sdlc_fleet.py verify-ruleset --plan "$plan_json" --repository "$REPOSITORY"
-          default_branch="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
-          lock_json="$(gh api "repos/$REPOSITORY/contents/flake.lock?ref=$default_branch" --jq .content | base64 -d)"
-          flake_text="$(gh api "repos/$REPOSITORY/contents/flake.nix?ref=$default_branch" --jq .content | base64 -d)"
+          read_consumer_file() {
+            local response status http_status body
+            set +e
+            response="$(gh api --include "$1" 2>&1)"
+            status=$?
+            set -e
+            http_status="$(python3 -c 'import re, sys; print(re.findall(r"HTTP/[^ ]+ (\d{3})", sys.stdin.read())[-1])' <<<"$response")"
+            if [[ "$http_status" == 404 ]]; then
+              return 1
+            fi
+            if [[ "$status" != 0 || "$http_status" != 200 ]]; then
+              printf 'consumer file read failed (%s): %s\n' "$http_status" "$1" >&2
+              return 2
+            fi
+            body="$(python3 -c 'import sys; print(sys.stdin.read().replace("\r\n", "\n").split("\n\n")[-1])' <<<"$response")"
+            jq -er '.content' <<<"$body" | base64 -d
+          }
+          lock_json=''
+          flake_text=''
+          lock_present=true
+          flake_present=true
+          if lock_json="$(read_consumer_file "repos/$REPOSITORY/contents/flake.lock?ref=$default_branch")"; then
+            :
+          else
+            case $? in 1) lock_present=false;; *) exit 1;; esac
+          fi
+          if flake_text="$(read_consumer_file "repos/$REPOSITORY/contents/flake.nix?ref=$default_branch")"; then
+            :
+          else
+            case $? in 1) flake_present=false;; *) exit 1;; esac
+          fi
           consumer_sdlc_node="$(jq -c '.nodes.sdlc.locked // empty' <<<"$lock_json")"
-          if [[ -n "$consumer_sdlc_node" ]]; then
+          if [[ "$lock_present" == true && "$flake_present" == true && -n "$consumer_sdlc_node" ]]; then
             jq -n --argjson lock "$lock_json" --arg flake "$flake_text" '{lock: $lock, flake: $flake}' \
               | python3 scripts/sdlc_fleet.py verify-consumer --expected-ref "$TRUSTED_SDLC_REF"
           else
