@@ -66,12 +66,43 @@ jobs:
           RELEASE_CREDENTIAL_VERSION: ${{ vars.SDLC_RELEASE_CREDENTIAL_VERSION }}
         run: |
           set -euo pipefail
+          : "${RELEASE_APP_ID:?missing SDLC release App ID}"
+          : "${RELEASE_APP_PRIVATE_KEY:?missing SDLC release App private key}"
           nix run "github:$REPOSITORY#sdlc" -- enable --repo "$REPOSITORY"
+          rulesets_json="$(gh api --paginate "repos/$REPOSITORY/rulesets")"
+          ruleset_id="$(jq -sre '
+            add | map(select(.name == "SDLC default branch"))
+            | if length == 1 then .[0].id else error("expected exactly one canonical SDLC ruleset") end
+          ' <<<"$rulesets_json")"
+          ruleset_json="$(gh api "repos/$REPOSITORY/rulesets/$ruleset_id")"
+          jq -e '
+            type == "object"
+            and (.id != null)
+            and (.updated_at | type == "string")
+            and has("bypass_actors")
+            and (.bypass_actors | type == "array")
+            and (.bypass_actors | length == 0)
+          ' <<<"$ruleset_json" >/dev/null
+          ruleset_attestation="$(jq -c --arg repository "$REPOSITORY" '
+            {
+              schema: 1,
+              repository: $repository,
+              ruleset_id: .id,
+              updated_at: .updated_at,
+              bypass_actors: []
+            }
+          ' <<<"$ruleset_json")"
+          gh variable set SDLC_RULESET_ATTESTATION --repo "$REPOSITORY" --body "$ruleset_attestation"
           credential_version="${RELEASE_CREDENTIAL_VERSION:-1}"
           installed_version="$(gh variable get SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" 2>/dev/null || true)"
-          if [[ "$installed_version" != "$credential_version" ]]; then
+          installed_secrets="$(gh secret list --repo "$REPOSITORY" --json name)"
+          if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_ID")' <<<"$installed_secrets")" != true ]]; then
             printf '%s' "$RELEASE_APP_ID" | gh secret set SDLC_RELEASE_APP_ID --repo "$REPOSITORY"
+          fi
+          if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_PRIVATE_KEY")' <<<"$installed_secrets")" != true ]]; then
             printf '%s' "$RELEASE_APP_PRIVATE_KEY" | gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo "$REPOSITORY"
+          fi
+          if [[ "$installed_version" != "$credential_version" ]]; then
             gh variable set SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" --body "$credential_version"
           fi
           if ! gh variable get SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" >/dev/null 2>&1; then
