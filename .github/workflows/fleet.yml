@@ -58,7 +58,6 @@ jobs:
           owner: ${{ matrix.repo.owner }}
           repositories: ${{ matrix.repo.repo }}
           permission-administration: write
-          permission-actions: write
       - name: Apply consumer-pinned ruleset and distribute release credentials
         env:
           GH_TOKEN: ${{ steps.fleet.outputs.token }}
