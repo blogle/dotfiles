@@ -20,7 +20,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: kubernetes-mcp
-          image: quay.io/containers/kubernetes_mcp_server@sha256:930ccd3e7415fa8f38de23da8d53cafd7a225a691d1a055f173420fa928ede1d
+          image: quay.io/containers/kubernetes_mcp_server@sha256:8bf8d1ad7d3101d0faa9b3cbbd6b8ab87f969a804f8b62f4c5adc0d120c956ea
           env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://clickstack-otel-collector.observability.svc.cluster.local:4317
