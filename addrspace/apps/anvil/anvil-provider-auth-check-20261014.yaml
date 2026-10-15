@@ -21,7 +21,7 @@ spec:
         runAsGroup: 65534
       containers:
         - name: inspect
-          image: python:3.13-alpine
+          image: python:3.15-alpine
           imagePullPolicy: IfNotPresent
           command: [python, -c]
           args:
