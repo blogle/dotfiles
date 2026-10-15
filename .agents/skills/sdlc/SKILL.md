@@ -6,8 +6,9 @@ description: Use the pinned SDLC contract for shared CI, policy, and rolling rel
 # Shared SDLC contract
 
 The consumer's `flake.lock` selects SDLC. The consumer owns only its Nix
-`checks.<system>.sdlc-fast`, `checks.<system>.sdlc-verify`, and
-`apps.<system>.sdlc-publish` outputs. Shared workflows own CI stages, runners,
+`ci.<system>.fast`, `ci.<system>.verify`, and `ci.<system>.publish` outputs.
+Publication invokes `ci.<system>.publish` directly, without a separate publish
+app output. Shared workflows own CI stages, runners,
 Nix setup, caching, rulesets, Mergify policy, and release orchestration.
 
 ## Development and CI

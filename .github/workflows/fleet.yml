@@ -57,7 +57,6 @@ jobs:
           private-key: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
           owner: ${{ matrix.repo.owner }}
           repositories: ${{ matrix.repo.repo }}
-          permission-administration: write
       - name: Apply consumer-pinned ruleset and distribute release credentials
         env:
           GH_TOKEN: ${{ steps.fleet.outputs.token }}
