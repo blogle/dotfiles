@@ -83,6 +83,14 @@ jobs:
             and (.bypass_actors | type == "array")
             and (.bypass_actors | length == 0)
           ' <<<"$ruleset_json" >/dev/null
+          variables_json="$(gh variable list --repo "$REPOSITORY" --json name)"
+          installed_secrets="$(gh secret list --repo "$REPOSITORY" --json name)"
+          has_credential_version="$(jq -r 'any(.[]; .name == "SDLC_RELEASE_CREDENTIAL_VERSION")' <<<"$variables_json")"
+          if [[ "$has_credential_version" == true ]]; then
+            installed_version="$(gh variable get SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY")"
+          else
+            installed_version=''
+          fi
           ruleset_attestation="$(jq -c --arg repository "$REPOSITORY" '
             {
               schema: 1,
@@ -94,8 +102,6 @@ jobs:
           ' <<<"$ruleset_json")"
           gh variable set SDLC_RULESET_ATTESTATION --repo "$REPOSITORY" --body "$ruleset_attestation"
           credential_version="${RELEASE_CREDENTIAL_VERSION:-1}"
-          installed_version="$(gh variable get SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" 2>/dev/null || true)"
-          installed_secrets="$(gh secret list --repo "$REPOSITORY" --json name)"
           if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_ID")' <<<"$installed_secrets")" != true ]]; then
             printf '%s' "$RELEASE_APP_ID" | gh secret set SDLC_RELEASE_APP_ID --repo "$REPOSITORY"
           fi
@@ -105,9 +111,14 @@ jobs:
           if [[ "$installed_version" != "$credential_version" ]]; then
             gh variable set SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" --body "$credential_version"
           fi
-          if ! gh variable get SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" >/dev/null 2>&1; then
+          if [[ "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_ACTIVATE")' <<<"$variables_json")" != true ]]; then
             gh variable set SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" --body false
           fi
-          if [[ "$(gh variable get SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY" 2>/dev/null || true)" != 'sdlc-release[bot]' ]]; then
+          has_bot_login="$(jq -r 'any(.[]; .name == "SDLC_RELEASE_BOT_LOGIN")' <<<"$variables_json")"
+          bot_login=''
+          if [[ "$has_bot_login" == true ]]; then
+            bot_login="$(gh variable get SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY")"
+          fi
+          if [[ "$bot_login" != 'sdlc-release[bot]' ]]; then
             gh variable set SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY" --body 'sdlc-release[bot]'
           fi
