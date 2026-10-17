@@ -1,0 +1,182 @@
+name: SDLC fleet
+on:
+  pull_request:
+    paths:
+      - fleet.yml
+      - .github/workflows/fleet.yml
+      - scripts/sdlc_fleet.py
+      - tests/test_sdlc_fleet.py
+      - tests/fixtures/sdlc-fleet/**
+  push:
+    branches: [master]
+  schedule:
+    - cron: '31 * * * *'
+permissions:
+  contents: read
+env:
+  TRUSTED_SDLC_REF: de40fc00bc632b7acd0b0ba5de1242f1af827a9f
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - id: matrix
+        run: |
+          set -euo pipefail
+          repos="$(nix run nixpkgs#yq-go -- -o=json fleet.yml | jq -c '[. as $fleet | .repos[] | select(.enabled == true) | {owner: $fleet.owner, repo: .name, sdlc_ref: $fleet.sdlc.ref}]')"
+          echo "value=$repos" >> "$GITHUB_OUTPUT"
+  validate:
+    if: github.event_name == 'pull_request'
+    needs: manifest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.manifest.outputs.matrix) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - name: Validate trusted fleet contract without credentials
+        env:
+          REPOSITORY: ${{ matrix.repo.owner }}/${{ matrix.repo.repo }}
+          MANIFEST_SDLC_REF: ${{ matrix.repo.sdlc_ref }}
+        run: |
+          [[ "$MANIFEST_SDLC_REF" == "$TRUSTED_SDLC_REF" ]]
+          nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset plan --repo "$REPOSITORY" >/dev/null
+          python3 -m unittest tests.test_sdlc_fleet
+  reconcile:
+    if: github.event_name != 'pull_request'
+    needs: manifest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.manifest.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/create-github-app-token@v2
+        id: fleet
+        with:
+          app-id: ${{ secrets.SDLC_FLEET_APP_ID }}
+          private-key: ${{ secrets.SDLC_FLEET_APP_PRIVATE_KEY }}
+          owner: ${{ matrix.repo.owner }}
+          repositories: ${{ matrix.repo.repo }}
+      - name: Apply trusted ruleset and distribute release credentials
+        env:
+          GH_TOKEN: ${{ steps.fleet.outputs.token }}
+          REPOSITORY: ${{ matrix.repo.owner }}/${{ matrix.repo.repo }}
+          MANIFEST_SDLC_REF: ${{ matrix.repo.sdlc_ref }}
+          RELEASE_APP_ID: ${{ secrets.SDLC_RELEASE_APP_ID }}
+          RELEASE_APP_PRIVATE_KEY: ${{ secrets.SDLC_RELEASE_APP_PRIVATE_KEY }}
+          RELEASE_CREDENTIAL_VERSION: ${{ vars.SDLC_RELEASE_CREDENTIAL_VERSION }}
+        run: |
+          set -euo pipefail
+          : "${RELEASE_APP_ID:?missing SDLC release App ID}"
+          : "${RELEASE_APP_PRIVATE_KEY:?missing SDLC release App private key}"
+          [[ "$MANIFEST_SDLC_REF" == "$TRUSTED_SDLC_REF" ]]
+          plan_json="$(nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset plan --repo "$REPOSITORY")"
+          default_branch="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
+          pulls_json="$(gh api --paginate "repos/$REPOSITORY/pulls?state=open&base=$default_branch&sort=updated&direction=desc&per_page=100")"
+          candidate_pr="$(jq -sc --arg branch "$default_branch" '
+            add | map(select(.base.ref == $branch)) | sort_by(.updated_at) | last // null
+          ' <<<"$pulls_json")"
+          if [[ "$candidate_pr" == null ]]; then
+            printf 'no open PR head; deferring publisher observation until a PR exists\n'
+          else
+            head_sha="$(jq -er '.head.sha' <<<"$candidate_pr")"
+            runs_json="$(gh api --paginate "repos/$REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
+            check_runs="$(jq -sc 'add | map(.check_runs) | add' <<<"$runs_json")"
+            printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json" --head-sha "$head_sha"
+          fi
+          nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset apply --repo "$REPOSITORY"
+          nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset check --repo "$REPOSITORY"
+          rulesets_json="$(gh api --paginate "repos/$REPOSITORY/rulesets")"
+          ruleset_id="$(jq -sre '
+            add | map(select(.name == "SDLC default branch"))
+            | if length == 1 then .[0].id else error("expected exactly one canonical SDLC ruleset") end
+          ' <<<"$rulesets_json")"
+          ruleset_json="$(gh api "repos/$REPOSITORY/rulesets/$ruleset_id")"
+          printf '%s' "$ruleset_json" | python3 scripts/sdlc_fleet.py verify-ruleset --plan "$plan_json" --repository "$REPOSITORY"
+          read_consumer_file() {
+            local response status http_status body
+            set +e
+            response="$(gh api --include "$1" 2>&1)"
+            status=$?
+            set -e
+            http_status="$(python3 -c 'import re, sys; print(re.findall(r"HTTP/[^ ]+ (\d{3})", sys.stdin.read())[-1])' <<<"$response")"
+            if [[ "$http_status" == 404 ]]; then
+              return 1
+            fi
+            if [[ "$status" != 0 || "$http_status" != 200 ]]; then
+              printf 'consumer file read failed (%s): %s\n' "$http_status" "$1" >&2
+              return 2
+            fi
+            body="$(python3 -c 'import sys; print(sys.stdin.read().replace("\r\n", "\n").split("\n\n")[-1])' <<<"$response")"
+            jq -er '.content' <<<"$body" | base64 -d
+          }
+          lock_json=''
+          flake_text=''
+          lock_present=true
+          flake_present=true
+          if lock_json="$(read_consumer_file "repos/$REPOSITORY/contents/flake.lock?ref=$default_branch")"; then
+            :
+          else
+            case $? in 1) lock_present=false;; *) exit 1;; esac
+          fi
+          if flake_text="$(read_consumer_file "repos/$REPOSITORY/contents/flake.nix?ref=$default_branch")"; then
+            :
+          else
+            case $? in 1) flake_present=false;; *) exit 1;; esac
+          fi
+          consumer_sdlc_node="$(jq -c '.nodes.sdlc.locked // empty' <<<"$lock_json")"
+          if [[ "$lock_present" == true && "$flake_present" == true && -n "$consumer_sdlc_node" ]]; then
+            jq -n --argjson lock "$lock_json" --arg flake "$flake_text" '{lock: $lock, flake: $flake}' \
+              | python3 scripts/sdlc_fleet.py verify-consumer --expected-ref "$TRUSTED_SDLC_REF"
+          else
+            printf 'consumer is not yet SDLC-onboarded; central policy remains authoritative\n'
+          fi
+          variables_json="$(gh variable list --repo "$REPOSITORY" --json name)"
+          installed_secrets="$(gh secret list --repo "$REPOSITORY" --json name)"
+          has_credential_version="$(jq -r 'any(.[]; .name == "SDLC_RELEASE_CREDENTIAL_VERSION")' <<<"$variables_json")"
+          if [[ "$has_credential_version" == true ]]; then
+            installed_version="$(gh variable get SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY")"
+          else
+            installed_version=''
+          fi
+          ruleset_attestation="$(jq -c --arg repository "$REPOSITORY" '
+            {
+              schema: 1,
+              repository: $repository,
+              ruleset_id: .id,
+              updated_at: .updated_at,
+              bypass_actors: []
+            }
+          ' <<<"$ruleset_json")"
+          gh variable set SDLC_RULESET_ATTESTATION --repo "$REPOSITORY" --body "$ruleset_attestation"
+          credential_version="${RELEASE_CREDENTIAL_VERSION:-1}"
+          if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_ID")' <<<"$installed_secrets")" != true ]]; then
+            printf '%s' "$RELEASE_APP_ID" | gh secret set SDLC_RELEASE_APP_ID --repo "$REPOSITORY"
+          fi
+          if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_PRIVATE_KEY")' <<<"$installed_secrets")" != true ]]; then
+            printf '%s' "$RELEASE_APP_PRIVATE_KEY" | gh secret set SDLC_RELEASE_APP_PRIVATE_KEY --repo "$REPOSITORY"
+          fi
+          if [[ "$installed_version" != "$credential_version" ]]; then
+            gh variable set SDLC_RELEASE_CREDENTIAL_VERSION --repo "$REPOSITORY" --body "$credential_version"
+          fi
+          if [[ "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_ACTIVATE")' <<<"$variables_json")" != true ]]; then
+            gh variable set SDLC_RELEASE_ACTIVATE --repo "$REPOSITORY" --body false
+          fi
+          has_bot_login="$(jq -r 'any(.[]; .name == "SDLC_RELEASE_BOT_LOGIN")' <<<"$variables_json")"
+          bot_login=''
+          if [[ "$has_bot_login" == true ]]; then
+            bot_login="$(gh variable get SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY")"
+          fi
+          if [[ "$bot_login" != 'sdlc-release[bot]' ]]; then
+            gh variable set SDLC_RELEASE_BOT_LOGIN --repo "$REPOSITORY" --body 'sdlc-release[bot]'
+          fi

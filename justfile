@@ -2,6 +2,7 @@ set dotenv-load := false
 
 check:
   nix flake check --no-build
+  python3 -m unittest tests.test_sdlc_fleet
 
 ci-fast:
   nix build .#hydraJobs.x86_64-linux.ci-pr-fast.deploy-schema .#hydraJobs.x86_64-linux.ci-pr-fast.flake-evaluation --no-link
