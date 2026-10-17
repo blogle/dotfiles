@@ -87,7 +87,7 @@ spec:
             - name: mcp-tmp
               mountPath: /tmp
         - name: chrome
-          image: chromedp/headless-shell:157.0.8103.6
+          image: chromedp/headless-shell:158.0.8106.0
           ports:
             - name: cdp
               containerPort: 9222
