@@ -91,7 +91,7 @@ jobs:
           else
             head_sha="$(jq -er '.head.sha' <<<"$candidate_pr")"
             runs_json="$(gh api --paginate "repos/$REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
-            check_runs="$(jq -sc 'add | map(.check_runs) | add' <<<"$runs_json")"
+            check_runs="$(jq -sc 'map(.check_runs) | add' <<<"$runs_json")"
             printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json" --head-sha "$head_sha"
           fi
           nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset apply --repo "$REPOSITORY"
