@@ -1,1 +1,9 @@
 extends: sdlc
+
+merge_protections_settings:
+  auto_merge_conditions:
+    - base ~= ^(main|master)$
+    - head != sdlc/release-next
+    - label != release
+    - label = integration:auto
+    - label != integration:review

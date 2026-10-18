@@ -1,0 +1,7 @@
+{
+  "check_runs": [
+    {"name": "sdlc / check", "app": {"id": 15368}},
+    {"name": "sdlc / policy", "app": {"id": 15368}},
+    {"name": "Mergify Merge Protections", "app": {"id": 10562}}
+  ]
+}
