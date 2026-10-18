@@ -24,6 +24,17 @@ jobs:
           RESULT: ${{ needs.pr-fast.result }}
         run: test "$RESULT" = success
 
+  check:
+    name: sdlc / check
+    needs: pr-fast-gate
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require legacy fast gate success
+        env:
+          RESULT: ${{ needs.pr-fast-gate.result }}
+        run: test "$RESULT" = success
+
   candidate:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'mergify/merge-queue/')
     uses: blogle/sdlc/.github/workflows/candidate.yml@v1.1.1
@@ -37,4 +48,15 @@ jobs:
       - name: Require reusable candidate workflow success
         env:
           RESULT: ${{ needs.candidate.result }}
+        run: test "$RESULT" = success
+
+  verify:
+    name: sdlc / verify
+    needs: candidate-gate
+    if: always() && github.event_name == 'pull_request' && startsWith(github.head_ref, 'mergify/merge-queue/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require legacy candidate gate success
+        env:
+          RESULT: ${{ needs.candidate-gate.result }}
         run: test "$RESULT" = success
