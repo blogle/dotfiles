@@ -16,11 +16,11 @@ data:
     enabled = true
     path = "/mcp"
 
-    [mcp.servers.chadlands]
+    [mcp.servers.markdown_vault]
     protocol = "streamable-http"
     url = "http://markdown-vault-mcp.knowledge.svc.cluster.local:8000/mcp"
 
-    [[mcp.servers.chadlands.headers]]
+    [[mcp.servers.markdown_vault.headers]]
     rule = "insert"
     name = "Host"
     value = "markdown-vault-mcp.thejeffer.net"
