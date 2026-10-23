@@ -5,10 +5,10 @@ check:
   python3 -m unittest tests.test_sdlc_fleet
 
 ci-fast:
-  nix build .#hydraJobs.x86_64-linux.ci-pr-fast.deploy-schema .#hydraJobs.x86_64-linux.ci-pr-fast.flake-evaluation --no-link
+  nix build .#ci.x86_64-linux.fast.flake-evaluation --no-link
 
 ci-candidate:
-  nix build .#hydraJobs.x86_64-linux.ci-candidate.home-activation .#hydraJobs.x86_64-linux.ci-candidate.modulus-toplevel .#hydraJobs.x86_64-linux.ci-candidate.nandstorm-toplevel .#hydraJobs.x86_64-linux.ci-candidate.deploy-activate --no-link
+  nix build .#ci.x86_64-linux.verify.deploy-schema .#ci.x86_64-linux.verify.home-activation .#ci.x86_64-linux.verify.modulus-toplevel .#ci.x86_64-linux.verify.nandstorm-toplevel .#ci.x86_64-linux.verify.deploy-activate --no-link
 
 skills:
   skills add https://github.com/blogle/sdlc/tree/v1/skills/sdlc --skill sdlc --agent opencode --yes
