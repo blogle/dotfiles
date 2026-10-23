@@ -5,6 +5,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime, timezone
 
 
 class FleetContractError(ValueError):
@@ -79,6 +80,34 @@ def secret_actions(installed_names, installed_version, desired_version):
     }
 
 
+def attest_rulesets(plan, checks, automated, repository):
+    verify_ruleset(plan, checks, repository)
+    desired = plan["automated_merges"]
+    for key in ("name", "target", "enforcement", "conditions", "rules", "bypass_actors"):
+        actual, expected = automated.get(key), desired[key]
+        if isinstance(expected, list):
+            actual = sorted(actual or [], key=lambda item: json.dumps(item, sort_keys=True))
+            expected = sorted(expected, key=lambda item: json.dumps(item, sort_keys=True))
+        if actual != expected:
+            raise FleetContractError(f"automated-merge restriction {key} differs from trusted policy")
+    if automated.get("source", repository) != repository:
+        raise FleetContractError("automated-merge restriction belongs to another repository")
+
+    def bind(rule):
+        try:
+            updated = datetime.fromisoformat(rule["updated_at"])
+            if updated.tzinfo is None:
+                raise ValueError("timezone missing")
+            timestamp = updated.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        except (KeyError, ValueError, TypeError) as exc:
+            raise FleetContractError("ruleset has no valid update timestamp") from exc
+        return {"schema": 1, "repository": repository, "ruleset_id": rule["id"], "updated_at": timestamp, "bypass_actors": rule["bypass_actors"]}
+
+    result = bind(checks)
+    result["automated_merges"] = bind(automated)
+    return result
+
+
 def verify_consumer_pin(flake_lock, flake_text, expected_ref):
     try:
         node = flake_lock["nodes"]["sdlc"]["locked"]
@@ -95,7 +124,7 @@ def verify_consumer_pin(flake_lock, flake_text, expected_ref):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("verify-check-runs", "verify-ruleset", "verify-consumer"))
+    parser.add_argument("command", choices=("verify-check-runs", "verify-ruleset", "verify-consumer", "attest"))
     parser.add_argument("--plan")
     parser.add_argument("--repository")
     parser.add_argument("--expected-ref")
@@ -112,6 +141,10 @@ def main():
             parser.error("--plan is required for verify-ruleset")
         plan = json.loads(args.plan)
         verify_ruleset(plan, payload, args.repository)
+    elif args.command == "attest":
+        if not args.plan or not args.repository:
+            parser.error("--plan and --repository are required for attest")
+        print(json.dumps(attest_rulesets(json.loads(args.plan), payload["checks"], payload["automated"], args.repository)))
     else:
         verify_consumer_pin(payload["lock"], payload["flake"], args.expected_ref)
 

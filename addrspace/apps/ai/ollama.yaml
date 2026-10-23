@@ -30,7 +30,7 @@ spec:
                       - nandstorm
       containers:
         - name: ollama
-          image: docker.io/ollama/ollama:0.40.8@sha256:242721b8a8dbb71c38fdc0a07ed60ca78363f278d33fdf171a48728abf40743a
+          image: docker.io/ollama/ollama:0.40.9@sha256:1914dade358389ce67f527f8d54914f0872fdafdc7a95980096ad0ff6a381196
           imagePullPolicy: IfNotPresent
           env:
             - name: OLLAMA_HOST
