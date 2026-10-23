@@ -2,7 +2,7 @@
   description = "NixOS system configurations";
 
   inputs = {
-    sdlc.url = "github:blogle/sdlc/v1.1.1";
+    sdlc.url = "github:blogle/sdlc/750bb47d2bc90b3026383050f529f9233e890c79";
     nixpkgs.follows = "sdlc/nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
@@ -169,9 +169,10 @@
       "${system}" = inputs.deploy-rs.lib.${system}.deployChecks self.deploy;
     };
 
-    hydraJobs.${system} = (sdlc.lib.mkConsumer {
-      contract = import ./ci.nix { inherit self system; };
-    }).hydraJobs;
+    ci.${system} = sdlc.lib.mkConsumer (import ./ci.nix {
+      inherit self system;
+      publish = sdlc.ci.${system}.publish;
+    });
 
     packages.${system} = {
       nix-eval-jobs = nixpkgs.legacyPackages.${system}.nix-eval-jobs;

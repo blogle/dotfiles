@@ -1,10 +1,10 @@
 owner: blogle
 sdlc:
-  ref: de40fc00bc632b7acd0b0ba5de1242f1af827a9f
+  ref: 750bb47d2bc90b3026383050f529f9233e890c79
 repos:
   - name: anvil
     enabled: true
   - name: sdlc
     enabled: false
   - name: dotfiles
-    enabled: false
+    enabled: true

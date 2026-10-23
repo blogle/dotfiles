@@ -656,17 +656,17 @@
         "nixpkgs": "nixpkgs_7"
       },
       "locked": {
-        "lastModified": 1791356684,
-        "narHash": "sha256-8mr562bsNKJkgJxOj6/p5/76Ix3U0PGfoJ3HMpLxHjc=",
+        "lastModified": 1792707989,
+        "narHash": "sha256-9n8W2hs/0rGkj4jM3qYPl3mmWFNagsLajSiYKUQCfFU=",
         "owner": "blogle",
         "repo": "sdlc",
-        "rev": "517216b32898ce5bcb43091fdc547169c767075e",
+        "rev": "750bb47d2bc90b3026383050f529f9233e890c79",
         "type": "github"
       },
       "original": {
         "owner": "blogle",
-        "ref": "v1.1.1",
         "repo": "sdlc",
+        "rev": "750bb47d2bc90b3026383050f529f9233e890c79",
         "type": "github"
       }
     },

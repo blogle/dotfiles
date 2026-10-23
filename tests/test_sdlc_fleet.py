@@ -5,6 +5,7 @@ import unittest
 
 from scripts.sdlc_fleet import (
     FleetContractError,
+    attest_rulesets,
     secret_actions,
     select_candidate_pr,
     verify_check_runs,
@@ -23,6 +24,26 @@ FLAKE = (ROOT / "consumer-flake.nix").read_text()
 
 
 class FleetContractTests(unittest.TestCase):
+    def test_two_layer_attestation_normalizes_timezones_and_rejects_extra_actors(self):
+        plan = copy.deepcopy(PLAN)
+        desired = {
+            "name": "SDLC automated merges", "target": "branch", "enforcement": "active",
+            "conditions": RULESET["conditions"], "rules": [{"type": "update"}],
+            "bypass_actors": [
+                {"actor_id": 10562, "actor_type": "Integration", "bypass_mode": "pull_request"},
+                {"actor_id": 5257759, "actor_type": "Integration", "bypass_mode": "pull_request"},
+            ],
+        }
+        plan["automated_merges"] = desired
+        actual = dict(copy.deepcopy(desired), id=43, updated_at="2026-10-15T00:00:00-07:00")
+        result = attest_rulesets(plan, RULESET, actual, "blogle/anvil")
+        self.assertEqual(result["updated_at"], "2026-10-15T07:00:00.000Z")
+        self.assertEqual(result["automated_merges"]["updated_at"], result["updated_at"])
+        self.assertEqual(result["automated_merges"]["bypass_actors"], desired["bypass_actors"])
+        actual["bypass_actors"].append({"actor_id": 1, "actor_type": "Team", "bypass_mode": "always"})
+        with self.assertRaises(FleetContractError):
+            attest_rulesets(plan, RULESET, actual, "blogle/anvil")
+
     def test_first_apply_plan_has_real_required_checks(self):
         self.assertEqual(PLAN["action"], "create")
         verify_check_runs(PLAN, CHECK_RUNS)

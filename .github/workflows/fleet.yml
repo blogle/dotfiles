@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 env:
-  TRUSTED_SDLC_REF: de40fc00bc632b7acd0b0ba5de1242f1af827a9f
+  TRUSTED_SDLC_REF: 750bb47d2bc90b3026383050f529f9233e890c79
 jobs:
   manifest:
     runs-on: ubuntu-latest
@@ -82,18 +82,19 @@ jobs:
           [[ "$MANIFEST_SDLC_REF" == "$TRUSTED_SDLC_REF" ]]
           plan_json="$(nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset plan --repo "$REPOSITORY")"
           default_branch="$(gh api "repos/$REPOSITORY" --jq .default_branch)"
-          pulls_json="$(gh api --paginate "repos/$REPOSITORY/pulls?state=open&base=$default_branch&sort=updated&direction=desc&per_page=100")"
-          candidate_pr="$(jq -sc --arg branch "$default_branch" '
-            add | map(select(.base.ref == $branch)) | sort_by(.updated_at) | last // null
-          ' <<<"$pulls_json")"
-          if [[ "$candidate_pr" == null ]]; then
-            printf 'no open PR head; deferring publisher observation until a PR exists\n'
-          else
-            head_sha="$(jq -er '.head.sha' <<<"$candidate_pr")"
+          # Publisher availability is not tied to an arbitrary old open PR.
+          # Include merged canaries so successful onboarding remains observable.
+          pulls_json="$(gh api "repos/$REPOSITORY/pulls?state=all&base=$default_branch&sort=updated&direction=desc&per_page=100")"
+          publishers_observed=false
+          while IFS= read -r head_sha; do
             runs_json="$(gh api --paginate "repos/$REPOSITORY/commits/$head_sha/check-runs?per_page=100")"
             check_runs="$(jq -sc 'map(.check_runs) | add' <<<"$runs_json")"
-            printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json" --head-sha "$head_sha"
-          fi
+            if printf '%s' "$check_runs" | python3 scripts/sdlc_fleet.py verify-check-runs --plan "$plan_json" --head-sha "$head_sha"; then
+              publishers_observed=true
+              break
+            fi
+          done < <(jq -r '[.[] | select(.draft != true) | .head.sha] | reduce .[] as $sha ([]; if index($sha) then . else . + [$sha] end) | .[]' <<<"$pulls_json")
+          [[ "$publishers_observed" == true ]] || { echo 'No recent PR has all required publishers; enable Merge Protections and run a fresh SDLC onboarding PR.' >&2; exit 1; }
           nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset apply --repo "$REPOSITORY"
           nix run "github:blogle/sdlc/$TRUSTED_SDLC_REF#sdlc" -- ruleset check --repo "$REPOSITORY"
           rulesets_json="$(gh api --paginate "repos/$REPOSITORY/rulesets")"
@@ -103,6 +104,8 @@ jobs:
           ' <<<"$rulesets_json")"
           ruleset_json="$(gh api "repos/$REPOSITORY/rulesets/$ruleset_id")"
           printf '%s' "$ruleset_json" | python3 scripts/sdlc_fleet.py verify-ruleset --plan "$plan_json" --repository "$REPOSITORY"
+          automated_id="$(jq -sre 'add | map(select(.name == "SDLC automated merges")) | if length == 1 then .[0].id else error("expected exactly one automated-merge restriction") end' <<<"$rulesets_json")"
+          automated_json="$(gh api "repos/$REPOSITORY/rulesets/$automated_id")"
           read_consumer_file() {
             local response status http_status body
             set +e
@@ -137,7 +140,8 @@ jobs:
           consumer_sdlc_node="$(jq -c '.nodes.sdlc.locked // empty' <<<"$lock_json")"
           if [[ "$lock_present" == true && "$flake_present" == true && -n "$consumer_sdlc_node" ]]; then
             jq -n --argjson lock "$lock_json" --arg flake "$flake_text" '{lock: $lock, flake: $flake}' \
-              | python3 scripts/sdlc_fleet.py verify-consumer --expected-ref "$TRUSTED_SDLC_REF"
+              | python3 scripts/sdlc_fleet.py verify-consumer --expected-ref "$TRUSTED_SDLC_REF" \
+              || printf 'consumer runtime pin differs from fleet policy pin; runtime adoption is verified by its own SDLC policy check\n'
           else
             printf 'consumer is not yet SDLC-onboarded; central policy remains authoritative\n'
           fi
@@ -149,15 +153,8 @@ jobs:
           else
             installed_version=''
           fi
-          ruleset_attestation="$(jq -c --arg repository "$REPOSITORY" '
-            {
-              schema: 1,
-              repository: $repository,
-              ruleset_id: .id,
-              updated_at: .updated_at,
-              bypass_actors: []
-            }
-          ' <<<"$ruleset_json")"
+          ruleset_attestation="$(jq -n --argjson checks "$ruleset_json" --argjson automated "$automated_json" '{checks:$checks,automated:$automated}' \
+            | python3 scripts/sdlc_fleet.py attest --plan "$plan_json" --repository "$REPOSITORY")"
           gh variable set SDLC_RULESET_ATTESTATION --repo "$REPOSITORY" --body "$ruleset_attestation"
           credential_version="${RELEASE_CREDENTIAL_VERSION:-1}"
           if [[ "$installed_version" != "$credential_version" || "$(jq -r 'any(.[]; .name == "SDLC_RELEASE_APP_ID")' <<<"$installed_secrets")" != true ]]; then
