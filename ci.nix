@@ -1,12 +1,10 @@
-{ self, system }:
+{ self, system, publish }:
 let
   pkgs = self.legacyPackages.${system};
   deployChecks = self.checks.${system};
 in
 {
-  schemaVersion = 1;
-  stages = {
-    pr-fast = {
+    fast = {
       flake-evaluation =
         let
           evaluatedTargets = [
@@ -16,15 +14,14 @@ in
           ];
         in
         builtins.deepSeq evaluatedTargets (pkgs.runCommand "dotfiles-flake-evaluation" { } "touch $out");
-    } // {
-      deploy-schema = deployChecks.deploy-schema;
     };
 
-    candidate = {
+    verify = {
+      deploy-schema = deployChecks.deploy-schema;
       home-activation = self.homeConfigurations.home.activationPackage;
       modulus-toplevel = self.nixosConfigurations.modulus.config.system.build.toplevel;
       nandstorm-toplevel = self.nixosConfigurations.nandstorm.config.system.build.toplevel;
       deploy-activate = deployChecks.deploy-activate;
     };
-  };
+  inherit publish;
 }
