@@ -14,11 +14,10 @@ in
           ];
         in
         builtins.deepSeq evaluatedTargets (pkgs.runCommand "dotfiles-flake-evaluation" { } "touch $out");
-    } // {
-      deploy-schema = deployChecks.deploy-schema;
     };
 
     verify = {
+      deploy-schema = deployChecks.deploy-schema;
       home-activation = self.homeConfigurations.home.activationPackage;
       modulus-toplevel = self.nixosConfigurations.modulus.config.system.build.toplevel;
       nandstorm-toplevel = self.nixosConfigurations.nandstorm.config.system.build.toplevel;
