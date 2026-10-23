@@ -5,7 +5,8 @@
         "darwin": "darwin",
         "home-manager": "home-manager",
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ],
         "systems": "systems"
       },
@@ -34,7 +35,8 @@
           "nixpkgs"
         ],
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ],
         "opencode": "opencode"
       },
@@ -55,7 +57,8 @@
     "bubblebox": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ]
       },
       "locked": {
@@ -147,7 +150,8 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ],
         "utils": "utils"
       },
@@ -244,7 +248,8 @@
     "hm": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ]
       },
       "locked": {
@@ -327,7 +332,8 @@
         "bun2nix": "bun2nix",
         "flake-parts": "flake-parts",
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ],
         "systems": "systems_4",
         "treefmt-nix": "treefmt-nix"
@@ -367,7 +373,7 @@
         "mergify-cli": "mergify-cli",
         "nixpkgs": [
           "sdlc",
-          "nixpkgs"
+          "nixpkgs-latest"
         ],
         "rust-overlay": "rust-overlay_2"
       },
@@ -434,6 +440,38 @@
       },
       "original": {
         "owner": "NixOS",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-latest": {
+      "locked": {
+        "lastModified": 1792502884,
+        "narHash": "sha256-IoNisKcGbUjdd45qCqywGMCYmZ5EnkxezvLII0FWwNA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-stable": {
+      "locked": {
+        "lastModified": 1792615934,
+        "narHash": "sha256-MlvRfa1O5Cqc2/a+gG+l9TSuowEoCKCmrJ1d9oAVm0I=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-26.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -515,22 +553,6 @@
         "type": "github"
       }
     },
-    "nixpkgs_7": {
-      "locked": {
-        "lastModified": 1790822859,
-        "narHash": "sha256-69xHQhAeMAD2wDXO7T2pcOZIF9Sga2W+JkmY2a11Ops=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nur": {
       "inputs": {
         "flake-parts": "flake-parts_2",
@@ -598,10 +620,6 @@
         "impermanence": "impermanence",
         "llm-agents": "llm-agents",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": [
-          "sdlc",
-          "nixpkgs"
-        ],
         "nur": "nur",
         "opencode": "opencode_2",
         "rust-overlay": "rust-overlay",
@@ -611,7 +629,8 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs"
+          "sdlc",
+          "nixpkgs-latest"
         ]
       },
       "locked": {
@@ -653,20 +672,21 @@
     "sdlc": {
       "inputs": {
         "mergify-nix": "mergify-nix",
-        "nixpkgs": "nixpkgs_7"
+        "nixpkgs-latest": "nixpkgs-latest",
+        "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {
-        "lastModified": 1792714211,
-        "narHash": "sha256-89dnivEXx52Fu5MRpMjwdGSF5nO3d51uPRBM9RXqkws=",
+        "lastModified": 1792791281,
+        "narHash": "sha256-bZt7BrqQhieCIxiTIOEOme1vsnBZVZ73yy6EGHmYJ+w=",
         "owner": "blogle",
         "repo": "sdlc",
-        "rev": "fa8b1cd2b03513318a9b6343a98e0ad0a30533e5",
+        "rev": "c4bd995541304dbdef6a981ae4b7a3786cfeaca3",
         "type": "github"
       },
       "original": {
         "owner": "blogle",
-        "ref": "v1.4.2",
         "repo": "sdlc",
+        "rev": "c4bd995541304dbdef6a981ae4b7a3786cfeaca3",
         "type": "github"
       }
     },

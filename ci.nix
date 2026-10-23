@@ -4,7 +4,7 @@ let
   deployChecks = self.checks.${system};
 in
 {
-    fast = {
+    check = {
       flake-evaluation =
         let
           evaluatedTargets = [
