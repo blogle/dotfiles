@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 env:
-  TRUSTED_SDLC_REF: 750bb47d2bc90b3026383050f529f9233e890c79
+  TRUSTED_SDLC_REF: fa8b1cd2b03513318a9b6343a98e0ad0a30533e5
 jobs:
   manifest:
     runs-on: ubuntu-latest
