@@ -87,13 +87,18 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
           readinessProbe:
-            exec:
-              command:
-                - python
-                - -c
-                - import socket; socket.create_connection(("127.0.0.1", 8000), 2).close()
+            httpGet:
+              path: /mcp
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: markdown-vault-mcp.thejeffer.net
+                - name: Accept
+                  value: application/json, text/event-stream
+                - name: MCP-Protocol-Version
+                  value: "2025-03-26"
             periodSeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 5
           livenessProbe:
             exec:
               command:
