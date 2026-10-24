@@ -6,7 +6,7 @@ description: Use the pinned SDLC contract for shared CI, policy, and rolling rel
 # Shared SDLC contract
 
 The consumer's `flake.lock` selects SDLC. The consumer owns only its Nix
-`ci.<system>.fast`, `ci.<system>.verify`, and `ci.<system>.publish` outputs.
+`ci.<system>.check`, `ci.<system>.verify`, and `ci.<system>.publish` outputs.
 Publication invokes `ci.<system>.publish` directly, without a separate publish
 app output. Shared workflows own CI stages, runners,
 Nix setup, caching, rulesets, Mergify policy, and release orchestration.
@@ -14,7 +14,7 @@ Nix setup, caching, rulesets, Mergify policy, and release orchestration.
 ## Development and CI
 
 - Use `nix develop` and the consumer's `justfile` for local work.
-- Fast checks gate admission to Mergify. Full verification runs on Mergify's
+- `check` derivations gate admission to Mergify. Full verification runs on Mergify's
   synthetic candidate and gates queue merge.
 - Use the generated SDLC workflow callers and Mergify snapshot. After changing
   the SDLC pin, run `nix run .#sdlc -- install` and commit regenerated adapters
@@ -42,7 +42,7 @@ Nix setup, caching, rulesets, Mergify policy, and release orchestration.
 
 ## Validate
 
-Before handing off, run `nix develop -c just check`, the consumer's fast stage,
+Before handing off, run `nix develop -c just check`, the consumer's check stage,
 and its candidate-equivalent checks when practical. Validate changed workflow
 YAML with `actionlint`. Report exactly which checks ran and any hosted GitHub
 steps still needed for the canary.
