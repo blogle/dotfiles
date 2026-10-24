@@ -67,10 +67,23 @@
       homeOverlays = commonOverlays ++ [
         inputs.bubblebox.overlays.default
         inputs.rust-overlay.overlays.default
+        # New nixpkgs expects makeWrapperArgs as argv tokens, while pywal16
+        # still provides its PATH prefix as one shell-fragment string.
+        (final: prev: {
+          pywal16 = prev.pywal16.overridePythonAttrs (_: {
+            makeWrapperArgs = [ "--prefix" "PATH" ":" (final.lib.makeBinPath [ final.imagemagick ]) ];
+          });
+        })
         (final: prev: {
           agenix = agenix.packages.${final.system}.default;
           anvilctl = inputs.anvil.packages.${final.system}.anvilctl;
-          chatgpt = inputs.llm-agents.packages.${final.system}.chatgpt;
+          chatgpt = let
+            upstream = inputs.llm-agents.packages.${final.system}.chatgpt;
+          in upstream.override {
+            chatgpt-unwrapped = upstream.unwrapped.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [ final.tpm2-tss ];
+            });
+          };
           home-manager = inputs.hm.packages.${final.system}.home-manager;
           opencode = inputs.opencode.packages.${final.system}.opencode;
         })
