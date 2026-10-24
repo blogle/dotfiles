@@ -2,7 +2,7 @@
   description = "NixOS system configurations";
 
   inputs = {
-    sdlc.url = "github:blogle/sdlc/c4bd995541304dbdef6a981ae4b7a3786cfeaca3";
+    sdlc.url = "github:blogle/sdlc/v2";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
