@@ -87,16 +87,57 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
           readinessProbe:
-            httpGet:
-              path: /mcp
-              port: http
-              httpHeaders:
-                - name: Host
-                  value: markdown-vault-mcp.thejeffer.net
-                - name: Accept
-                  value: application/json, text/event-stream
-                - name: MCP-Protocol-Version
-                  value: "2025-03-26"
+            exec:
+              command:
+                - python
+                - -c
+                - |
+                  import json
+                  import urllib.request
+
+                  url = "http://127.0.0.1:8000/mcp"
+                  host = "markdown-vault-mcp.thejeffer.net"
+                  payload = json.dumps({
+                      "jsonrpc": "2.0",
+                      "id": 1,
+                      "method": "initialize",
+                      "params": {
+                          "protocolVersion": "2025-03-26",
+                          "capabilities": {},
+                          "clientInfo": {"name": "readiness-probe", "version": "1"},
+                      },
+                  }).encode()
+                  request = urllib.request.Request(
+                      url,
+                      data=payload,
+                      headers={
+                          "Host": host,
+                          "Content-Type": "application/json",
+                          "Accept": "application/json, text/event-stream",
+                      },
+                  )
+                  session_id = None
+                  try:
+                      with urllib.request.urlopen(request, timeout=5) as response:
+                          if response.status != 200:
+                              raise RuntimeError(f"MCP initialize returned HTTP {response.status}")
+                          session_id = response.headers.get("mcp-session-id")
+                          if not session_id:
+                              raise RuntimeError("MCP initialize returned no session ID")
+                          events = response.read().decode()
+                      message = next(line[6:] for line in events.splitlines() if line.startswith("data: "))
+                      result = json.loads(message).get("result", {})
+                      if result.get("protocolVersion") != "2025-03-26":
+                          raise RuntimeError("MCP initialize returned an invalid protocol response")
+                  finally:
+                      if session_id:
+                          close_request = urllib.request.Request(
+                              url,
+                              method="DELETE",
+                              headers={"Host": host, "MCP-Session-Id": session_id},
+                          )
+                          with urllib.request.urlopen(close_request, timeout=5):
+                              pass
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
