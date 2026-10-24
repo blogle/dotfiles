@@ -2,34 +2,33 @@
   description = "NixOS system configurations";
 
   inputs = {
-    sdlc.url = "github:blogle/sdlc/v1.4.2";
-    nixpkgs.follows = "sdlc/nixpkgs";
+    sdlc.url = "github:blogle/sdlc/v2";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nur.url = "github:nix-community/nur";
 
     agenix = {
       url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
 
     anvil = {
       url = "github:blogle/anvil";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
 
     bubblebox = {
       url = "github:blogle/bubblebox";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
 
     hm = {
       url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
 
     impermanence = {
@@ -38,7 +37,7 @@
 
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
     opencode = {
       url = "github:anomalyco/opencode/v1.18.35";
@@ -46,12 +45,12 @@
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "sdlc/nixpkgs-latest";
     };
     
   };
 
-  outputs = { self, nixpkgs, agenix, hm, impermanence, nixos-hardware, sdlc, ... }@inputs:
+  outputs = { self, agenix, hm, impermanence, nixos-hardware, sdlc, ... }@inputs:
     let
       system = "x86_64-linux";
 
@@ -83,13 +82,18 @@
         })
       ];
 
-      homePkgs = import nixpkgs {
+      packageSets = sdlc.lib.importPackages {
         inherit system;
-        config = {
-          inherit (commonConfig) allowUnfree allowBroken;
+        latest = {
+          config = commonConfig;
+          overlays = homeOverlays;
         };
-        overlays = homeOverlays;
+        stable = {
+          config = commonConfig;
+          overlays = hostOverlays;
+        };
       };
+      homePkgs = packageSets.latest;
 
       nixpkgModule = { ... }: {
         # Use our overlayed package set
@@ -129,7 +133,7 @@
 
     nixosConfigurations = {
 
-      modulus = nixpkgs.lib.nixosSystem {
+      modulus = sdlc.nixpkgs-stable.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -139,7 +143,7 @@
         ];
       };
 
-      nandstorm = nixpkgs.lib.nixosSystem {
+      nandstorm = sdlc.nixpkgs-stable.lib.nixosSystem {
         inherit system;
         modules = [
           nixpkgModule
@@ -175,7 +179,7 @@
     });
 
     packages.${system} = {
-      nix-eval-jobs = nixpkgs.legacyPackages.${system}.nix-eval-jobs;
+      nix-eval-jobs = packageSets.latest.nix-eval-jobs;
       mergify-cli = sdlc.packages.${system}.mergify-cli;
       sdlc = sdlc.packages.${system}.sdlc;
     };
@@ -187,7 +191,7 @@
       };
       nix-eval-jobs = {
         type = "app";
-        program = "${nixpkgs.legacyPackages.${system}.nix-eval-jobs}/bin/nix-eval-jobs";
+        program = "${packageSets.latest.nix-eval-jobs}/bin/nix-eval-jobs";
       };
       mergify-cli = {
         type = "app";
@@ -195,26 +199,26 @@
       };
     };
 
-    devShells.${system}.default = nixpkgs.legacyPackages.${system}.mkShell {
+    devShells.${system}.default = packageSets.latest.mkShell {
       packages = sdlc.lib.devTools {
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = packageSets.latest;
         sdlcCli = sdlc.packages.${system}.sdlc;
       } ++ [
-        nixpkgs.legacyPackages.${system}.just
-        nixpkgs.legacyPackages.${system}.jq
-        nixpkgs.legacyPackages.${system}.nix-eval-jobs
-        nixpkgs.legacyPackages.${system}.helm
-        nixpkgs.legacyPackages.${system}.kubectl
-        nixpkgs.legacyPackages.${system}.kubeseal
-        nixpkgs.legacyPackages.${system}.kustomize
-        nixpkgs.legacyPackages.${system}.openssl
-        (nixpkgs.legacyPackages.${system}.python3.withPackages (pythonPackages: [
+        packageSets.latest.just
+        packageSets.latest.jq
+        packageSets.latest.nix-eval-jobs
+        packageSets.latest.helm
+        packageSets.latest.kubectl
+        packageSets.latest.kubeseal
+        packageSets.latest.kustomize
+        packageSets.latest.openssl
+        (packageSets.latest.python3.withPackages (pythonPackages: [
           pythonPackages.json5
           pythonPackages.pyyaml
         ]))
-        nixpkgs.legacyPackages.${system}.docker-compose
-        nixpkgs.legacyPackages.${system}.bun
-        nixpkgs.legacyPackages.${system}.nodejs
+        packageSets.latest.docker-compose
+        packageSets.latest.bun
+        packageSets.latest.nodejs
       ];
     };
 
