@@ -3,11 +3,9 @@
 The `knowledge` namespace runs Ignis and markdown-vault-mcp against one shared,
 human-owned Markdown root. Ignis is available at
 `https://obsidian.thejeffer.net` through Traefik, cert-manager, and the existing
-Tinyauth middleware. The MCP server is also available at
+Tinyauth middleware. The MCP server is available at
 `https://markdown-vault-mcp.thejeffer.net/mcp` through the private
-Traefik/MetalLB path for tailnet clients. The same pod's OpenAI tunnel-client
-continues to reach
-`http://127.0.0.1:8000/mcp` for ChatGPT.
+Traefik/MetalLB path for tailnet clients.
 
 The namespace also contains three external GHCR collectors. Their production
 manifest digests are centralized in `kustomization.yaml`; release tags are not
@@ -199,18 +197,6 @@ new top-level vault may require `kubectl -n knowledge rollout restart
 deployment/markdown-vault-mcp` or an explicit reindex so the watcher registers
 the new directory.
 
-## Tunnel credentials
-
-`tunnel-credentials.sealed.yaml` is a namespace-scoped SealedSecret generated
-from the proven POC's `CONTROL_PLANE_TUNNEL_ID` and
-`CONTROL_PLANE_API_KEY`. Never commit an unsealed Secret. To rotate the values,
-use `addrspace/scripts/seal-secret.sh` with `--scope strict`, replace the sealed manifest,
-and restart `deployment/markdown-vault-mcp`.
-
-The sidecar runs tunnel-client 0.0.10 from the host's
-`/run/current-system/sw/bin/tunnel-client`, mounted read-only into a pinned
-Alpine runtime containing CA certificates. It does not mount `/nix/store`.
-
 ## Operations
 
 ```sh
@@ -218,7 +204,6 @@ kubectl -n knowledge get deployments,pods,pvc,service,ingress
 kubectl -n knowledge get cronjob,job
 kubectl -n knowledge describe ingress markdown-vault-mcp
 kubectl -n knowledge logs deployment/markdown-vault-mcp -c markdown-vault-mcp
-kubectl -n knowledge logs deployment/markdown-vault-mcp -c tunnel-client
 kubectl -n knowledge logs deployment/telegram-collector
 kubectl -n knowledge logs job/telegram-collector-auth
 kubectl -n knowledge create job --from=cronjob/chadlands-collector chadlands-collector-manual

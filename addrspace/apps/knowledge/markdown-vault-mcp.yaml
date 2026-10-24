@@ -153,65 +153,6 @@ spec:
               mountPath: /data/state
             - name: vaults
               mountPath: /data/vaults
-        - name: tunnel-client
-          image: alpine@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
-          command:
-            - /bin/sh
-            - -ec
-            - |
-              until nc -z 127.0.0.1 8000; do
-                sleep 1
-              done
-              exec /usr/local/bin/tunnel-client run
-          env:
-            - name: CONTROL_PLANE_TUNNEL_ID
-              valueFrom:
-                secretKeyRef:
-                  name: tunnel-credentials
-                  key: CONTROL_PLANE_TUNNEL_ID
-            - name: CONTROL_PLANE_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tunnel-credentials
-                  key: CONTROL_PLANE_API_KEY
-            - name: MCP_SERVER_URL
-              value: http://127.0.0.1:8000/mcp
-            - name: HEALTH_LISTEN_ADDR
-              value: :8080
-            - name: LOG_LEVEL
-              value: info
-            - name: LOG_FORMAT
-              value: json
-          startupProbe:
-            httpGet:
-              path: /readyz
-              port: 8080
-            failureThreshold: 60
-            periodSeconds: 5
-            timeoutSeconds: 2
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8080
-            periodSeconds: 10
-            timeoutSeconds: 2
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            periodSeconds: 30
-            timeoutSeconds: 2
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              cpu: 250m
-              memory: 128Mi
-          volumeMounts:
-            - name: tunnel-client
-              mountPath: /usr/local/bin/tunnel-client
-              readOnly: true
       volumes:
         - name: state
           persistentVolumeClaim:
@@ -220,10 +161,6 @@ spec:
           hostPath:
             path: /persist/knowledge/vaults
             type: DirectoryOrCreate
-        - name: tunnel-client
-          hostPath:
-            path: /run/current-system/sw/bin/tunnel-client
-            type: File
 ---
 apiVersion: v1
 kind: Service

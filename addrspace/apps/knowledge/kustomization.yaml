@@ -8,7 +8,6 @@ resources:
   - telegram-auth-job.yaml
   - markdown-vault-mcp.yaml
   - ignis.yaml
-  - tunnel-credentials.sealed.yaml
   - chatgpt-collector.yaml
   - chadlands-collector.yaml
   - chadlands-validator.yaml
