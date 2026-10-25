@@ -3,10 +3,10 @@
   "skills": {
     "sdlc": {
       "source": "blogle/sdlc",
-      "ref": "v1",
+      "ref": "v2",
       "sourceType": "github",
       "skillPath": "skills/sdlc/SKILL.md",
-      "computedHash": "c10c30188fbcdd9c23201eb40a17cad4da90ac83423ef05a7a4ca12adea02b66"
+      "computedHash": "9cc528bf12c1a116135f2d0a85815df6ad69852d9ac65730758c18d02736a9e9"
     }
   }
 }
