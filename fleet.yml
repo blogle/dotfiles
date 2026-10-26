@@ -8,3 +8,5 @@ repos:
     enabled: false
   - name: dotfiles
     enabled: true
+  - name: fieldnotes
+    enabled: true
