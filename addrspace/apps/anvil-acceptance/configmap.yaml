@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anvil-acceptance-runtime
+data:
+  ANVIL_CONTROLLER_ID: anvil-acceptance-controller
+  ANVIL_OPERATOR_ID: acceptance-operator
+  ANVIL_DATABASE: /var/lib/anvil/anvil.sqlite
+  ANVIL_RECONCILE_INTERVAL_MS: "5000"
+  PORT: "8080"
+
+  # Hard-disable external provider mutations during preparation.
+  # Enabling requires FS-10/13 configuration and separate approval.
+  ANVIL_PROVIDER_MODE: unavailable
+  ANVIL_SANDBOX_NAMESPACE: anvil-acceptance
+  ANVIL_KUBERNETES_API_URL: https://kubernetes.default.svc
+  ANVIL_KUBERNETES_TOKEN_FILE: /var/run/secrets/kubernetes.io/serviceaccount/token
+  ANVIL_KUBERNETES_CA_FILE: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt

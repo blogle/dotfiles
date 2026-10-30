@@ -1,0 +1,34 @@
+# All claims are distinct from the production anvil namespace.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: anvil-acceptance-state
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-zfspv
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: anvil-acceptance-profile
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-zfspv
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Shared-store layout and actual Nix daemon mounting remain an FS-13 gate.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: anvil-acceptance-nix
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-zfspv-shared-ext4
+  resources:
+    requests:
+      storage: 100Gi
