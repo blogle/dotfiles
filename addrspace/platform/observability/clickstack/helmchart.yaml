@@ -6,7 +6,7 @@ metadata:
 spec:
   repo: https://clickhouse.github.io/ClickStack-helm-charts
   chart: clickstack
-  version: 3.4.0
+  version: 3.5.0
   targetNamespace: observability
   createNamespace: true
   timeout: 30m
