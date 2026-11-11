@@ -30,7 +30,7 @@ spec:
                       - nandstorm
       containers:
         - name: ollama
-          image: docker.io/ollama/ollama:0.40.9@sha256:1914dade358389ce67f527f8d54914f0872fdafdc7a95980096ad0ff6a381196
+          image: docker.io/ollama/ollama:0.40.16@sha256:a372a1c0d1e15b68e9521189785c3ca17795c26c2356f8b1b10122cfb59ed0d7
           imagePullPolicy: IfNotPresent
           env:
             - name: OLLAMA_HOST
@@ -89,7 +89,7 @@ spec:
             - name: models
               mountPath: /root/.ollama
         - name: model-bootstrap
-          image: docker.io/curlimages/curl:8.23.0@sha256:ed154ad601683a2a85f8634398a6fbefd64d624df7b8432bbad512f8b8bfbf93
+          image: docker.io/curlimages/curl:8.23.0@sha256:3b8fde20978e330b401837f24b871ebe2c8d14ff7f07b87990bcd832588a1a75
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
