@@ -1,6 +1,7 @@
 resources:
   - ai
   - anvil
+  - anvil-dotfiles
   - auth
   - bitmagnet
   - browser-mcp

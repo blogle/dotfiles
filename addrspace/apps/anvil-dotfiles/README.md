@@ -1,55 +1,48 @@
-# Anvil dotfiles (standalone render-only overlay)
+# Anvil dotfiles
 
-This overlay is intentionally **not registered** in
-`addrspace/apps/kustomization.yaml` or Flux. Render it for inspection with:
+This Kustomize overlay deploys a second Anvil instance into the dedicated
+`dotfiles` namespace. It is registered in `addrspace/apps/kustomization.yaml`
+after the incumbent `anvil` overlay and is reconciled with the apps layer.
+Render it independently with:
 
 ```sh
 kubectl kustomize addrspace/apps/anvil-dotfiles
 ```
 
-The overlay includes its own `Namespace/dotfiles`. Namespaced PVCs, Services,
-Deployments, ServiceAccount, Role, and RoleBinding render into `dotfiles`; the
-incumbent `Namespace/anvil` and upstream `github-app-credentials` Secret are
-removed. The overlay does not create cluster-scoped RBAC or storage resources,
-or copy any incumbent Secret, PVC, or ingress route. There are no GitHub App
-credentials or fake Secret data in this overlay. The independently generated
-`anvil-profile-credentials` and `anvil-controller-signing` SealedSecrets provide
-the profile password and controller signing configuration in the `dotfiles`
-namespace. The V2 profile's `ANVIL_OPENCODE_SERVER_PASSWORD` is supplied by its
-own `anvil-profile-credentials` Secret.
+The overlay pins Anvil release v0.1.1 at merged commit
+`6dce30b1963cbc26c31baa1187498f59f92b014e`. The base and all three application
+images (`anvil`, `anvil-sandbox`, and `anvil-nix-daemon`) use this same commit;
+the immutable GHCR `sha-*` tags were verified to exist (HTTP 200).
 
-This remains render-only and **cannot be deployed**: `anvild` startup requires
-real GitHub App credentials, which are intentionally not included or wired yet.
-Do not register the overlay in the apps layer or Flux until those credentials
-are provisioned through an approved secret workflow and the other deployment
-gates below are cleared.
+The dotfiles instance intentionally shares the existing GitHub App identity
+with the incumbent Anvil instance. Its credentials are supplied by the
+namespace-scoped `github-app-credentials-dotfiles` SealedSecret; `anvild`
+requires all three GitHub App keys and will not start without that Secret. This
+shared identity means both instances act as the same GitHub App, not separate
+identities.
 
-The upstream Anvil base and all three image tags are pinned to merged release
-candidate commit `17b4640ff5b27d3282cef9ac9e9a384c223ee4e6`. Its protected PR
-has merged, but image publication is still pending. Do not treat any of the
-three immutable image tags as available until the publisher succeeds and the
-artifacts are verified. This overlay remains unregistered and must not be
-deployed or compared against the live cluster before all deployment gates are
-cleared. Rendering is structural validation only; it does not establish
-artifact availability, compatibility, or runtime behavior.
+Other state and access boundaries remain independent: the profile-password
+Secret (`anvil-profile-credentials`) and controller-signing Secret
+(`anvil-controller-signing`) are separately sealed for `dotfiles`; profile
+password remains a direct SecretKeyRef in the profile Deployment. The
+namespace, profile/Nix/history PVCs, and ingress/certificate/TLS Secret and
+preview routing are also separate from incumbent Anvil. No incumbent Secret,
+PVC, Namespace, or ingress route is copied or reused. The overlay does not add
+cluster-scoped RBAC or storage resources.
 
-The separate ingress/certificate cover only `anvil-dotfiles.thejeffer.net` and
-`*.dotfiles.preview.thejeffer.net`, with a unique TLS Secret. The Ingress
-references shared Traefik SSO authentication middlewares, which must be
-independently confirmed available. DNS, certificate issuance, SSO middleware
-availability, and routing also require verification before deployment.
+No model/API credential is configured. The service and profile can be deployed,
+but real worker/model execution remains gated until an authorized model
+credential and its approved secret wiring are provided.
 
-Outstanding deployment gates:
+The Ingress uses the shared Traefik SSO authentication middlewares and covers
+`anvil-dotfiles.thejeffer.net` plus `*.dotfiles.preview.thejeffer.net`. Before
+depending on external access, confirm DNS, certificate issuance, middleware
+availability, Agent Sandbox admission/authorization, and sandbox routing.
 
-- Wait for publication of the `anvil`, `anvil-sandbox`, and `anvil-nix-daemon`
-  artifacts for `17b4640ff5b27d3282cef9ac9e9a384c223ee4e6`, then verify all
-  three immutable image references. Publication is pending; do not infer the
-  artifacts exist from the merged source commit.
-- Provision and independently review a real GitHub App credential Secret for
-  `dotfiles` via an approved secret workflow; `anvild` cannot start without it.
-  The profile password and controller-signing SealedSecrets are already
-  included, sealed for this namespace with independent keys. Do not reuse
-  incumbent credential values.
-- Review namespace-specific PVC capacity/storage policy, Agent Sandbox
-  admission/authorization behavior, DNS and certificate issuance, SSO, and
-  sandbox routing.
+No new Flux healthChecks are added for these workloads at initial adoption:
+the new deployments must first be inspected and their readiness verified
+manually, without making the entire apps Kustomization wait on the dotfiles
+instance. Do not change Nexus MCP wiring as part of this deployment; that work
+is gated on a separately ready MCP service. The incumbent Anvil pin and the
+Renovate SEV-1 hold are unchanged. Rendering is structural validation only and
+does not establish runtime behavior or external dependency readiness.

@@ -146,6 +146,7 @@ jobs:
         run: |
           python addrspace/tests/check-anvil-manifest.py
           python addrspace/tests/check-anvil-canonical-nix.py
+          python addrspace/tests/check-anvil-dotfiles-manifest.py
       - name: Validate Flux reconciliation objects
         if: steps.changes.outputs.relevant == 'true'
         run: |
