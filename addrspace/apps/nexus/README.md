@@ -21,21 +21,12 @@ existing `checksum/config` annotation as well.
 
 ## Deployment procedure
 
-Run from the dotfiles repository:
-
-```bash
-kubectl apply -k addrspace/apps/nexus
-kubectl -n nexus rollout status deployment/nexus --timeout=180s
-kubectl -n nexus rollout status deployment/nexus-mcp-compat --timeout=180s
-```
-
-If applying a local change without changing the pod annotation, explicitly
-restart the gateway:
-
-```bash
-kubectl -n nexus rollout restart deployment/nexus
-kubectl -n nexus rollout status deployment/nexus --timeout=180s
-```
+Nexus is managed by Flux. Commit and merge the desired-state change through the
+normal PR workflow; Flux reconciles it from `master`. Do not use `kubectl apply`
+or an out-of-band rollout restart for routine deployment. The pod-template
+annotations above trigger a rollout when the config or downstream contract
+changes. Verify the rollout after Flux reports the `addrspace-apps`
+reconciliation complete.
 
 The compatibility deployment does not own the downstream tool catalog. Restart
 it only when its image or configuration changes.
