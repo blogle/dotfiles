@@ -14,7 +14,7 @@ jobs:
     name: Kubernetes desired state
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
       - name: Check whether Kubernetes desired state changed
@@ -46,7 +46,7 @@ jobs:
               echo "No Kubernetes desired-state or Renovate configuration changes; passing as a no-op."
             fi
           fi
-      - uses: azure/setup-kubectl@v4
+      - uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
         if: steps.changes.outputs.relevant == 'true'
         with:
           version: v1.35.0
