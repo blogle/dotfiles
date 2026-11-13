@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Standalone render-only overlay. Deliberately not registered in apps/ or Flux.
+namespace: dotfiles
+
+resources:
+  - github.com/blogle/anvil//k8s/base?ref=17b4640ff5b27d3282cef9ac9e9a384c223ee4e6
+  - namespace.yaml
+  - certificate.yaml
+  - ingress.yaml
+  - anvil-profile-credentials.sealed.yaml
+  - anvil-controller-signing.sealed.yaml
+
+images:
+  - name: ghcr.io/blogle/anvil
+    newTag: sha-17b4640ff5b27d3282cef9ac9e9a384c223ee4e6
+  - name: ghcr.io/blogle/anvil-sandbox
+    newTag: sha-17b4640ff5b27d3282cef9ac9e9a384c223ee4e6
+  - name: ghcr.io/blogle/anvil-nix-daemon
+    newTag: sha-17b4640ff5b27d3282cef9ac9e9a384c223ee4e6
+
+patches:
+  # The upstream Namespace is for the incumbent app; this overlay owns dotfiles.
+  - patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: anvil
+      $patch: delete
+  # Never render the upstream credential placeholder or imply GitHub auth.
+  - patch: |-
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: github-app-credentials
+      $patch: delete
+  # Keep the runtime config map and wire the independently sealed production
+  # secrets. GitHub App credentials are intentionally not supplied here.
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: anvild
+    patch: |-
+      - op: test
+        path: /spec/template/spec/containers/0/envFrom/0/configMapRef/name
+        value: anvil-runtime
+      - op: test
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/name
+        value: github-app-credentials
+      - op: replace
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/name
+        value: anvil-profile-credentials
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/optional
+        value: false
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value:
+          secretRef:
+            name: anvil-controller-signing
+  - path: runtime-config.patch.yaml
+  - path: mcp-hosts.patch.yaml
+  - path: profile-pvc.patch.yaml
+  - path: profile-deployment.patch.yaml
+  - path: nix-shared-pvc.patch.yaml
+  - path: history-pvc.patch.yaml
+  - path: anvild-rollout.patch.yaml

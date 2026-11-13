@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # A namespace-local claim, distinct from any incumbent namespace's PVC.
+  name: anvil-nix-shared
+spec:
+  storageClassName: openebs-zfspv-shared-ext4
+  resources:
+    requests:
+      storage: 100Gi

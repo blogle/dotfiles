@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: anvil-dotfiles-preview-tls
+spec:
+  commonName: anvil-dotfiles.thejeffer.net
+  dnsNames:
+    - anvil-dotfiles.thejeffer.net
+    - '*.dotfiles.preview.thejeffer.net'
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  renewBefore: 360h
+  secretName: anvil-dotfiles-preview-tls

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anvil-profile
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      initContainers:
+        - name: fix-profile-permissions
+          image: ghcr.io/blogle/anvil-sandbox
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              mkdir -p /anvil/profile/config /anvil/profile/auth
+              chown -R 1000:1000 /anvil/profile
+              chmod 700 /anvil/profile/auth
+              if [ -e /anvil/profile/auth/auth.json ]; then chmod 600 /anvil/profile/auth/auth.json; fi
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: profile
+              mountPath: /anvil/profile
+      containers:
+        - name: opencode
+          env:
+            - name: ANVIL_OPENCODE_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: anvil-profile-credentials
+                  key: ANVIL_OPENCODE_SERVER_PASSWORD

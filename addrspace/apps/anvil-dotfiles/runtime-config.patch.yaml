@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anvil-runtime
+data:
+  ANVIL_NAMESPACE: dotfiles
+  ANVIL_PROFILE_OPENCODE_URL: http://anvil-profile.dotfiles.svc.cluster.local:4096
+  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-17b4640ff5b27d3282cef9ac9e9a384c223ee4e6
+  ANVIL_PREVIEW_DOMAIN: dotfiles.preview.thejeffer.net
+  BASE_DOMAIN: dotfiles.preview.thejeffer.net
+  ANVIL_ANNOTATION_PREFIX: anvil-dotfiles.thejeffer.net
+  ANVIL_GIT_COMMITTER_NAME: Anvil Dotfiles
+  ANVIL_GIT_COMMITTER_EMAIL: anvil-dotfiles@noreply.thejeffer.net
+  AGENT_SANDBOX_ROUTER_URL: http://sandbox-router-svc.agent-sandbox-system.svc.cluster.local:8080
