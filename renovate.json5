@@ -6,7 +6,7 @@
   // Keep unrelated Renovate PRs from starving production deployment updates.
   prConcurrentLimit: 10,
   branchConcurrentLimit: 10,
-  labels: ['dependencies', 'kubernetes'],
+  labels: ['dependencies', 'kubernetes', 'integration:review'],
   packageRules: [
     {
       // SEV-1: hold Anvil rollouts at the restored pre-V2 release until Kind E2E proves V2 recovery.
@@ -83,6 +83,9 @@
       matchManagers: ['kubernetes', 'kustomize', 'flux', 'custom.regex'],
       automerge: true,
       automergeType: 'pr',
+      // Match the SDLC auto-queue authority only for updates already approved
+      // for unattended merging by this repository's existing Renovate policy.
+      labels: ['dependencies', 'kubernetes', 'integration:auto'],
       ignoreTests: false,
     },
   ],
