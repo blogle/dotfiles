@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # A namespace-local claim, distinct from any incumbent namespace's PVC.
+  name: anvil-opencode-profile
+spec:
+  storageClassName: openebs-zfspv
+  resources:
+    requests:
+      storage: 1Gi

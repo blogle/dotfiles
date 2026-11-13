@@ -1,0 +1,173 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Isolated dotfiles namespace overlay; Flux adopts it with the apps layer.
+namespace: dotfiles
+
+resources:
+  - github.com/blogle/anvil//k8s/base?ref=6dce30b1963cbc26c31baa1187498f59f92b014e
+  - namespace.yaml
+  - certificate.yaml
+  - ingress.yaml
+  - anvil-profile-credentials.sealed.yaml
+  - anvil-controller-signing.sealed.yaml
+  - github-app-credentials-dotfiles.sealed.yaml
+
+images:
+  - name: ghcr.io/blogle/anvil
+    newTag: sha-6dce30b1963cbc26c31baa1187498f59f92b014e
+  - name: ghcr.io/blogle/anvil-sandbox
+    newTag: sha-6dce30b1963cbc26c31baa1187498f59f92b014e
+  - name: ghcr.io/blogle/anvil-nix-daemon
+    newTag: sha-6dce30b1963cbc26c31baa1187498f59f92b014e
+
+patches:
+  # The upstream Namespace is for the incumbent app; this overlay owns dotfiles.
+  - patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: anvil
+      $patch: delete
+  # Replace the upstream placeholder with the dotfiles-scoped sealed Secret.
+  - patch: |-
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: github-app-credentials
+      $patch: delete
+  # Wire this namespace's independently sealed GitHub App, profile-password,
+  # and controller-signing credentials.
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: anvild
+    patch: |-
+      - op: test
+        path: /spec/template/spec/containers/0/envFrom/0/configMapRef/name
+        value: anvil-runtime
+      - op: test
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/name
+        value: github-app-credentials
+      - op: replace
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/name
+        value: github-app-credentials-dotfiles
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/optional
+        value: false
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value:
+          secretRef:
+            name: anvil-profile-credentials
+            optional: false
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value:
+          secretRef:
+            name: anvil-controller-signing
+            optional: false
+  - path: runtime-config.patch.yaml
+  - path: mcp-hosts.patch.yaml
+  - path: profile-pvc.patch.yaml
+  - path: profile-deployment.patch.yaml
+  - path: nix-shared-pvc.patch.yaml
+  - path: history-pvc.patch.yaml
+  - path: anvild-rollout.patch.yaml
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_PREVIEW_DOMAIN
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-preview-domain]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_ANNOTATION_PREFIX
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-annotation-prefix]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_GIT_COMMITTER_NAME
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-git-committer-name]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_GIT_COMMITTER_EMAIL
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-git-committer-email]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.BASE_DOMAIN
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-base-domain]
+        options:
+          create: true
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.AGENT_SANDBOX_ROUTER_URL
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-sandbox-router-url]
+        options:
+          create: true
+  - source:
+      kind: Deployment
+      name: anvil-profile
+      fieldPath: spec.template.spec.containers.0.image
+    targets:
+      - select:
+          kind: ConfigMap
+          name: anvil-runtime
+        fieldPaths:
+          - data.ANVIL_SANDBOX_IMAGE
+  - source:
+      kind: ConfigMap
+      name: anvil-runtime
+      fieldPath: data.ANVIL_SANDBOX_IMAGE
+    targets:
+      - select:
+          kind: Deployment
+          name: anvild
+        fieldPaths:
+          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-sandbox-image]
+        options:
+          create: true

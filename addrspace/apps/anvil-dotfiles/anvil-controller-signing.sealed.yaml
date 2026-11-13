@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: anvil-controller-signing
+  namespace: dotfiles
+spec:
+  encryptedData:
+    ANVIL_SESSION_SIGNING_SECRET: AgBx0Pn3+SB9GDw52R4IrcHvPMvutWvP69phK1F4rQjbzMPFGt6fn0c7EvMHVgpG9QcDAvoP0HKaBFZcF5AMFft5qCC29Sz/E2P0bWrjAwSCvEXdN8OBLOEBqMEPVDDFvaEnV5Ki/2sobFCAdPZk9Hf+ian8LbCRl1XUYoOTv4HTuAe7ptZ0cbGjDXjCqvaTENiByP35Hs5CdCbaizMHQsuw4PTuzQ2zdAaoR+08Ok03JpLDpbWPnbyCvmkzD7IKKur1xGmjm9yltV7oPYEmAF3IMLnjKcUZBiOCUK1GazG5CeDCFoyvHyW7A1p/24dkQGBcn7ZL46nINNBEZ1yY5zBDfNr8VBQPzZOthfVr+zfQ4tVQqhZhyTLR8yAxvK4F3379wKf8peZ5r2mETnI1nYVmM9NDW8Gmhb0gR3IryppbCSyz9+EgZjdgBxTrB27sPplSyPnPqt4m9FBs1UCkEZUNI5uE/y0XiYBjjSYwpOfyK9hoSMin3GvFlg5zN2h2hgH6KytPqmrLk2coSlY45cIG066LQBcvvnu2BgwtXbWmOucL54Z6d2fwTfvRAg9/X6GPBTrJ4f5hB/kBPdZIbIA5KzLjSvIlYPIHkPHC9e1wwaI8uyZYHC2gH7a44dOO5fG6uW+0kRxskc6zVx5Fjh0+kGhCFr53EEN8NFB1W21B51qfM3NIwBrKsKasbcO0llGHRrM8xlf0/0XOjiYp3yo6mf2y+PODEBvToVsi3X5+0VZzIMsz3GYpOWsJd9coW4s=
+  template:
+    metadata:
+      name: anvil-controller-signing
+      namespace: dotfiles

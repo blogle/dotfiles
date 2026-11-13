@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: anvil-dotfiles
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: auth-sso-auth@kubernetescrd,auth-sso-errors@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - anvil-dotfiles.thejeffer.net
+        - '*.dotfiles.preview.thejeffer.net'
+      secretName: anvil-dotfiles-preview-tls
+  rules:
+    - host: anvil-dotfiles.thejeffer.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: anvild
+                port:
+                  name: http
+    - host: '*.dotfiles.preview.thejeffer.net'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: anvil-router
+                port:
+                  name: http
