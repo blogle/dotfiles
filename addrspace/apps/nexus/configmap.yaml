@@ -48,7 +48,7 @@ data:
     protocol = "streamable-http"
     url = "http://anvil-mcp.anvil.svc.cluster.local:8081/mcp"
 
-    [mcp.servers.anvil_dotfiles]
+    [mcp.servers.anvil_next]
     protocol = "streamable-http"
     url = "http://anvil-mcp.dotfiles.svc.cluster.local:8081/mcp"
 

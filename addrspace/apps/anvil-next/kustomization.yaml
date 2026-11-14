@@ -86,7 +86,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-preview-domain]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-preview-domain]
         options:
           create: true
   - source:
@@ -98,7 +98,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-annotation-prefix]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-annotation-prefix]
         options:
           create: true
   - source:
@@ -110,7 +110,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-git-committer-name]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-git-committer-name]
         options:
           create: true
   - source:
@@ -122,7 +122,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-git-committer-email]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-git-committer-email]
         options:
           create: true
   - source:
@@ -134,7 +134,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-base-domain]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-base-domain]
         options:
           create: true
   - source:
@@ -146,7 +146,7 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-sandbox-router-url]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-sandbox-router-url]
         options:
           create: true
   - source:
@@ -168,6 +168,6 @@ replacements:
           kind: Deployment
           name: anvild
         fieldPaths:
-          - spec.template.metadata.annotations.[anvil-dotfiles.thejeffer.net/runtime-config-sandbox-image]
+          - spec.template.metadata.annotations.[anvil-next.thejeffer.net/runtime-config-sandbox-image]
         options:
           create: true
