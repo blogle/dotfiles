@@ -6,9 +6,9 @@ data:
   ANVIL_NAMESPACE: dotfiles
   ANVIL_PROFILE_OPENCODE_URL: http://anvil-profile.dotfiles.svc.cluster.local:4096
   ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-6dce30b1963cbc26c31baa1187498f59f92b014e
-  ANVIL_PREVIEW_DOMAIN: dotfiles.preview.thejeffer.net
-  BASE_DOMAIN: dotfiles.preview.thejeffer.net
-  ANVIL_ANNOTATION_PREFIX: anvil-dotfiles.thejeffer.net
-  ANVIL_GIT_COMMITTER_NAME: Anvil Dotfiles
-  ANVIL_GIT_COMMITTER_EMAIL: anvil-dotfiles@noreply.thejeffer.net
+  ANVIL_PREVIEW_DOMAIN: next.preview.thejeffer.net
+  BASE_DOMAIN: next.preview.thejeffer.net
+  ANVIL_ANNOTATION_PREFIX: anvil-next.thejeffer.net
+  ANVIL_GIT_COMMITTER_NAME: Anvil Next
+  ANVIL_GIT_COMMITTER_EMAIL: anvil-next@noreply.thejeffer.net
   AGENT_SANDBOX_ROUTER_URL: http://sandbox-router-svc.agent-sandbox-system.svc.cluster.local:8080

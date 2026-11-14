@@ -60,7 +60,7 @@ PR does not change cluster-wide deletion behavior.
 Deployment readiness in the `anvil` namespace. Core Flux reports a failed
 rollout by marking reconciliation unhealthy and emitting events; it does not
 automatically revert Git or roll workloads back to an earlier revision.
-The separately namespaced `anvil-dotfiles` rollout is not yet included in
+The separately namespaced Anvil Next (`dotfiles`) rollout is not included in
 additional apps-layer healthChecks. Verify its Deployments and supporting
 resources manually after adoption before adding any Flux health gates, so an
 initial dotfiles issue does not block readiness reporting for all apps.
@@ -142,15 +142,19 @@ GHCR artifacts exist; a passing, current Renovate PR can then automerge and
 Flux deploys it. The vendor-provided Agent Sandbox controller pin remains a
 separate dependency.
 
-The `anvil-dotfiles` overlay is an independent deployment namespace registered
-after incumbent Anvil. It currently pins the v0.1.1 release commit and shares
-the incumbent GitHub App identity via a dotfiles-specific SealedSecret; its
-profile password, controller signing key, PVCs, namespace, TLS, and ingress
-routing remain independent. No model credential is configured, so real worker
-execution remains gated pending approved credential wiring. Do not add Flux
-healthChecks until its manually observed readiness is established, and do not
-include Nexus MCP changes until the dotfiles MCP service is ready. These changes
-do not move the incumbent Anvil pin or alter its Renovate SEV-1 hold.
+The `anvil-next` overlay is an independent deployment in the `dotfiles`
+namespace, registered after incumbent Anvil. It pins the v0.1.1 release commit
+and shares the incumbent GitHub App identity via a dotfiles-specific
+SealedSecret; its profile password, controller signing key, PVCs, namespace,
+TLS, and ingress routing remain independent. SealedSecret metadata names and
+ciphertext stay unchanged because they are cryptographically bound to the
+`dotfiles` namespace. Anvil Next is exposed at `anvil-next.thejeffer.net` and
+`*.next.preview.thejeffer.net`. No model credential is configured, so real
+worker execution remains gated pending approved credential wiring. Do not add
+Flux healthChecks until its manually observed readiness is established. Nexus
+is configured to route the `anvil_next` downstream, but only transport smoke is
+currently verified; tool-parity validation remains pending. These changes do
+not move the incumbent Anvil pin or alter its Renovate SEV-1 hold.
 
 ### Dojo staging: automatic delivery of semantic releases
 

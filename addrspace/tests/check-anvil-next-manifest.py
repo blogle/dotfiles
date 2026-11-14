@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Validate isolation and runtime wiring for the Anvil dotfiles overlay."""
+"""Validate isolation and runtime wiring for the Anvil Next overlay."""
 
+import hashlib
 import re
 import subprocess
 from pathlib import Path
@@ -9,7 +10,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OVERLAY = ROOT / "addrspace/apps/anvil-dotfiles"
+OVERLAY = ROOT / "addrspace/apps/anvil-next"
 
 
 def render(path):
@@ -73,6 +74,26 @@ assert profile_image == f"ghcr.io/blogle/anvil-sandbox:sha-{base_sha}", (
 assert runtime["ANVIL_SANDBOX_IMAGE"] == profile_image, (
     "runtime sandbox image must match the rendered profile image"
 )
+assert runtime["ANVIL_NAMESPACE"] == "dotfiles", "SealedSecret-bound namespace must remain dotfiles"
+assert runtime["ANVIL_PREVIEW_DOMAIN"] == "next.preview.thejeffer.net"
+assert runtime["BASE_DOMAIN"] == "next.preview.thejeffer.net"
+assert runtime["ANVIL_ANNOTATION_PREFIX"] == "anvil-next.thejeffer.net"
+
+nexus_toml = yaml.safe_load(
+    (ROOT / "addrspace/apps/nexus/configmap.yaml").read_text()
+)["data"]["nexus.toml"]
+nexus_deployment = yaml.safe_load(
+    (ROOT / "addrspace/apps/nexus/deployment.yaml").read_text()
+)
+nexus_annotations = nexus_deployment["spec"]["template"]["metadata"]["annotations"]
+assert "[mcp.servers.anvil_next]" in nexus_toml
+assert "[mcp.servers.anvil_dotfiles]" not in nexus_toml
+assert "url = \"http://anvil-mcp.dotfiles.svc.cluster.local:8081/mcp\"" in nexus_toml
+assert "[mcp.servers.anvil]" in nexus_toml
+assert "url = \"http://anvil-mcp.anvil.svc.cluster.local:8081/mcp\"" in nexus_toml
+assert nexus_annotations["checksum/config"] == hashlib.sha256(nexus_toml.encode()).hexdigest()
+assert nexus_annotations["anvil-next.example.invalid/mcp-contract-revision"] == base_sha
+assert "anvil-dotfiles.example.invalid/mcp-contract-revision" not in nexus_annotations
 
 # SealedSecret metadata and key names are safe to inspect; never print or
 # include encryptedData values in diagnostics.
@@ -146,10 +167,26 @@ for key, suffix in {
     "AGENT_SANDBOX_ROUTER_URL": "sandbox-router-url",
     "ANVIL_SANDBOX_IMAGE": "sandbox-image",
 }.items():
-    annotation = f"anvil-dotfiles.thejeffer.net/runtime-config-{suffix}"
+    annotation = f"anvil-next.thejeffer.net/runtime-config-{suffix}"
     assert annotations.get(annotation) == runtime[key], (
         "dotfiles anvild rollout annotation must match its runtime ConfigMap value"
     )
+
+# Preserve stable Ingress and Certificate identities because Flux pruning is off.
+ingress = selected[("Ingress", "anvil-dotfiles")]
+certificate = selected[("Certificate", "anvil-dotfiles-preview-tls")]
+assert ingress["metadata"]["name"] == "anvil-dotfiles"
+assert certificate["metadata"]["name"] == "anvil-dotfiles-preview-tls"
+assert {rule["host"] for rule in ingress["spec"]["rules"]} == {
+    "anvil-next.thejeffer.net",
+    "*.next.preview.thejeffer.net",
+}, "Ingress must expose only the canonical Anvil Next hosts"
+assert ingress["spec"]["tls"][0]["secretName"] == "anvil-dotfiles-preview-tls"
+assert set(certificate["spec"]["dnsNames"]) == {
+    "anvil-next.thejeffer.net",
+    "*.next.preview.thejeffer.net",
+}, "Certificate must cover only the canonical Anvil Next hosts"
+assert certificate["spec"]["secretName"] == "anvil-dotfiles-preview-tls"
 
 # No namespaced objects, storage claims, sealed/plain Secret names, or ingress
 # hosts may collide with the incumbent Anvil instance.
@@ -195,4 +232,4 @@ assert dotfiles_hosts and not (incumbent_hosts & dotfiles_hosts), (
     "dotfiles ingress hosts must be distinct from incumbent Anvil hosts"
 )
 
-print("Anvil dotfiles overlay isolation and runtime invariants passed.")
+print("Anvil Next overlay isolation and runtime invariants passed.")

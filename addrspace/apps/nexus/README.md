@@ -13,11 +13,12 @@ Bounce Nexus after either of these changes:
 - A downstream MCP server changes its tool names, descriptions, input schema,
   protocol implementation, or image.
 
-For an Anvil MCP change, update the `anvil.example.invalid/mcp-contract-revision`
-pod-template annotation in `deployment.yaml` to the Anvil commit that supplied
-the contract. That annotation is intentionally a rollout trigger and makes the
-required Nexus bounce visible in the diff. For a config-only change, update the
-existing `checksum/config` annotation as well.
+For an Anvil MCP change, update the appropriate pod-template contract annotation
+in `deployment.yaml` (`anvil.example.invalid/mcp-contract-revision` for Anvil or
+`anvil-next.example.invalid/mcp-contract-revision` for Anvil Next) to the Anvil
+commit that supplied the contract. That annotation is intentionally a rollout
+trigger and makes the required Nexus bounce visible in the diff. For a
+config-only change, update the existing `checksum/config` annotation as well.
 
 ## Deployment procedure
 

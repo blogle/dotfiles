@@ -3,10 +3,10 @@ kind: Certificate
 metadata:
   name: anvil-dotfiles-preview-tls
 spec:
-  commonName: anvil-dotfiles.thejeffer.net
+  commonName: anvil-next.thejeffer.net
   dnsNames:
-    - anvil-dotfiles.thejeffer.net
-    - '*.dotfiles.preview.thejeffer.net'
+    - anvil-next.thejeffer.net
+    - '*.next.preview.thejeffer.net'
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
