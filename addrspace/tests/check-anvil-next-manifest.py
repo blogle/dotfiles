@@ -100,6 +100,10 @@ assert "anvil-dotfiles.example.invalid/mcp-contract-revision" not in nexus_annot
 sealed_names = {
     "anvil-profile-credentials": {"ANVIL_OPENCODE_SERVER_PASSWORD"},
     "anvil-controller-signing": {"ANVIL_SESSION_SIGNING_SECRET"},
+    "anvil-provider-credentials": {
+        "ANVIL_PROVIDER_ENCRYPTION_KEY",
+        "ANVIL_PROVIDER_OPERATOR_TOKEN",
+    },
     "github-app-credentials-dotfiles": {
         "ANVIL_GITHUB_APP_ID",
         "ANVIL_GITHUB_INSTALLATION_ID",
@@ -107,7 +111,7 @@ sealed_names = {
     },
 }
 sealed = {name: resource for (kind, name), resource in selected.items() if kind == "SealedSecret"}
-assert set(sealed) == set(sealed_names), "overlay must contain exactly its three expected SealedSecrets"
+assert set(sealed) == set(sealed_names), "overlay must contain exactly its four expected SealedSecrets"
 for name, expected_keys in sealed_names.items():
     resource = sealed[name]
     metadata = resource["metadata"]
@@ -126,7 +130,7 @@ for name, expected_keys in sealed_names.items():
         "SealedSecret template must create an ordinary Opaque Secret"
     )
 
-# anvild must require all three namespace-specific credential sources.
+# anvild must require all four namespace-specific credential sources.
 anvild = selected[("Deployment", "anvild")]
 container = anvild["spec"]["template"]["spec"]["containers"][0]
 env_from = container.get("envFrom", [])
@@ -134,6 +138,7 @@ required_secret_refs = {
     "github-app-credentials-dotfiles",
     "anvil-profile-credentials",
     "anvil-controller-signing",
+    "anvil-provider-credentials",
 }
 actual_secret_refs = {
     item["secretRef"]["name"]
@@ -141,7 +146,7 @@ actual_secret_refs = {
     if "secretRef" in item and item["secretRef"].get("optional") is False
 }
 assert required_secret_refs <= actual_secret_refs, (
-    "anvild envFrom must require the dotfiles App, profile, and signing Secrets"
+    "anvild envFrom must require the dotfiles App, profile, signing, and provider Secrets"
 )
 password_env = [
     item
