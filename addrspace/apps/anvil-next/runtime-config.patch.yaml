@@ -5,7 +5,7 @@ metadata:
 data:
   ANVIL_NAMESPACE: dotfiles
   ANVIL_PROFILE_OPENCODE_URL: http://anvil-profile.dotfiles.svc.cluster.local:4096
-  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-6dce30b1963cbc26c31baa1187498f59f92b014e
+  ANVIL_SANDBOX_IMAGE: ghcr.io/blogle/anvil-sandbox:sha-0668f24aadf53b82d021ea53a4ae77d91295f7c4
   ANVIL_PREVIEW_DOMAIN: next.preview.thejeffer.net
   BASE_DOMAIN: next.preview.thejeffer.net
   ANVIL_ANNOTATION_PREFIX: anvil-next.thejeffer.net
