@@ -35,9 +35,15 @@ preview routing are also separate from incumbent Anvil. No incumbent Secret,
 PVC, Namespace, or ingress route is copied or reused. The overlay does not add
 cluster-scoped RBAC or storage resources.
 
-No model/API credential is configured. The service and profile can be deployed,
-but real worker/model execution remains gated until an authorized model
-credential and its approved secret wiring are provided.
+The separately sealed `anvil-provider-credentials` Secret configures the
+Anvil provider encryption key and operator token for this namespace. An
+authorized operator can retrieve the token from the namespace Secret with
+`kubectl -n dotfiles get secret anvil-provider-credentials -o
+jsonpath='{.data.ANVIL_PROVIDER_OPERATOR_TOKEN}' | base64 -d`. Preserve and back
+up `ANVIL_PROVIDER_ENCRYPTION_KEY` securely: existing provider database records
+depend on it for decryption, and rotating or losing it can make that data
+unreadable. No actual provider/model API credential is onboarded; supplying an
+authorized provider credential remains a separate step.
 
 The Ingress uses the shared Traefik SSO authentication middlewares and covers
 `anvil-next.thejeffer.net` plus `*.next.preview.thejeffer.net`. The Ingress and

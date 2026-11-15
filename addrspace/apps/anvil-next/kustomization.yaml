@@ -12,6 +12,7 @@ resources:
   - anvil-profile-credentials.sealed.yaml
   - anvil-controller-signing.sealed.yaml
   - github-app-credentials-dotfiles.sealed.yaml
+  - anvil-provider-credentials.sealed.yaml
 
 images:
   - name: ghcr.io/blogle/anvil
@@ -67,6 +68,12 @@ patches:
         value:
           secretRef:
             name: anvil-controller-signing
+            optional: false
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value:
+          secretRef:
+            name: anvil-provider-credentials
             optional: false
   - path: runtime-config.patch.yaml
   - path: mcp-hosts.patch.yaml
