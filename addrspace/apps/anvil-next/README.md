@@ -10,12 +10,10 @@ Render it independently with:
 kubectl kustomize addrspace/apps/anvil-next
 ```
 
-The overlay pins the published Anvil v0.2.2 release at merged commit
-`ff9d253c01e4e049b19b54a642d6cd4b6b70e061`. The base and all three application
-images (`anvil`, `anvil-sandbox`, and `anvil-nix-daemon`) use this same commit's
-`sha-*` tags, verified with `docker manifest inspect`. The preceding v0.2.1
-release was published but intentionally not promoted because of a model warmup
-race; Anvil Next moves directly from v0.2.0 to v0.2.2.
+The overlay pins the published Anvil v0.2.3 release at merged commit
+`146d80e860f764e0655bf84f35b5b598639100e0`. The base and all three application
+image tags (`anvil`, `anvil-sandbox`, and `anvil-nix-daemon`) use this
+commit's immutable `sha-*` tags, verified with `docker manifest inspect`.
 
 The Anvil Next instance intentionally shares the existing GitHub App identity
 with the incumbent Anvil instance. Its credentials are supplied by the
