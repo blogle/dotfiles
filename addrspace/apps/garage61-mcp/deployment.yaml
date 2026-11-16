@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage61-mcp
+  namespace: garage61-mcp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: garage61-mcp
+  template:
+    metadata:
+      labels:
+        app: garage61-mcp
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              exec uv run --no-project --with 'git+https://github.com/tqhdesilva/Garage61MCP.git@a0d4c9d943dce7599f5647b8feb6d30b33b02d0d' \
+                python -c 'from garage61_mcp.server import mcp; mcp.run(transport="http", host="0.0.0.0", port=8000, path="/mcp")'
+          env:
+            - name: GARAGE61_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: garage61-credentials
+                  key: GARAGE61_TOKEN
+            - name: UV_CACHE_DIR
+              value: /tmp/uv-cache
+            - name: MPLCONFIGDIR
+              value: /tmp/matplotlib
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 2Gi
