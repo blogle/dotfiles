@@ -56,6 +56,10 @@ data:
     protocol = "streamable-http"
     url = "http://kubernetes-mcp.kubernetes-mcp.svc.cluster.local:8080/mcp"
 
+    [mcp.servers.garage61]
+    protocol = "streamable-http"
+    url = "http://garage61-mcp.garage61-mcp.svc.cluster.local:8000/mcp"
+
     [mcp.servers.clickstack]
     protocol = "streamable-http"
     url = "http://clickstack-app.observability.svc.cluster.local:3000/api/mcp"
