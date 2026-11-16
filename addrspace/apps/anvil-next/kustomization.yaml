@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: dotfiles
 
 resources:
-  - github.com/blogle/anvil//k8s/base?ref=ff9d253c01e4e049b19b54a642d6cd4b6b70e061
+  - github.com/blogle/anvil//k8s/base?ref=146d80e860f764e0655bf84f35b5b598639100e0
   - namespace.yaml
   - certificate.yaml
   - ingress.yaml
@@ -16,11 +16,11 @@ resources:
 
 images:
   - name: ghcr.io/blogle/anvil
-    newTag: sha-ff9d253c01e4e049b19b54a642d6cd4b6b70e061
+    newTag: sha-146d80e860f764e0655bf84f35b5b598639100e0
   - name: ghcr.io/blogle/anvil-sandbox
-    newTag: sha-ff9d253c01e4e049b19b54a642d6cd4b6b70e061
+    newTag: sha-146d80e860f764e0655bf84f35b5b598639100e0
   - name: ghcr.io/blogle/anvil-nix-daemon
-    newTag: sha-ff9d253c01e4e049b19b54a642d6cd4b6b70e061
+    newTag: sha-146d80e860f764e0655bf84f35b5b598639100e0
 
 patches:
   # The upstream Namespace is for the incumbent app; this overlay owns dotfiles.
