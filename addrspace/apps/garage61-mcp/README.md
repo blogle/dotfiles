@@ -10,7 +10,7 @@ Before enabling this application, create a SealedSecret in namespace `garage61-m
 
 ## Runtime
 
-FastMCP upstream defaults to stdio; the Deployment imports its `mcp` instance and runs streamable HTTP on port 8000, path `/mcp`. Dependencies resolve at startup via uv from the pinned upstream commit. Promote to a prebuilt, digest-pinned image for reproducible production deployment.
+FastMCP upstream defaults to stdio; the Deployment imports its `mcp` instance and runs streamable HTTP on port 8000, path `/mcp`. The digest-pinned uv/Python image installs the source archive for the pinned upstream commit at startup. Dependency versions still resolve from upstream constraints at startup; use a prebuilt, digest-pinned application image for fully reproducible production deployment.
 
 The upstream Git submodule for Lovely track data is not installed by uv. Track metadata tools requiring that dataset may return incomplete results; telemetry and API tools can still operate. Inspect startup logs and validate tools through Nexus after supplying credentials.
 
