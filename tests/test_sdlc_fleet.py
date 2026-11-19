@@ -24,6 +24,11 @@ FLAKE = (ROOT / "consumer-flake.nix").read_text()
 
 
 class FleetContractTests(unittest.TestCase):
+    def test_renovate_labels_unattended_managers_auto_and_other_updates_review(self):
+        config = (pathlib.Path(__file__).parents[1] / "renovate.json5").read_text()
+        self.assertIn("labels: ['dependencies', 'kubernetes', 'integration:review']", config)
+        self.assertIn("labels: ['dependencies', 'kubernetes', 'integration:auto']", config)
+
     def test_two_layer_attestation_normalizes_timezones_and_rejects_extra_actors(self):
         plan = copy.deepcopy(PLAN)
         desired = {
