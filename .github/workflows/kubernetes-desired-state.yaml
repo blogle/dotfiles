@@ -46,7 +46,7 @@ jobs:
               echo "No Kubernetes desired-state or Renovate configuration changes; passing as a no-op."
             fi
           fi
-      - uses: azure/setup-kubectl@v4
+      - uses: azure/setup-kubectl@bda439f5f36b99b262ebdcd3613869bddb064c8e # v5
         if: steps.changes.outputs.relevant == 'true'
         with:
           version: v1.35.0
