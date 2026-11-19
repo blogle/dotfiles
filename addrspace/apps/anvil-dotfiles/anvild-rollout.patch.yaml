@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Rendered only in the isolated dotfiles namespace.
+  name: anvild
+spec:
+  # The dedicated history PVC is ReadWriteOnce; avoid overlapping pods on rollout.
+  strategy:
+    type: Recreate

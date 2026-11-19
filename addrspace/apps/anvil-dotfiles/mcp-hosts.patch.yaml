@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anvil-mcp
+spec:
+  template:
+    spec:
+      containers:
+        - name: mcp
+          env:
+            - name: MCP_ALLOWED_HOSTS
+              value: localhost,127.0.0.1,anvil-mcp,anvil-mcp:8081,anvil-mcp.dotfiles.svc,anvil-mcp.dotfiles.svc:8081,anvil-mcp.dotfiles.svc.cluster.local,anvil-mcp.dotfiles.svc.cluster.local:8081

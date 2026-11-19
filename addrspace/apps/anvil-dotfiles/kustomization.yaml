@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Standalone render-only overlay. Deliberately not registered in apps/.
+namespace: dotfiles
+
+resources:
+  - github.com/blogle/anvil//k8s/base?ref=9fdd0b9f5a72236c63770d0e95e89b784c9cadda
+  - certificate.yaml
+  - ingress.yaml
+
+images:
+  - name: ghcr.io/blogle/anvil
+    newTag: sha-9fdd0b9f5a72236c63770d0e95e89b784c9cadda
+  - name: ghcr.io/blogle/anvil-sandbox
+    newTag: sha-9fdd0b9f5a72236c63770d0e95e89b784c9cadda
+  - name: ghcr.io/blogle/anvil-nix-daemon
+    newTag: sha-9fdd0b9f5a72236c63770d0e95e89b784c9cadda
+
+patches:
+  # Keep cluster-scoped objects out of this render-only overlay.
+  - patch: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: anvil
+      $patch: delete
+  # The shared upstream base's production credential object must not render here.
+  - patch: |-
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: github-app-credentials
+      $patch: delete
+  # Remove the optional daemon credential reference; profile credentials remain
+  # intentionally unresolved until independent namespace-bound provisioning.
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: anvild
+    patch: |-
+      - op: test
+        path: /spec/template/spec/containers/0/envFrom/1/secretRef/name
+        value: github-app-credentials
+      - op: remove
+        path: /spec/template/spec/containers/0/envFrom/1
+  - path: runtime-config.patch.yaml
+  - path: mcp-hosts.patch.yaml
+  - path: profile-pvc.patch.yaml
+  - path: profile-deployment.patch.yaml
+  - path: nix-shared-pvc.patch.yaml
+  - path: history-pvc.patch.yaml
+  - path: anvild-rollout.patch.yaml
