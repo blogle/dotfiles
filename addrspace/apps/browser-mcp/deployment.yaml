@@ -22,7 +22,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: mcp
-          image: node:24-slim
+          image: node:26-slim
           command:
             - /bin/sh
             - -ec
