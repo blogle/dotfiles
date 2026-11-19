@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage61-mcp
+  namespace: garage61-mcp
+spec:
+  selector:
+    app: garage61-mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

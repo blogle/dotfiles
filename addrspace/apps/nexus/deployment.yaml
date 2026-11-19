@@ -15,7 +15,7 @@ spec:
       labels:
         app: nexus
       annotations:
-        checksum/config: 03a573419e3512b8d3c1f6aeb61374b6e3ac64a4b77d7478193ad12d20d3bc6e
+        checksum/config: 22a366ca92b3dc06679827f493a32436ce8aae141214ff0ea172f4178043d4d1
         anvil.example.invalid/mcp-contract-revision: 8d84110f3ae431d92e004d7dbd2cb9befb7fe6e1
         anvil-next.example.invalid/mcp-contract-revision: 146d80e860f764e0655bf84f35b5b598639100e0
     spec:
