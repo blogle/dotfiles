@@ -6,7 +6,7 @@ Upstream: https://github.com/tqhdesilva/Garage61MCP
 
 ## Credentials
 
-Before enabling this application, create a SealedSecret in namespace `garage61-mcp` that materializes a Kubernetes Secret named `garage61-credentials` with key `GARAGE61_TOKEN`. Obtain the token from https://garage61.net/developer. Do not commit an unsealed token.
+The namespace-scoped `garage61-credentials` SealedSecret supplies `GARAGE61_TOKEN`. On rotation, reseal the token for this namespace/name and update the Deployment's `checksum/credentials` annotation to the SHA-256 of the sealed manifest so the pod reloads it. Do not commit an unsealed token.
 
 ## Runtime
 
