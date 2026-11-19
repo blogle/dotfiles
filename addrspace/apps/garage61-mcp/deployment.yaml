@@ -12,6 +12,8 @@ spec:
       app: garage61-mcp
   template:
     metadata:
+      annotations:
+        checksum/credentials: a81482424cdf3cb3c040fdfc96d73df0dfcf66e882a6eed6b79a583e03ed8372
       labels:
         app: garage61-mcp
     spec:
