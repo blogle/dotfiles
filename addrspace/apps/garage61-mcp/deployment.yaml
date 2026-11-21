@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: server
-          image: ghcr.io/astral-sh/uv@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+          image: ghcr.io/astral-sh/uv@sha256:d3b601f0c7b118bc1753febf7c41cc80981df678445e0254284eecf84db79a7d
           command: ["/bin/sh", "-ec"]
           args:
             - |
